@@ -32,13 +32,7 @@ var relocate = null
 #table are updated when a phase containing a string followed by a number is called
 #default values are a boolean 0/1 for whether the piece can be checkmated and an integet for the number of moves
 var table = {"key": 0, "moves":0, "fx":0, "fy":0, "ff":0,
-#these parameters determine whether or not a piece moves in certain ways
-#"x_mode":0 will change dynamically but uniformly (all basis vectors will change the same way to keep proportions
-#1 will change dynamically and not uniformly (pieces will not retain proportions)
-#0 and 1 are the same for rotate and translate
-#2 will lock this part of the piece's transforms, making for some truly unholy concoctions
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
-#this property will define the piece's scale relative to its square if scale_mode is 1
 			 "scale": 1.0/3.0}
 
 #piece types considered by the creation phase, indicated by their string path

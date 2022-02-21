@@ -10,7 +10,7 @@ My code is a mess. This has always been part of the joke of the project, but mov
 # Navigating and using this project
 To open the project, import it as a Godot project in Godot 3.x, I haven't tested it with 4.x alphas.
 For testing out boards, go to Static Body in the Godot scene and change it's path value to the board you want to load.
-For editing boards and pieces, refer to docs_temp.md in Notes
+For editing boards and pieces, refer to wiki page "Editing Boards and Pieces"
 
 # Mess roadmap (in order)
  - Make better comments so the code isn't completely unreadable to other GitHub users
