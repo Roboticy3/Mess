@@ -1,0 +1,57 @@
+#this is the default board
+#you can type anything here and it shouldnt ruin things
+
+default_board
+
+b
+#this phase sets boundries that define the shape of the board
+#if a piece tries to move to a spot with no encompassing boundries, the option will not appear
+
+?1 < 2 0 bigmac 7 7 #set a boundary defining the board as a square from 0 to 7 places in both direction
+
+p
+#this phase sets portals that define how edges of the board may connect to each-other
+#a portal consists of two boundry definitions back-to-back, followed by 2 numbers defining a direction
+#the direction decides how much a piece's forward direction will change if it passes through a portal
+#setting a direction to 1, 0 will change nothing, 1, 1 will change a pieces direction by 45 degrees clockwise, -1, 1 counterclockwise
+
+#this portal is utter nonsense and will not effect gameplay because the entrance does not intersect with the playable area, 
+#but it shows how the syntax works
+54 68 72 84 7 3 200 34 5 5
+
+t
+#this phase creates the teams on the board, indicating their color in R G B format, the forward direction as two numbers
+#and finally friendly fire as 0 for false and 1 for true
+#setting the friendly fire parameter to 2 will make the team unplayable, which is sometimes the intention
+1 1 1 0 1 0 #create white team facing up with no friendly fire
+0 0 0 0 -1 0 #create black team facing down with no friendly fire
+#if two teams are declared with the same color, the most recent will replace the last
+
+g
+#this phase places pieces on the board, pieces are collected into an array via the paths below and called from 0 - n in the order they appear
+Instructions/p_pawn.txt
+Instructions/p_rook.txt
+Instructions/p_knight.txt
+Instructions/p_bishop.txt
+Instructions/p_queen.txt
+Instructions/p_king.txt
+
+#next, pieces are placed on the board with a 0 - n integer for their path from above, 0 - n for their team from the t phase, and position as two numbers
+0 0 0 1 1 #create white piece that reads from p_pawn.txt at 0 1 on the board (A2)
+0 0 1 1 #pieces with a 1 on the end are symmetrical, meaning they're copied to the opposite end of the board and the copy has its team index increased by 1
+0 0 2 1 #until a 0 is placed in the last position, pieces will be symmetrized around the center of the board
+0 0 3 1
+0 0 4 1
+0 0 5 1
+0 0 6 1
+0 0 7 1
+0 1 0 0 
+0 2 1 0
+0 3 2 0
+0 3 5 0
+0 2 6 0
+0 1 7 0
+0 5 4 0 0
+1 5 4 7
+0 4 3 0
+1 4 3 7

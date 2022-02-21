@@ -1,0 +1,35 @@
+torus
+
+Meshes/torus.obj
+
+oogabooga 1
+
+b
+0 0 7 7
+
+g
+Instructions/p_pawn.txt
+Instructions/p_rook.txt
+Instructions/p_knight.txt
+Instructions/p_bishop.txt
+Instructions/p_queen.txt
+Instructions/p_king.txt
+
+0 0 0 1 1 
+0 0 1 1
+0 0 2 1
+0 0 3 1
+0 0 4 1
+0 0 5 1
+0 0 6 1
+0 0 7 1
+0 1 0 0 
+0 2 1 0
+0 3 2 0
+0 3 5 0
+0 2 6 0
+0 1 7 0
+0 5 4 0 0
+1 5 4 7
+0 4 3 0
+1 4 3 7

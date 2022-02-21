@@ -1,0 +1,78 @@
+1/21/2022
+	- Made wrld_to_uv(), collider thickness intercepts ray and projects it from the wrong spot
+	- Made Triangle class, includes lots of fun math functions that might be useful later
+	NEXT:
+	Make player camera controls, program piece model loader
+1/23/2022
+	- Made player camera controls
+	NEXT:
+	make uv viewer shader and square shader where uv's are adjusted by keybinds
+	fix uv_from_board and wrld_to_uv
+1/26/2022
+	 - Stress tested the board creation process
+	NEXT:
+	>>1/23/2022
+	Make BoardMesh model loader create a concave collision shape from ArrayMesh if possible
+1/27/2022
+	 - reworked collision shape system to work with concave meshes
+	 - added quick way to switch to debug mode in wrld_to_uv
+	NEXT:
+	finish shader-based mode of approaching wrld_to_uv()
+	program piece model loader
+1/28/2022
+	 - fixed half of wrld_to_uv(), learned that shader approach wont work because fragment() cannot send data
+	 - learned how to use GLSL
+	NEXT:
+	find cause of and fix bug with wrld_to_uv() where some positions will fail to pass is_surrounding()
+	program piece model loader
+1/29/2022
+	 - started piece model loader, BoardMesh keeps a cache of hard-to-load data on each type of piece and sends it to each of the pieces, instantiated as children of the board staticbody
+	NEXT
+	fix piece scale calculation to match piece AABB to its square (may have to be dynamic) add piece table param that lets users disable this
+	add piece scale rotation to match the normal of the board on their square (maybe also allow user to disable this)
+	change Player.raycast() to work with the piece collision layer of the player's team as well as the board
+2/4-5/2022
+	 - made piece model loader
+	 - made implicit teams phase for default pieces 
+	 - made symmetrize and no-symmetrize sub-modes for g phase
+	 - began move() function
+	 - changed forward vector and ff on pieces to be part of their table
+	NEXT
+	add implicit modes for every phase that pull from default
+	use square_to_mdata, square_to_loc and dot product to create
+	make AABB system for pieces 
+2/6/2022
+	 - started resolve_transforms()
+	 - made intruction settings for pieces to resist transforms
+	NEXT
+	 - make square_to_box() to resolve a board square to a mesh
+	 - use square_to_box() to cache selectable selectable squares and scale pieces
+2/9/2022
+	 - make screen_to_uv() like a chad
+	 - that's fucken it
+	NEXT
+	 - make the scale component of resolve_transforms()
+	 - start intruction interpereter
+2/11/2022
+	 - started square_to_box() again
+	 - started update_scale() for PieceMesh
+	NEXT
+	 - finish system for converting uv square to mesh
+		 - maybe change the system so that mesh is instantiated from intersecting faces and the "cropped" instead of trying to instantiate in the right shape as is
+2/12/2022
+	 - continued work on square_to_box()
+	NEXT
+	- TAKE A BREAK
+2/19/2022
+	 - took break
+	 - continued work on square_to_box() (now shortening to stb)
+	NEXT
+	 - make stb match verts in outside to corners
+	 - if outside is missing verts, add corner verts in new array and make matching indices in outside negative to distinguish from existing verts
+	 - slide outside verts onto edge of two closest corners
+2/20/2022
+	 - fixed stb
+	 - created edge set intersection with bound
+	 - fixed square_to_basis() to work with broken team definitions
+	NEXT
+	 - finish stb by adding system to move verts inward and extrude into a box
