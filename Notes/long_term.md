@@ -10,5 +10,8 @@
 #Add extrusion to BoardConverter.square_to_box()
 	square_to_box() is meant to highlight selected or available squares, but right now just proposes a flat plane of the square. It has a lot of rough edges
 
+#Make portal phase (p) in boards functional.
+	Portals will allow for objects with uvs other than planes to be traversed smoothly
+
 ~Full mesh importing
 	Import any mesh with proper uvs and board instructions for a fully automatically generated chessboard :)

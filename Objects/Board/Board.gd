@@ -158,8 +158,9 @@ func _ready():
 		elif (c.match("g")):
 			stage = 4
 			#if teams are empty by game phase, add black and white teams implicitly
-			teams.append(Team.new())
-			teams.append(Team.new(Color.black, Vector2.UP))
+			if teams.empty():
+				teams.append(Team.new())
+				teams.append(Team.new(Color.black, Vector2.UP))
 	pass
 
 #set piece and return set position from array of length 4

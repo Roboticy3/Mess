@@ -8,8 +8,3 @@ m
 ?hasmoved < 1 0 2 #move 2 forward if hasmoved is 0
 ?1 1 1 1
 ?-1 1 -1 1
-
-c
-Instructions/p_queen.txt
-
-0 0 0 #creates a queen at 0 0 (on self) if the pawn is seven forwards away from its starting y

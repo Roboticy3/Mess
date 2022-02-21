@@ -9,16 +9,6 @@ b
 
 ?1 < 2 0 bigmac 7 7 #set a boundary defining the board as a square from 0 to 7 places in both direction
 
-p
-#this phase sets portals that define how edges of the board may connect to each-other
-#a portal consists of two boundry definitions back-to-back, followed by 2 numbers defining a direction
-#the direction decides how much a piece's forward direction will change if it passes through a portal
-#setting a direction to 1, 0 will change nothing, 1, 1 will change a pieces direction by 45 degrees clockwise, -1, 1 counterclockwise
-
-#this portal is utter nonsense and will not effect gameplay because the entrance does not intersect with the playable area, 
-#but it shows how the syntax works
-54 68 72 84 7 3 200 34 5 5
-
 t
 #this phase creates the teams on the board, indicating their color in R G B format, the forward direction as two numbers
 #and finally friendly fire as 0 for false and 1 for true
