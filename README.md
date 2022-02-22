@@ -1,6 +1,6 @@
 # Mess
 Mess is a silly videogame idea I had that I'm making in Godot Engine, it lets people make their own chess variants. 
-Right now it doesn't work, look at README for details.
+Right now it doesn't work as a full game, but you can look at the [wiki page](https://github.com/Roboticy3/Mess/wiki) for planned and current functionality.
 by Pablo Ibarz
 
 ## Current state of Mess
@@ -36,3 +36,4 @@ But, little by little I'll chisel away at this thing and gain more experience an
 In the Notes folder there is a text file called log_and_plan.txt, it contains my session-to-session notes on what to do.
 The other file, long_term.md, contains slightly larger goals that most have to do with keeping the project clean.
 	in long_term, finished goals are prefixed by tildes ~, and unfinished ones are untagged.
+Right now I'm at the top of the Roadmap above.
