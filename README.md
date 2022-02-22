@@ -24,7 +24,7 @@ For editing boards and pieces, refer to wiki page "Editing Boards and Pieces"
 
 ## Mess probably-wont-get-to-it roadmap (not in order)
  - Visual board and piece editors in-game with tutorials on how to use them
- - Release on Steam with Workshop support
+ - Add enough distinguishing features to the game to separate the project from its current branch and push the project to Steam as a cheap (but not free) game, users would still be able to access the project here but would be paying to keep up with updates and use features such as Steam Workshop support.
  - Refactor whole project with better code
  - Create proper documentation wiki for making user-creations
 
