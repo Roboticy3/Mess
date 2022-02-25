@@ -1,6 +1,9 @@
 extends KinematicBody
 class_name Player
 
+#Player class created by Pablo Ibarz
+#created January 2022
+
 #store a reference to the board in the scene
 export (Resource) var board
 #store reference to BoardMesh object in the physical board
@@ -57,10 +60,7 @@ func _ready():
 		if s is CSGBox:
 			debug_cube = s
 
-#this function runs at every physics timestep, best for movment keys
-func _integrate_forces(state):
-	pass
-
+#run movement functions on physics timestep
 func _physics_process(delta):
 	look(delta)
 	accelerate(delta)

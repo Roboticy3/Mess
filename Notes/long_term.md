@@ -1,4 +1,4 @@
-#Rework file structure
+~Rework file structure
 	Change file references in Boards and Pieces to be relative to their directory instead of relative to the project so mesh importing for a piece will take the raw file name since the instruction set and the mesh will be organized under the same board. This will allow for boards to be easily moved around.
 
 #Modulate Instruction.gd

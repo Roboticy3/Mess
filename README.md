@@ -14,7 +14,6 @@ For editing boards and pieces, refer to wiki page "Editing Boards and Pieces"
 # Mess roadmap (in order)
  - Make better comments so the code isn't completely unreadable to other GitHub users
  - Make game comprehensible to look at
- - Rework Instruction.gd to be more modular to allow for greater versatility in the way players write custom pieces
  - Add step-wise marking and turns to make the game playable
  - Finish Portal.gd and how other scripts handle it
  - Make docs for piece and board editors

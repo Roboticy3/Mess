@@ -1,0 +1,16 @@
+loop
+
+meshes/loop.obj
+
+
+b
+0 0 15 3
+
+t
+0 0 0 0 0 1
+
+g
+default/p_pawn.txt
+
+0
+0 0 0 1 0

@@ -1,17 +1,24 @@
 class_name PieceMesh
 extends KinematicBody
 
+#PieceMesh class by Pablo Ibarz
+#created January 2022
+
+#control the visual and physical aspects of a Piece
+
+#reference to Piece and parent Board
 var piece:Piece
 var board:Board
 
+#collisions, visuals, and mdt for BoardConverter
 var shape:CollisionShape
 var mesh:ArrayMesh
-var mdt:MeshDataTool
-#the piece's footprint of its base relative to its scale
-var aabb:AABB
 var mat:Material
+var mdt:MeshDataTool
+#not sure if I'm actually gonna use AABB
+var aabb:AABB
 
-				#these properties let PieceMesh access the game and itself
+#these properties let PieceMesh access the game and itself
 func _init(var _piece:Piece, var _board:Board, 
 	#these parameters defined the physical properties of PieceMesh
 	var _shape:CollisionShape = null, var _mesh:ArrayMesh = null, var _mat:Material = null):
@@ -20,6 +27,7 @@ func _init(var _piece:Piece, var _board:Board,
 	
 	shape = _shape
 	mesh = _mesh
+	#generate mdt and aabb from mesh
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(mesh, 0)
 	aabb = mesh.get_aabb()
@@ -30,8 +38,9 @@ func _init(var _piece:Piece, var _board:Board,
 func _ready():
 	#get mesh from path
 	if mesh == null: 
-		mesh = BoardConverter.path_to_mesh(piece.mesh, false)
+		mesh = BoardConverter.path_to_mesh(piece.mesh)
 	
+	#if no collisions were added, make one from mesh
 	if shape == null: 
 		#add a CollisionShape and CSGMesh child
 		#use same function as BoardMesh for creating the piece collision
@@ -51,7 +60,6 @@ func _ready():
 	add_child(csg)
 	
 	#print(get_children())
-	
 
 func _to_string():
 	return piece._to_string()

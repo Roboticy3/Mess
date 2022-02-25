@@ -1,6 +1,6 @@
 torus
 
-Meshes/torus.obj
+meshes/torus.obj
 
 oogabooga 1
 
@@ -8,12 +8,12 @@ b
 0 0 7 7
 
 g
-Instructions/p_pawn.txt
-Instructions/p_rook.txt
-Instructions/p_knight.txt
-Instructions/p_bishop.txt
-Instructions/p_queen.txt
-Instructions/p_king.txt
+default/p_pawn.txt
+default/p_rook.txt
+default/p_knight.txt
+default/p_bishop.txt
+default/p_queen.txt
+default/p_king.txt
 
 0 0 0 1 1 
 0 0 1 1

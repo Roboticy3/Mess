@@ -1,16 +1,16 @@
-#a Piece contains all the data needed for a single chess piece
-#they are derived from a text path containing all of the necessary information
-#this data includes values like its team, display name, forward direction and so on
-#each Piece also has a table of its own custom variables derived from its path
-
 class_name Piece
 extends Object
+
+#Piece class by Pablo Ibarz
+#created December 2021
+
+#store the behaviour of a piece
 
 # name of piece and file path from which it reads instructions
 var name = ""
 var path = ""
 #the path to the mesh .obj the piece will appear as and the team
-var mesh = "Meshes/pawn.obj"
+var mesh = "Instructions/default/meshes/pawn.obj"
 var team = 0
 
 #the piece's position on the board
@@ -51,10 +51,12 @@ func _init(var _p, var _t = 0, var v = Vector2.ZERO):
 	#open file
 	var f = File.new()
 	#if file does not exist, exit the init function to create "blank" piece
-	if !f.file_exists(_p): pass
+	if !f.file_exists(_p): return null
 	#read file into string array representing the separate lines of text
 	f.open(_p, File.READ)
 	var content = f.get_as_text().rsplit("\n")
+	
+	path = path.substr(0, path.find_last("/")) + "/"
 	
 	#assign instructions based on the last stage character in the piece's instruciton file
 	var stage = -1
@@ -71,12 +73,12 @@ func _init(var _p, var _t = 0, var v = Vector2.ZERO):
 			#break up string by spaces
 			var s = I.to_string_array()
 			#assign name if not done already
-			if s.size() > 0:
+			if s.size() > 0 && s[0].length() > 0:
 				if name == "":
 					name = s[0].strip_edges()
 				#try and set the piece's model path
-				if f.file_exists(s[0]):
-					mesh = s[0]
+				if f.file_exists(path + s[0]):
+					mesh = path + s[0]
 			
 			#once name is assigned, add metadata to the piece
 			#0 0 0 will signify F = 0 0, ff = false

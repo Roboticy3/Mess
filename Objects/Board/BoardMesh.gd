@@ -10,7 +10,7 @@ extends Node
 var board = null
 
 #board instruction path, mesh object, mdt object (for BoardConverter), and default mesh path meant to be set in the editor
-export (String) var path:String = "Instructions/b_cube.txt"
+export (String) var path:String = "Instructions/cube"
 export (Resource) var mesh = null
 var mdt:MeshDataTool = null
 export (Resource) var default = null
@@ -29,6 +29,22 @@ var square_meshes:Dictionary = {}
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	#copy path to a usable board path
+	var _path:String = "" + path
+	#if path ends in "/", copy folder name and remove end
+	var i:int = _path.find_last("/")
+	var p:String = _path.substr(i)
+	if i + 1 == _path.length():
+		_path = _path.substr(0, _path.length() - 1)
+		i = _path.find_last("/")
+		p = _path.substr(i)
+	#if path does not prefix with _b, assume it is a folder and add b_folder_name.txt onto the end
+	if _path.find("b_") != 0:
+		p = p.substr(1)
+		path = _path + "/b_" + p + ".txt"
+	#otherwise, take path as-is (no operation)
+	print(path)
+	
 	#retrieve board reference from spatial parent if possible
 	board = Board.new(path)
 	
@@ -127,15 +143,22 @@ func create_piece(var p:Piece, var v:Vector2):
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
 func highlight_square(var vs:PoolVector2Array, var mode:int = 0):
+	#hide everything to start if mode is 1
 	if mode == 1:
 		for c in get_children():
 			if c.name.find("Square") != -1:
 				c.visible = false
 	
-	#TODO add dictionary of square_meshes so that new meshes don't have to be created every time.
 	for v in vs:
-		var csg = BoardConverter.square_to_child(self, mdt, board.size, v)
-		if mode == 2: csg.visible = false
+		#if a square mesh for this square has already been created, just unhide it
+		if square_meshes.has(v):
+			var csg = square_meshes[v]
+			if mode == 2: csg.visible = false
+			#mode 2 hides selection
+			else: csg.visible = true
+		else:
+			var csg = BoardConverter.square_to_child(self, mdt, board.size, v)
+			if mode == 2: csg.visible = false
 		
 	
 

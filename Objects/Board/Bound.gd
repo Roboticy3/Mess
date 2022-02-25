@@ -1,8 +1,11 @@
-#a Bound is a rectangle which is used to define shapes on a board
-
 class_name Bound
 
-#is the top right corner of the bound, b the bottome left
+#Bound class by Pablo Ibarz
+#created December 2021
+
+#a Bound is a rectangle which is used to define shapes on a board
+
+#a is the top right corner of the bound, b the bottom left
 var a:Vector2
 var b:Vector2
 
@@ -25,29 +28,35 @@ func from_text(var c:String, var mp:int, var sp:int):
 	if (mp == 0): mp = c.length()
 	if (sp == 0): sp = c.length()
 	#create the Vectors with Instruction's vectorize() method
-	#its kind of like using a claymore to cut a pizza
+	#its kind of like using a claymore to cut a pizza, yummy!
 	var v = Instruction.new(c.substr(0, mp)).vectorize()
 	var v2 = Instruction.new(c.substr(mp, sp)).vectorize()
 	
+	#ok so im going back through my comments to push more readable code and..
+	#this is insane and i love it
 	_init(v, v2)
 	return self
 
+#check if boundary is zeroed
 func is_zero():
 	return a == Vector2.ZERO && b == Vector2.ZERO
 
+#get Vector2 array of corners
 func get_corners():
 	return [Vector2(b.x, a.y), a, Vector2(a.x, b.y), b]
 
+#get 2D Vector2 array of edges
 func get_edges():
 	var c = Vector2(b.x, a.y)
 	var d = Vector2(a.x, b.y)
 	return [[a, c], [c, b], [b, d], [d, a]]
 
 #check if bound intersects with an object, runs differently depending on type of input
-#returns negative 1 for false, an array of indices which intersect array
+#currently the only object type which works is Array
+#returns an array of intersections
 func intersection(var X = null, var args:Array = []):
 	if X == null:
-		return -1
+		return []
 		
 	if X is Array || X is PoolVector2Array:
 		var c:bool = false
@@ -57,12 +66,14 @@ func intersection(var X = null, var args:Array = []):
 #return intersecting edges with bound edges from a set
 #if cyclic is checked, the pair (n, 0) will be checked for intersection as well
 func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
+	#don't run function for empty sets
 	if edges.size() == 0:
 		return false
+	#run is_surrounding instead for single point inputs
 	elif edges.size() == 1: 
 		return is_surrounding(edges[0])
 		
-	#create line segments from bound
+	#create line segments from bound to intersect against edges
 	var bsegs = get_edges()
 	
 	#convert edges into point/slope form
@@ -76,7 +87,8 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 			blines[i][0] = (a.y - b.y) / (a.x - b.x)
 		blines[i][1] = a
 		blines[i][2] = b
-		
+	
+	#create intersection array
 	var intersections:PoolIntArray = []
 	
 	var s:int = -1

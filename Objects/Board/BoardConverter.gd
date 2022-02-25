@@ -8,7 +8,7 @@ class_name BoardConverter
 
 #path to the default mesh
 static func default_mesh():
-	return "res://Meshes/default.obj"
+	return "res://Instructions/default.obj"
 
 #return the face index, position in space and normal of mesh from a uv coordinate pos
 #optionally send in a mask of face indices to exclude (mask_type == 0), include (mask_type == 1), or search first (mask_type == 2)
@@ -138,6 +138,9 @@ static func square_to_transform(var mdt:MeshDataTool,
 	#get mesh data on square center for position and normal of the piece
 	#if the piece is not centered on its origin, offsets can be created
 	var mdata = square_to_mdata(mdt, board.size, pos)
+	#skip function if mdata returns null
+	if mdata == null:
+		return transform
 	
 	#ROTATION
 	#go through each of the transformation steps
@@ -163,6 +166,8 @@ static func square_to_transform(var mdt:MeshDataTool,
 #convert the normal of a square on the board to a set of basis vectors
 static func square_to_basis(var mdt:MeshDataTool, var board:Board, 
 	var piece:Piece, var mdata:Array):
+		
+	if mdata == null: return Basis()
 	
 	#up vector will take the normal of the square
 	var up:Vector3 = mdata[2].normalized()
@@ -187,11 +192,8 @@ static func square_to_basis(var mdt:MeshDataTool, var board:Board,
 	#last basis vector is cross of up and forward
 	var rt = up.cross(fd)
 	
-	#to force fd to be orthogonal to up, rotate fd by pi - angle between fd and up
-	#couldn't it just get the cross again?
-	var a = acos(fd.dot(up))
-	#cursedmathgames
-	fd = rt.rotated(up, PI/2)
+	#to force fd to be orthogonal to up, cross up with right
+	fd = up.cross(rt)
 	
 	#finally, send the basis as a transform into self.transform
 	var b:Basis = Basis(rt, up, fd)

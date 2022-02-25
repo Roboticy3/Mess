@@ -19,12 +19,12 @@ t
 
 g
 #this phase places pieces on the board, pieces are collected into an array via the paths below and called from 0 - n in the order they appear
-Instructions/p_pawn.txt
-Instructions/p_rook.txt
-Instructions/p_knight.txt
-Instructions/p_bishop.txt
-Instructions/p_queen.txt
-Instructions/p_king.txt
+default/p_pawn.txt
+default/p_rook.txt
+default/p_knight.txt
+default/p_bishop.txt
+default/p_queen.txt
+default/p_king.txt
 
 #next, pieces are placed on the board with a 0 - n integer for their path from above, 0 - n for their team from the t phase, and position as two numbers
 0 0 0 1 1 #create white piece that reads from p_pawn.txt at 0 1 on the board (A2)

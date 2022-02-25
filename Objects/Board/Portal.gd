@@ -1,6 +1,9 @@
-#a Portal Bound gives information on how to transfer a piece from one Bound to another
-
 class_name PortalBound
+
+#PortalBound class by Pablo Ibarz
+#created January 2022
+
+#a Portal Bound gives information on how to transfer a piece from one Bound to another
 
 #the boundries where pieces enter (i) and exit (o)
 var i:Bound = null
@@ -16,10 +19,8 @@ func _init(var _i:Bound, var _o:Bound, var _f:Vector2):
 	_f = _f.normalized().round()
 	forward = _f
 
-#translate a piece's position in the in boundary to a position in the out boundary
+#TODO translate a piece's position in the in boundary to a position in the out boundary
 func _travel(var pos:Vector2, var dir:Vector2):
-	#make later
-	#snap forward to the nearest 90 degree angle to properly set the orientation of the out boundary
 	pass
 	
 

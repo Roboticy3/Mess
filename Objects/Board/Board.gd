@@ -36,9 +36,13 @@ func _ready():
 	
 	#initialize file object for collecting the board's info
 	var b = File.new()
+	if !b.file_exists(path): return null
 	b.open(path, File.READ)
 	var content = b.get_as_text().rsplit("\n")
 	
+	#refine path to be extendable by other files
+	path = path.substr(0, path.find_last("/")) + "/"
+
 	#store vectors across iterations
 	var vec = null
 	
@@ -64,12 +68,12 @@ func _ready():
 			var s = I.to_string_array()
 			
 			#allow operations to be done with the first word if s has size
-			#assign name if not done already
-			if s.size() > 0:
+			if s.size() > 0 && s[0].length() > 0:
+				#assign name if not done already
 				if (name == ""):
 					name = s[0].strip_edges()
-				if b.file_exists(s[0]):
-					mesh = s[0]
+				elif b.file_exists(path + s[0]):
+					mesh = path + s[0]
 			
 			#update string table with variables
 			I.update_table(table)
@@ -116,6 +120,13 @@ func _ready():
 				vec = null
 		
 		elif (persist[0] == 4):
+			#if pieces start with default, load them from Instructions/default/
+			if c.find("default") == 0:
+				c = c.substr(c.find("/"))
+				c = "Instructions/default/pieces" + c
+			else:
+				c = path + c
+			
 			#initialize pieces from the paths in which they appear
 			#Piece.new() runs a file path check on a path input, so this works just fine
 			var p = Piece.new(c)

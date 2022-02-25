@@ -59,6 +59,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Objects/Board/Portal.gd"
 }, {
+"base": "Reference",
+"class": "Reader",
+"language": "GDScript",
+"path": "res://Objects/Reader.gd"
+}, {
 "base": "Node",
 "class": "Team",
 "language": "GDScript",
@@ -80,6 +85,7 @@ _global_script_class_icons={
 "PieceMesh": "",
 "Player": "",
 "PortalBound": "",
+"Reader": "",
 "Team": "",
 "Triangle": ""
 }

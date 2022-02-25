@@ -82,3 +82,10 @@
 	NEXT
 	>>2/20/2022
 	 - keep fixin comments m'boy
+2/25/2022
+	 - fixed file stucture, wasn't as hard as I thought it would be
+	 - fixed comments for all the Board and Piece classes, there were some bits not even I could figure out, guess the project really is getting big
+	 - started Reader class, which will eventually unite the ready functions for Board and Piece with string function dark magic
+	NEXT
+	>>2/20/2022
+	 - fix rest of comments
