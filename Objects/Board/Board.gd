@@ -1,37 +1,35 @@
-#a Board contains a collection of pieces and other accosiated data
-#they are derived from a text path containing all of the neces
-#a Board allows for user interaction with pieces
-#a Board runs checks to determine game states like checkmate and stalemate
-
 class_name Board
 extends Node
 
-#store the pieces in a dictionary with respect to location
+#Board object made by Pablo Ibarz
+#created in November 2021
+
+#store pairs of pieces and their location
+#FIX: this is data-redundant because pieces also store their location
 var pieces:Dictionary = {}
+#store the types of pieces on the board to avoid having to load pieces from scratch every time
 var piece_types = []
+
 #store a list of the teams on the board
 var teams:Array = []
+#turn increases by 1 each turn and selects the active team via teams[turn % teams.size()]
 var turn:int = 0
 
-#the parameters of the board can be written in a text file
+#the instruction and mesh path of the board
 var path:String = ""
 var mesh:String = ""
-#some boards require an offset for their uv coordinates for BoardMesh to work
-var uv_offset:Vector2
 
 #the rectangular boundries and portals which define the shape of the board
 var bounds:Array = Array()
 var portals:Array = Array()
 
-#the center, min, and max of the board
+#the center, min, and max of the board in square space
 var center:Vector2
 var maximum = Vector2(-1000000, -1000000)
 var minimum = Vector2.INF
 var size = Vector2.ONE
 
 #store a set of variables declared in metadata phase
-#scale multiplies the scale of the board
-#piece_scale multiples the 
 var table:Dictionary = {"scale":1, "piece_scale":0.2}
 
 func _ready():
@@ -41,29 +39,26 @@ func _ready():
 	b.open(path, File.READ)
 	var content = b.get_as_text().rsplit("\n")
 	
-	#board configurations have an optional path used to the model of the board
-	#add later
-	
-	#boards establish their shape from a series of bounds and portals, established in the b and p sections respectively
-	var stage = -1
 	#store vectors across iterations
 	var vec = null
-	#store whether or not pieces are symmetrized
-	var symmetrize = 0
-	#loop through instructions
+	
+	#store the following values across iterations
+	var persist:PoolIntArray = [-1, 0]
+	
+	#loop through instruction lines
 	for c in content:
-		c = c.strip_edges()
 		
+		#create an instruction from the current line
 		var I = Instruction.new(c)
 		
 		#append the current vector if it's valid
 		var v = I.vectorize(0, 1)
-		#only first index is considered for now, increasing the "magnitude" of vectors could get weird and is easily replaced by other strategies
 		if (v != null): 
+			#for boards, only one vector set should be created at a time
 			vec = v[0]
 		
 		#metadata phase is for determining things like the name and porperties of the board
-		if (stage == -1):
+		if (persist[0] == -1):
 			#code from line 64 of Piece.gd
 			#break up string by spaces
 			var s = I.to_string_array()
@@ -76,22 +71,17 @@ func _ready():
 				if b.file_exists(s[0]):
 					mesh = s[0]
 			
-			#read out uv offset as vector2
-			if (vec is Vector2):
-				uv_offset = vec
-			
 			#update string table with variables
-			update_table(I)
+			I.update_table(table)
 			
-		#stages use multiple lines, use phases to indicate which objects are being constructed 
-		#if a phase changes before the maximum data for the current phase is initialized, throw an error
-		elif (stage == 1):
+		#next stage creates the boundaries of the board
+		elif (persist[0] == 1):
 			#board creation waits until there is a 4 number list in vec, then creates a bound
 			if (vec.size() >= 4):
 				bounds.append(set_bound(vec))
 				vec = null
 			
-				#calculate the center of the board from the most maximum and most minimum corner
+				#update key points in square space
 				for bound in bounds:
 					if bound.b.x < minimum.x: minimum.x = bound.b.x
 					if bound.b.y < minimum.y: minimum.y = bound.b.y
@@ -99,22 +89,21 @@ func _ready():
 					if bound.a.y > maximum.y: maximum.y = bound.a.y
 				
 				center = (minimum-maximum) / 2 + maximum
-				#add size to default Vector2.ONE
-				#since max-min is exclusive of the leftmost row and column
+				#add size to default Vector2.ONE since max-min is exclusive of the leftmost row and column
 				size = maximum - minimum + Vector2.ONE
 			
-		elif (stage == 2):
-			
-			#portal creation waits until there are five vectors (10 nums) in the stack, then initializes a portal
+		elif (persist[0] == 2):
+			#portal creation waits until there are 10 nums in the vector, then initializes a portal
 			if (vec.size() >= 10):
+				#a portal consists of 2 bounds (indices 0 - 7) and a change in direction (indices 8 and 9)
 				var i = set_bound(vec.slice(0, 3))
 				var j = set_bound(vec.slice(4, 7))
 				var k = vec.slice(8, vec.size())
 				k = Vector2(k[0], k[1])
 				portals.append(PortalBound.new(i, j, k))
 				vec = null
-		elif (stage == 3):
-			
+				
+		elif (persist[0] == 3):
 			#team creation takes in a vector of length 6
 			if (vec.size() >= 6):
 				#the first three indicate color
@@ -125,23 +114,26 @@ func _ready():
 				var k = vec[5] == 1
 				teams.append(Team.new(i, j, k))
 				vec = null
-		elif (stage == 4):
-			
+		
+		elif (persist[0] == 4):
 			#initialize pieces from the paths in which they appear
+			#Piece.new() runs a file path check on a path input, so this works just fine
 			var p = Piece.new(c)
-			#only consider them if they are named
-			if p.name != "": piece_types.append(c)
 			
-			#once paths are done being declared, start place a piece
-			#the last two numbers indicate position
+			#only consider piece paths if they are named
+			if p.name != "": 
+				piece_types.append(c)
+				continue
+			
+			#if this line has not declared a path
 			if vec.size() >= 4 && piece_types.size() > 0:
 				var pos = set_piece(vec)
 				#check if symmetry should be enabled
 				if vec.size() == 5:
-					symmetrize = vec[4]
+					persist[1] = vec[4]
 					
 				#symmetrize piece
-				if symmetrize == 1:
+				if persist[1] == 1:
 					pos = -pos + 2*(center)
 					vec[0] += 1
 					vec[2] = pos.x
@@ -150,18 +142,17 @@ func _ready():
 		
 		#set phase for next line
 		if (c.match("b")):
-			stage = 1
+			persist[0] = 1
 		elif (c.match("p")):
-			stage = 2
+			persist[0] = 2
 		elif (c.match("t")):
-			stage = 3
+			persist[0] = 3
 		elif (c.match("g")):
-			stage = 4
+			persist[0] = 4
 			#if teams are empty by game phase, add black and white teams implicitly
 			if teams.empty():
 				teams.append(Team.new())
 				teams.append(Team.new(Color.black, Vector2.UP))
-	pass
 
 #set piece and return set position from array of length 4
 #return null if the set fails
@@ -190,12 +181,12 @@ func set_bound(var i:Array):
 func is_surrounding(var pos:Vector2):
 	#loop through bounds
 	for b in bounds:
-		#if position is greater than minimum, and less than maximum, return true
-		if pos.x >= b.b.x && pos.y >= b.b.y && pos.x <= b.a.x && pos.y <= b.a.y:
+		if b.is_surrounding(pos):
 			return true
 	#if no bounds enclosed pos, return false
 	return false
 
+#print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
 	
 	var s:String = name
@@ -227,17 +218,6 @@ func _to_string():
 		s += "\n"
 		i -= 1
 	return s
-
-#Copied from Piece.gd
-#allow for table declarations and value updates to be made anywhere in a piece's instructions
-#call this function whenever a piece is acted upon
-func update_table(var I:Instruction):
-	#populate piece table by trying taking numbers from the second word
-	var s = I.to_string_array()
-	if s.size() > 1:
-		var n = [I.parse(s[0]), I.parse(s[1])]
-		if n[0] == null && n[1] != null:
-			table[s[0]] = n[1]
 
 func _init(var _path:String):
 	path = _path

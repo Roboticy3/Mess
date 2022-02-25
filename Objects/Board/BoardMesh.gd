@@ -71,14 +71,16 @@ func _ready():
 	var ps = board.pieces
 	for v in ps.keys():
 		create_piece(ps[v], v)
+	
+	print(board.table)
 
 #remap uv settings from board shape
 func uv_from_board(var object:Node):
 	
 	#offset uvs by the minimum corner of the board
 	var offset = Vector3()
-	offset.x = board.minimum.x + board.uv_offset.x
-	offset.y = board.minimum.y + board.uv_offset.y
+	offset.x = board.minimum.x
+	offset.y = board.minimum.y
 
 	#scale is divided by two because the checkerboard texture is 2x2
 	var scale = Vector3()

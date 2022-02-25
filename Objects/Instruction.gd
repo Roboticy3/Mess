@@ -7,9 +7,7 @@ class_name Instruction
 
 var contents = ""
 
-#string table gains references
-#references are limited to the piece in question, their team, or the board
-const TABLE : Dictionary = {"bigmac" : 0}
+#set of comparison statements
 const SYMBL : String = ">=<=="
 
 #string table can be added by users of the instruction object, the tables are then stitched together in parse()
@@ -130,10 +128,6 @@ func parse(var string=contents):
 	#parse text expressions as numerics
 	var expression = Expression.new()
 	
-	#stitch TABLE to table
-	for k in TABLE.keys():
-		table[k] = TABLE[k]
-	
 	#look in string table
 	for s in table.keys():
 		var i = string.find(s)
@@ -174,6 +168,15 @@ func to_string_array(var c:String = contents, var s:int = 0, var delims:String =
 		a.remove(0)
 		
 	return a
+
+#take in a table to update with self
+func update_table(var t:Dictionary=table):
+	#populate piece table by trying taking numbers from the second word
+	var s = to_string_array()
+	if s.size() > 1:
+		var n = [parse(s[0]), parse(s[1])]
+		if n[0] == null && n[1] != null:
+			t[s[0]] = n[1]
 
 func _to_string():
 	return contents

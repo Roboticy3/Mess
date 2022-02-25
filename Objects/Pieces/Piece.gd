@@ -93,7 +93,7 @@ func _init(var _p, var _t = 0, var v = Vector2.ZERO):
 					set_forward(s[0])
 			
 			#try to update table from metadata line, essentially initializing the table
-			update_table(I)
+			I.update_table(table)
 			
 		#add instructions into the appropriate collections
 		elif stage == 0: 
@@ -123,18 +123,6 @@ func _init(var _p, var _t = 0, var v = Vector2.ZERO):
 		elif c.match("t"): stage = 1
 		elif c.match("c"): stage = 2
 		elif c.match("r"): stage = 3
-
-#allow for table declarations and value updates to be made anywhere in a piece's instructions
-#call this function whenever a piece is acted upon
-func update_table(var I:Instruction):
-	#populate piece table by trying taking numbers from the second word
-	var s = I.to_string_array()
-	#only update table if there are at least two elements in the line
-	if s.size() > 1:
-		#only update the table if the value being sent is not null
-		var n = I.parse(s[1])
-		if n != null:
-			table[s[0]] = n
 			
 #sets the forward and orthogonal forward vector along with the table values correctly
 func set_forward(var _F:Vector2 = Vector2(0, 1)):

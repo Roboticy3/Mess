@@ -76,3 +76,9 @@
 	 - fixed square_to_basis() to work with broken team definitions
 	NEXT
 	 - finish stb by adding system to move verts inward and extrude into a box
+2/24/2022
+	 - shelfed stb for a bit to start fixing comments
+	 - holy shit its 11pm i have school tomorrow
+	NEXT
+	>>2/20/2022
+	 - keep fixin comments m'boy
