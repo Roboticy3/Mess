@@ -1,10 +1,15 @@
-#a BoardMesh is set up after its Board, and handles how pieces will display on a mesh in-game
 class_name BoardMesh
 extends Node
+
+#BoardMesh class by Pablo Ibarz
+#created in January 2022 
+
+#a BoardMesh is set up after its Board, and handles how pieces will display on a mesh in-game
 
 #reference to a Board
 var board = null
 
+#board instruction path, mesh object, mdt object (for BoardConverter), and default mesh path meant to be set in the editor
 export (String) var path:String = "Instructions/b_cube.txt"
 export (Resource) var mesh = null
 var mdt:MeshDataTool = null
@@ -13,6 +18,7 @@ export (Resource) var default = null
 #store the size of the board in squares
 export (Vector2) var size:Vector2 = Vector2.ONE
 
+#shader of the board is meant to be set in the editor
 export (Resource) var shader = null
 
 #dictionary of a mesh and collision shape of a certain piece, keyed by its name
@@ -20,9 +26,6 @@ export (Resource) var shader = null
 var piece_types:Dictionary = {}
 #this collection prevents BoardConverter from having to run square_to_box on the same square multiple times
 var square_meshes:Dictionary = {}
-
-#debug mesh to test stuff on
-var debug = null
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -67,12 +70,10 @@ func _ready():
 			
 	print(board)
 	
-	#generate team objects
+	#generate piece objects
 	var ps = board.pieces
 	for v in ps.keys():
 		create_piece(ps[v], v)
-	
-	print(board.table)
 
 #remap uv settings from board shape
 func uv_from_board(var object:Node):
@@ -94,13 +95,14 @@ func uv_from_board(var object:Node):
 	if material is SpatialMaterial:
 		material.set_uv1_offset(offset)
 		material.set_uv1_scale(scale)
-	else:
+	#otherwise, hope ShaderMaterial has "size" parameter
+	elif material is ShaderMaterial:
 		shader.set_shader_param("size", board.maximum - board.minimum)
 		pass
 
 #initialize a PieceMesh p at a position v on the board
 func create_piece(var p:Piece, var v:Vector2):
-	#if the piece is not recorded in the piece_types dict, add its data
+	#if the piece is not recorded in the piece_types dict, update dict with its data
 	var pdata = {}
 	if !([p._to_string()] in piece_types):
 		pdata["mat"] = PieceMesh.pmat(p, board)
@@ -108,15 +110,17 @@ func create_piece(var p:Piece, var v:Vector2):
 		pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
 		pdata["transform"] = BoardConverter.square_to_transform(mdt, board, p)
 		piece_types[p._to_string()] = pdata
-	#otherwise, copy piece data out
+	#otherwise, copy piece data out of current dict
 	else:
 		pdata = piece_types[p.name]
-	#create the piece mesh with all the right references
+	
+	#create the piece mesh with all the right references, then add the PieceMesh object to self's tree
 	var pm = PieceMesh.new(p, board 
 			,pdata["shape"], pdata["mesh"], pdata["mat"]
 			)
 	add_child(pm)
 	
+	#set transforms
 	pm.transform = pdata["transform"]
 
 #highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
@@ -128,15 +132,10 @@ func highlight_square(var vs:PoolVector2Array, var mode:int = 0):
 			if c.name.find("Square") != -1:
 				c.visible = false
 	
+	#TODO add dictionary of square_meshes so that new meshes don't have to be created every time.
 	for v in vs:
-		if true:
-			var csg = BoardConverter.square_to_child(self, mdt, board.size, v)
-			#square_meshes[v] = csg
-			if mode == 2: csg.visible = false
-		else:
-			var csg = square_meshes[v]
-			csg.visible = true
-			if mode == 2: csg.visible = false
+		var csg = BoardConverter.square_to_child(self, mdt, board.size, v)
+		if mode == 2: csg.visible = false
 		
 	
 
