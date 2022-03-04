@@ -89,7 +89,7 @@ func _init(var _p, var _t = 0, var v = Vector2.ZERO):
 				l -= 1
 				s = I.vectorize(0, l)
 			#if s is null, ignore this step
-			if s != null:
+			if s.size() > 0:
 				#only assign the vector if thats all that shows
 				if s[0] is Vector2:
 					set_forward(s[0])

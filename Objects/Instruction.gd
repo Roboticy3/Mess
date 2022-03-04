@@ -29,7 +29,7 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 	var wrds = to_string_array(string, start)
 	
 	#return null for empty contents
-	if wrds.size() == 0: return null
+	if wrds.size() == 0: return []
 	
 	#reset line flag to false
 	line = false
@@ -48,30 +48,17 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 			nums.append(n)
 			
 	#if length is two, set up a Vector2 array, otherwize set up a matrix
-	var v = null
+	var v = []
 	var is_vec = false
 	if nums.size() == 2 && length == 2:
 		is_vec = true
-		v = [Vector2(nums[0], nums[1])]
+		v = Vector2(nums[0], nums[1])
 	else:
-		v = Array()
-		v.append(nums)
-	#if nums has an extra element, add array elements to v of v[0] multiplied by 2, 3, 4... up to nums[-1]
-	if nums.size() > length && nums[nums.size() - 1] > 1:
-		#if loop will be very large, set line to true as a flag that this vector tiles indefinitely
-		if nums[nums.size() - 1] > 31:
-			line = true
-			return v
-		#Vector2 objects have to be handled differently here
-		if is_vec:
-			for i in range(2, nums[nums.size() - 1] + 1):
-				v.append(v[0] * i) 
-		else:
-			var n = Array()
-			for i in range(2, nums[nums.size() - 1] + 1):
-				for j in nums.size():
-					n.append(nums[j] * i)
-				v.append(n)
+		v = nums
+	#if nums has an extra element, mark self as line
+	if nums.size() > length && nums[nums.size() - 1] > 0:
+		line = true
+		return v
 	return v
 
 func conditional(var wrds:Array=[""], var length:int=2, var string:String=contents):

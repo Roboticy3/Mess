@@ -34,136 +34,118 @@ var table:Dictionary = {"scale":1, "piece_scale":0.2}
 
 func _ready():
 	
-	#initialize file object for collecting the board's info
-	var b = File.new()
-	if !b.file_exists(path): return null
-	b.open(path, File.READ)
-	var content = b.get_as_text().rsplit("\n")
-	
-	#refine path to be extendable by other files
-	path = path.substr(0, path.find_last("/")) + "/"
-
-	#store vectors across iterations
-	var vec = null
-	
-	#store the following values across iterations
+	#store the following values across multiple lines in Reade object
 	var persist:PoolIntArray = [-1, 0]
 	
-	#loop through instruction lines
-	for c in content:
+	#tell Reader object which functions to call
+	var funcs = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
+	
+	#read the Instruction file
+	var r:Reader = Reader.new(self, funcs, path)
+	r.read()
+
+#x_phase() functions are called by the Reader object in ready to initialize the board
+#all x_phase functions take in the same arguments I, vec, and file
+
+#_phase is the default phase and defines metadata for the board like mesh and name
+func _phase(var I:Instruction, var vec:Array, var persist:Array):
+	#code from line 64 of Piece.gd
+	#break up string by spaces
+	var s = I.to_string_array()
+	
+	#allow operations to be done with the first word if s has size
+	if s.size() > 0 && s[0].length() > 0:
+		var p:String = path.substr(0, path.find_last("/") + 1) + s[0]
+		var b = File.new()
+		#assign name if not done already
+		if (name == ""):
+			name = s[0].strip_edges()
+		#only assign mesh after name
+		elif b.file_exists(p) && p.ends_with(".obj"):
+			mesh = p
+	
+	#update string table with variables
+	I.update_table(table)
+
+#b_phase implicitly defines the mesh and defines the boundaries of the board from sets of 4 numbers
+func b_phase(var I:Instruction, var vec:Array, var persist:Array):
+	if mesh.empty(): mesh = "Instructions/default/meshes/default.obj"
+	
+	#board creation waits until there is a 4 number list in vec, then creates a bound
+	if (vec.size() >= 4):
+		bounds.append(set_bound(vec))
+		vec = []
+	
+		#update key points in square space
+		for bound in bounds:
+			if bound.b.x < minimum.x: minimum.x = bound.b.x
+			if bound.b.y < minimum.y: minimum.y = bound.b.y
+			if bound.a.x > maximum.x: maximum.x = bound.a.x
+			if bound.a.y > maximum.y: maximum.y = bound.a.y
 		
-		#create an instruction from the current line
-		var I = Instruction.new(c)
+		center = (minimum-maximum) / 2 + maximum
+		#add size to default Vector2.ONE since max-min is exclusive of the leftmost row and column
+		size = maximum - minimum + Vector2.ONE
+
+#the t phase handles explicit team creation
+func t_phase(var I:Instruction, var vec:Array, var persist:Array):
+	#team creation takes in a vector of length 6
+	if (vec.size() >= 6):
+		#the first three indicate color
+		var i = Color(vec[0], vec[1], vec[2])
+		#the next two are the forward direction of the team
+		var j = Vector2(vec[3], vec[4])
+		#the last is a boolean indicating friendly fire
+		var k = vec[5] == 1
+		teams.append(Team.new(i, j, k))
+		vec = []
+
+#the g phase handles implicit team creation and places pieces on the board
+#uses persitant to create a "sub-stage" where pieces are placed on the board with symmetry
+func g_phase(var I:Instruction, var vec:Array, var persist:Array):
+	#if there are no teams from the t phase, implicitly create black and white teams
+	if teams.empty():
+		teams.append(Team.new())
+		teams.append(Team.new(Color.black, Vector2.UP))
+	
+	var c = I.contents
+	
+	#if pieces start with default, load them from Instructions/default/
+	if c.find("default") == 0:
+		c = c.substr(c.find("/"))
+		c = "Instructions/default/pieces" + c
+	else:
+		c = path + c
+	
+	#only try to use files that exist
+	#the Piece object should have this handled but its more direct to check here
+	var b = File.new()
+	if b.file_exists(c):
+	
+		#initialize pieces from the paths in which they appear
+		#Piece.new() runs a file path check on a path input, so this works just fine
+		var p = Piece.new(c)
 		
-		#append the current vector if it's valid
-		var v = I.vectorize(0, 1)
-		if (v != null): 
-			#for boards, only one vector set should be created at a time
-			vec = v[0]
-		
-		#metadata phase is for determining things like the name and porperties of the board
-		if (persist[0] == -1):
-			#code from line 64 of Piece.gd
-			#break up string by spaces
-			var s = I.to_string_array()
+		#only use named pieces to avoid ambiguous pieces on the board
+		if !p.name.match(""):
+			piece_types.append(c)
+			#when a piece is assigned, skip the rest of the g phase loop
+			return null
+	
+	#if this line has not declared a path
+	if vec.size() >= 4 && piece_types.size() > 0:
+		var pos = set_piece(vec)
+		#check if symmetry should be enabled
+		if vec.size() == 5:
+			persist[1] = vec[4]
 			
-			#allow operations to be done with the first word if s has size
-			if s.size() > 0 && s[0].length() > 0:
-				#assign name if not done already
-				if (name == ""):
-					name = s[0].strip_edges()
-				elif b.file_exists(path + s[0]):
-					mesh = path + s[0]
-			
-			#update string table with variables
-			I.update_table(table)
-			
-		#next stage creates the boundaries of the board
-		elif (persist[0] == 1):
-			#board creation waits until there is a 4 number list in vec, then creates a bound
-			if (vec.size() >= 4):
-				bounds.append(set_bound(vec))
-				vec = null
-			
-				#update key points in square space
-				for bound in bounds:
-					if bound.b.x < minimum.x: minimum.x = bound.b.x
-					if bound.b.y < minimum.y: minimum.y = bound.b.y
-					if bound.a.x > maximum.x: maximum.x = bound.a.x
-					if bound.a.y > maximum.y: maximum.y = bound.a.y
-				
-				center = (minimum-maximum) / 2 + maximum
-				#add size to default Vector2.ONE since max-min is exclusive of the leftmost row and column
-				size = maximum - minimum + Vector2.ONE
-			
-		elif (persist[0] == 2):
-			#portal creation waits until there are 10 nums in the vector, then initializes a portal
-			if (vec.size() >= 10):
-				#a portal consists of 2 bounds (indices 0 - 7) and a change in direction (indices 8 and 9)
-				var i = set_bound(vec.slice(0, 3))
-				var j = set_bound(vec.slice(4, 7))
-				var k = vec.slice(8, vec.size())
-				k = Vector2(k[0], k[1])
-				portals.append(PortalBound.new(i, j, k))
-				vec = null
-				
-		elif (persist[0] == 3):
-			#team creation takes in a vector of length 6
-			if (vec.size() >= 6):
-				#the first three indicate color
-				var i = Color(vec[0], vec[1], vec[2])
-				#the next two are the forward direction of the team
-				var j = Vector2(vec[3], vec[4])
-				#the last is a boolean indicating friendly fire
-				var k = vec[5] == 1
-				teams.append(Team.new(i, j, k))
-				vec = null
-		
-		elif (persist[0] == 4):
-			#if pieces start with default, load them from Instructions/default/
-			if c.find("default") == 0:
-				c = c.substr(c.find("/"))
-				c = "Instructions/default/pieces" + c
-			else:
-				c = path + c
-			
-			#initialize pieces from the paths in which they appear
-			#Piece.new() runs a file path check on a path input, so this works just fine
-			var p = Piece.new(c)
-			
-			#only consider piece paths if they are named
-			if p.name != "": 
-				piece_types.append(c)
-				continue
-			
-			#if this line has not declared a path
-			if vec.size() >= 4 && piece_types.size() > 0:
-				var pos = set_piece(vec)
-				#check if symmetry should be enabled
-				if vec.size() == 5:
-					persist[1] = vec[4]
-					
-				#symmetrize piece
-				if persist[1] == 1:
-					pos = -pos + 2*(center)
-					vec[0] += 1
-					vec[2] = pos.x
-					vec[3] = pos.y
-					set_piece(vec)
-		
-		#set phase for next line
-		if (c.match("b")):
-			persist[0] = 1
-		elif (c.match("p")):
-			persist[0] = 2
-		elif (c.match("t")):
-			persist[0] = 3
-		elif (c.match("g")):
-			persist[0] = 4
-			#if teams are empty by game phase, add black and white teams implicitly
-			if teams.empty():
-				teams.append(Team.new())
-				teams.append(Team.new(Color.black, Vector2.UP))
+		#symmetrize piece
+		if persist[1] == 1:
+			pos = -pos + 2*(center)
+			vec[0] += 1
+			vec[2] = pos.x
+			vec[3] = pos.y
+			set_piece(vec)
 
 #set piece and return set position from array of length 4
 #return null if the set fails
@@ -172,13 +154,17 @@ func set_piece(var i:Array):
 	#the first indicates the team and the second the type of piece
 	if i[0] < teams.size() && i[1] < piece_types.size():
 		var p = Piece.new(piece_types[i[1]], i[0], v)
+		
 		#if piece has not overrided team's direction, set it
 		if p.get_forward() == Vector2.ZERO:
 			p.set_forward(teams[i[0]].forward)
+			
 		#add the piece to the dictionary
 		teams[i[0]].pieces[v] = p
 		pieces[v] = p
+	
 	else: return null
+	
 	return v
 
 #create a boundary object from a vector of length 4

@@ -89,3 +89,9 @@
 	NEXT
 	>>2/20/2022
 	 - fix rest of comments
+3/4/2022
+	 - continued work on Reader class, fixing Board comments in the process
+	NEXT
+	>>2/25/2022
+	 - make Piece use Reader class
+	 - start movement algorithm

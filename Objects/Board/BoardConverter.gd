@@ -6,10 +6,6 @@ class_name BoardConverter
 #BoardConverter started as a converter for things related to well, the board
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
-#path to the default mesh
-static func default_mesh():
-	return "res://Instructions/default.obj"
-
 #return the face index, position in space and normal of mesh from a uv coordinate pos
 #optionally send in a mask of face indices to exclude (mask_type == 0), include (mask_type == 1), or search first (mask_type == 2)
 #TODO make search first into separate function which searches faces recursively from a starting face in mask through its connected faces
@@ -363,52 +359,19 @@ static func path_to_mesh(var path:String = "", var debug:bool = false):
 	#parse board using parser script into loadable mesh
 	var m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
 	
-	#check if mesh was created correctly
+	#create mdt to read mesh
 	var mdt:MeshDataTool = MeshDataTool.new()
 	mdt.create_from_surface(m, 0)
+	#if mesh was not created correctly, read from default mesh path
 	if mdt.get_vertex_count() == 0:
-		path = default_mesh()
+		path = "Instructions/default/meshes/default.obj"
 		m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
 	
 	return m
 
 #create a convex or concave shape from a mesh dependant on whether or not the mesh is flat
 static func mesh_to_shape(var m:Mesh):
-	#create the collision shape of the board as a concave shape if and only if the board is not flat
-	
-	#plane from first face by which to compare every other face and determine if the mesh is flat
-	var flat = true
-	var plane = Plane()
-	
-	#why is this necesary?
-	var mdt = MeshDataTool.new()
-	mdt.create_from_surface(m, 0)
-	#loop through faces until a valid plane is found
-	for i in mdt.get_face_count():
-		if plane == Plane():
-			var t = get_face_vertices(mdt, i)
-			t = Triangle.new(t[0], t[1])
-			plane = t.plane(mdt.get_face_normal(i))
-		else:
-			break
-	
-	#loop through verts and add them to an array of vertices
-	#check if each vertex projects into the plane, if all verts are roughly coplanar, convex shapes will be a better solution
-	for i in range(0, mdt.get_vertex_count()):
-		var p = mdt.get_vertex(i)
-		if (plane.project(p) - p).length() != 0:
-			flat = false
-			break
-	
-	var shape
-	#if mesh is not flat, use a concave shape
-	if !flat:
-		shape = m.create_trimesh_shape()
-	else:
-		#if mesh is not flat, make a convex shape
-		m.create_convex_shape()
-	
-	return shape
+	return m.create_trimesh_shape()
 
 #slice mesh in mdt into a smaller mesh from an array of vertex indices and face indices to take from
 #the last argument can be used to send in new positions for vertices
