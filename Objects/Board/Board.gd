@@ -134,7 +134,7 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 	
 	#if this line has not declared a path
 	if vec.size() >= 4 && piece_types.size() > 0:
-		var pos = set_piece(vec)
+		var pos = make_piece(vec)
 		#check if symmetry should be enabled
 		if vec.size() == 5:
 			persist[1] = vec[4]
@@ -145,11 +145,11 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 			vec[0] += 1
 			vec[2] = pos.x
 			vec[3] = pos.y
-			set_piece(vec)
+			make_piece(vec)
 
 #set piece and return set position from array of length 4
 #return null if the set fails
-func set_piece(var i:Array):
+func make_piece(var i:Array):
 	var v = Vector2(i[2], i[3])
 	#the first indicates the team and the second the type of piece
 	if i[0] < teams.size() && i[1] < piece_types.size():
@@ -166,6 +166,12 @@ func set_piece(var i:Array):
 	else: return null
 	
 	return v
+	
+func get_piece(var v:Vector2):
+	if v in pieces:
+		return pieces[v]
+	else:
+		return null
 
 #create a boundary object from a vector of length 4
 func set_bound(var i:Array):
@@ -182,6 +188,17 @@ func is_surrounding(var pos:Vector2):
 			return true
 	#if no bounds enclosed pos, return false
 	return false
+
+#generate marks for a piece from its position on the board
+func mark_from(var v:Vector2):
+	if !(v in pieces):
+		return []
+	
+	var p:Piece = pieces[v]
+	var m:Array = p.mark
+	for i in m.size():
+		m[i].pieces = pieces
+		m[i].table = p.table
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():

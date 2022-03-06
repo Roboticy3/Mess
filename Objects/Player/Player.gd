@@ -186,16 +186,15 @@ func request_square(var event:InputEventMouseButton):
 		#REWORK check if collider is a piece, if so return piece position
 		var square:Vector2
 		if r["collider"] is KinematicBody:
-			square = r["collider"].piece.pos
+			square = r["collider"].piece.get_pos()
 		#otherwise, return uv square of board
 		else:
 			var uv = BoardConverter.mpos_to_uv(board_mesh.mdt, 
 				board_mesh.transform, transform, r["position"])
 			
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
-			
-		print(square)
 		
 		board_mesh.highlight_square([square], 1)
+		board.mark_from(square)
 		return square
 	return null

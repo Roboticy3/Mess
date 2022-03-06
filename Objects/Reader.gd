@@ -61,7 +61,7 @@ func read(var stage:int = -1):
 		c = c.strip_edges()
 		
 		#create an instruction from the current line
-		var I = Instruction.new(c)
+		var I = Instruction.new(c, node.table)
 		
 		#append the current vector if it's valid
 		vec = I.vectorize(0, 1)

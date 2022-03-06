@@ -95,3 +95,10 @@
 	>>2/25/2022
 	 - make Piece use Reader class
 	 - start movement algorithm
+3/6/2022
+	 - Piece and Board both use Reader class
+	 - I don't know why but Board isn't loading Piece correctly and that error is propogating throughout the whole code
+	 - Designed algorithm for squishing mesh in stb
+	 - Added primitive square checking to Instruction
+	NEXT
+	>>3/4/2022

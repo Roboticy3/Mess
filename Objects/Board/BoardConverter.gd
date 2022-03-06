@@ -77,7 +77,7 @@ static func uv_to_mdata(var mdt:MeshDataTool, var pos:Vector2 = Vector2.ZERO,
 			var b = t.barycentric(p)
 			#then use the bcoords to weigh the positions of the tri's verts into an average for output
 			#this is why the position copy was made earlier
-			var out = b[0] * u[0] + b[1] * u[1] + b[2] * u[2]
+			var out:Vector3 = b[0] * u[0] + b[1] * u[1] + b[2] * u[2]
 			#if mask mode is 2, add surrounding faces to mask so the same mask so other functions can use the same mask multiple times for faster search
 			if mask_type == 2:
 				var faces:PoolIntArray = []
@@ -125,7 +125,7 @@ static func square_to_transform(var mdt:MeshDataTool,
 	var board:Board, var piece:Piece):
 	
 	#reference useful piece properties in other variables
-	var pos:Vector2 = piece.pos
+	var pos:Vector2 = piece.get_pos()
 	var table:Dictionary = piece.table
 	
 	#create a new transform to modify
@@ -173,13 +173,13 @@ static func square_to_basis(var mdt:MeshDataTool, var board:Board,
 	var d = 0
 	#check if piece's direction goes out of bounds, if so try next orthogonal direction
 	#keep trying orthogonal directions until a valid spot is found
-	while !board.is_surrounding(piece.pos + v) && d < 4:
+	while !board.is_surrounding(piece.get_pos() + v) && d < 4:
 		v = v.tangent()
 		d += 1
 	#if no directions are valid, just default to Vector3.forward
 	var mf = [-1, Vector3.FORWARD, Vector3.UP]
 	if d < 4 && v != Vector2.ZERO:
-		mf = square_to_mdata(mdt, board.size, piece.pos + v)
+		mf = square_to_mdata(mdt, board.size, piece.get_pos() + v)
 	
 	#process mf[1] into a vector that is orthogonal to up
 	#these vectors are not necesarily orthogonal, but a true forward can be computed from up and right later
@@ -223,7 +223,7 @@ static func square_to_box(var mdt:MeshDataTool, var size:Vector2, var square:Vec
 	#keep vertices connected to verts in the square as indices keying position
 	var verts:Dictionary = {}
 	#keep verts which are outside the square to know which ones to move late
-	var outside:PoolIntArray = []
+	var outside:Dictionary = {}
 	
 	#loop through verts of faces and add every face connected to a vert inside the square
 	for i in mdt.get_face_count():
@@ -259,7 +259,7 @@ static func square_to_box(var mdt:MeshDataTool, var size:Vector2, var square:Vec
 	for v in verts.keys():
 		var uv:Vector2 = mdt.get_vertex_uv(v)
 		if !b.is_surrounding(uv):
-			outside.append(v)
+			outside[v] = mdt.get_vertex(v)
 	
 	#TODO slide vertices into corners of square
 	
@@ -276,12 +276,7 @@ static func square_to_box(var mdt:MeshDataTool, var size:Vector2, var square:Vec
 		corners[i] = uv_to_mdata(mdt, c[i], mask)
 		
 	
-	#find closest point on the square to send outside vertices to
-	var outpos:PoolVector3Array = []
-	outpos.resize(outside.size())
-	for i in outside.size():
-		outpos[i] = mdt.get_vertex(outside[i])
-	#debug_positions(node, outpos)
+	#find largest and smallest uvs of the outer verts to make up the corners
 	
 	#construct a mesh from inner verts and connected outer verts
 	var st = slice_mesh(mdt, verts.keys(), faces.keys(), verts)

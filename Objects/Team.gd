@@ -10,9 +10,9 @@ var lost:Array = []
 
 #friendly fire and forward properties usually override those of individual Piece objects
 var ff:int = 0
-var forward:Vector2 = Vector2(1, 0)
+var forward:Vector2 = Vector2.DOWN
 
-var selected:Vector2 = Vector2(0, 0)
+var selected:Vector2 = Vector2.ZERO
 var players:Array
 
 var turn:int = 0

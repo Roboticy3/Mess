@@ -15,8 +15,9 @@ var table:Dictionary = {}
 #piece table can be referenced in conditional phase when checking squares
 var pieces:Dictionary ={}
 
-#store whether the last vectorize() call demanded a large line (>32)
-var line:bool = false
+#store whether the last vectorize() call demanded a line (1) or an infinite line (2)
+var line:int = 0
+
 
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
 	contents = _contents
@@ -28,14 +29,24 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 	#convert string to sequence of numbers
 	var wrds = to_string_array(string, start)
 	
-	#return null for empty contents
+	#return empty for empty contents
 	if wrds.size() == 0: return []
 	
-	#reset line flag to false
-	line = false
+	#reset line
+	line = 0
 	
-	var cond = conditional(wrds, length, string)
-	if typeof(cond) != 1:
+	#replace variable terms with matching table terms
+	for w in wrds:
+		w = w.strip_edges()
+		if w.begins_with("?"):
+			w = w.substr(1)
+		if w in table:
+			w = String(table[w])
+	
+	#assume conditional and return it if it doesn't return null
+	var cond:Array = conditional(wrds, length, string)
+	#if return is not a boolean(?) it will be a vector, so return that
+	if !cond.empty():
 		return cond
 
 	var nums = Array()
@@ -48,40 +59,50 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 			nums.append(n)
 			
 	#if length is two, set up a Vector2 array, otherwize set up a matrix
-	var v = []
-	var is_vec = false
-	if nums.size() == 2 && length == 2:
-		is_vec = true
-		v = Vector2(nums[0], nums[1])
-	else:
-		v = nums
-	#if nums has an extra element, mark self as line
-	if nums.size() > length && nums[nums.size() - 1] > 0:
-		line = true
-		return v
+	var v = nums
+	#Instructions default to an L shape, line = 1 makes the shape diagonal,
+	#line = 2 maks and infinite diagonal
+	if nums.size() > length:
+		if nums[nums.size() - 1] == 2:
+			line = 2
+		elif nums[nums.size() - 1] == 1:
+			line = 1
 	return v
 
 func conditional(var wrds:Array=[""], var length:int=2, var string:String=contents):
 	#enter conditional state if neccesary
 	var w = wrds[0]
 	if w.begins_with("?"):
-		#check next word
+		#remove question mark from wrds[0]
 		wrds[0] = wrds[0].substr(1)
+		#conditionals need 3 wrds to evaluate and at least another term after them to return anything
 		if wrds.size() > 3:
-			var v = wrds[1].strip_edges()
-			#if next word is a number, a vector is being checked
-			if parse(v) != null:
-				#check if a piece is in that vector, return true if its an enemy piece, false if otherwise
-				pass
+			var u = parse(wrds[0].strip_edges())
+			var v = parse(wrds[1].strip_edges())
+			#if first word is not a number, then a conditional cannot be formed and false is assumed
+			if u == null: return []
+			
+			#if second word is a number and table has px and py vars, 
+			#a vector is being checked from pieces
+			var x:Vector2
+			if v != null && "px" in table && "py" in table:
+				x = Vector2(table["px"], table["py"])
+				#if the relative position of the position from the piece is filled
+				#return true
+				var y:Vector2 = Vector2(u, v)
+				y = y.rotated(table["angle"])
+				if x + y in pieces:
+					return vectorize(2, length, string)
+				#otherwise return false
+				return []
+				
 			#if next word is a conditional, a value is being checked next to "?"
 			if SYMBL.find(v) != -1:
 				var s = wrds.slice(0, 2)
 				if (evaluate(s)):
 					#vectorize after the conditional if the statement passes
 					return vectorize(3, length, string)
-				else:
-					return null
-	return false
+	return []
 
 #evaluate conditional of an array of strings of length 3 or 4
 func evaluate(var wrds:Array = [""]):
@@ -95,7 +116,7 @@ func evaluate(var wrds:Array = [""]):
 	var sgn = wrds[1].strip_edges()
 	
 	#if conditional is in the right format and has valid variable calls, evaluate it
-	if (SYMBL.find(sgn) != -1):
+	if (SYMBL.find(sgn) != -1) && a.size() > 1:
 		#check for the conditional symbol
 		if sgn.ends_with("="):
 			if (sgn.find("<") != -1 && a[0] <= a[1]):
@@ -114,15 +135,6 @@ func evaluate(var wrds:Array = [""]):
 func parse(var string=contents):
 	#parse text expressions as numerics
 	var expression = Expression.new()
-	
-	#look in string table
-	for s in table.keys():
-		var i = string.find(s)
-		#if string is in contents replace string in contents with TABLE[string]
-		if i != -1:
-			var a = string.substr(0, i)
-			var b = string.substr(i + s.length())
-			string = a + String(table[s]) + b
 	
 	expression.parse(string)
 	#if the parse was "successful", add the result
@@ -160,10 +172,13 @@ func to_string_array(var c:String = contents, var s:int = 0, var delims:String =
 func update_table(var t:Dictionary=table):
 	#populate piece table by trying taking numbers from the second word
 	var s = to_string_array()
+	#check if last two terms in array make up a key pair
 	if s.size() > 1:
-		var n = [parse(s[0]), parse(s[1])]
+		var i:int = s.size() - 2
+		var j:int = s.size() - 1
+		var n = [parse(s[i]), parse(s[j])]
 		if n[0] == null && n[1] != null:
-			t[s[0]] = n[1]
+			t[s[i]] = n[1]
 
 func _to_string():
 	return contents
