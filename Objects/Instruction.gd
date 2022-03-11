@@ -66,10 +66,8 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 	
 	#check each word in the line and parse it into a float
 	for i in wrds.size():
-		#this line should be unnecesary, test later
-		#var w = wrds[i].strip_edges()
 		
-		var n = parse(w)
+		var n = parse(wrds[i])
 		nums.append(n)
 			
 	#last element determines line type, this should probably be moved to handling entirely on the end of the Board object
@@ -83,15 +81,15 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 #WIP evaluate conditional statements, made up of a wrds Array of length 2 or more that can solve inequalities or check pieces on the Board
 func conditional(var wrds:Array=[""], var length:int=2, var string:String=contents):
 	
-	#if input is not a conditional, return blank Array
-	if !w.begins_with("?"):
-		return []
-	
 	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
 	if wrds.size() < 3:
 		return []
+	
+	#if input is not a conditional, return blank Array
+	if !wrds[0].begins_with("?"):
+		return []
 		
-	#remove question mark from wrds[0]
+	#remove question mark from wrds[0] once it is confirmed of valid size and format
 	wrds[0] = wrds[0].substr(1)
 	
 	#take parsed versions of first and second wrds to determine the type of conditional
