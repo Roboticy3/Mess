@@ -1,31 +1,35 @@
-#Instructions can create moves from string math expressions and conditionals prefixed by "?"
-#Variables can be referenced from a string table
-#A conditional followed by a position returns a 0 if the position is empty, 1 if it is friendly, and 2 otherwise
-#Direction is always relative to the piece's forward vector
-
 class_name Instruction
+
+#Instruction class by Pablo Ibarz
+#created November 2021
+
+#An Instruction takes in a single line string (no \n characters) and converts it into an array of numbers
+#It also holds table and pieces Dictionaries of variables and pieces
+#TODO merge table with pieces because their keys will never intersect
 
 var contents = ""
 
-#set of comparison statements
+#the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=="
 
-#string table can be added by users of the instruction object, the tables are then stitched together in parse()
 var table:Dictionary = {}
-#piece table can be referenced in conditional phase when checking squares
-var pieces:Dictionary ={}
+var pieces:Dictionary = {}
 
-#store whether the last vectorize() call demanded a line (1) or an infinite line (2)
+#store whether the last vectorize() call demanded an L-line as opposed to the default diagonal (1) or an infinite line (2)
+#line doesn't mean anything to the Instruction class directly, but is used by a Board object to generate a line of positions
 var line:int = 0
 
 
+#fill variables of the object fully
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
 	contents = _contents
 	table = _table
 	pieces = _pieces
 
-#Convert a line of instructions into a vector, starting from a certain index
+#convert contents into an Array of floats, starting from a word index start
+#TODO: separate formatting part of function into separate format() function for faster recursive calls
 func vectorize(var start = 0, var length = 2, var string = contents):
+
 	#convert string to sequence of numbers
 	var wrds = to_string_array(string, start)
 	
@@ -35,74 +39,86 @@ func vectorize(var start = 0, var length = 2, var string = contents):
 	#reset line
 	line = 0
 	
-	#replace variable terms with matching table terms
+	#replace terms in table key set with their value pairs
 	for w in wrds:
+		#help parser later by stripping edges in each word
 		w = w.strip_edges()
+		#take conditional indicator into secondary String so w can be added back onto it later
+		var q:String = ""
 		if w.begins_with("?"):
 			w = w.substr(1)
 		if w in table:
+			#String replacement is a little awkward, 
+			#but it must be done before wrds is parsed for full functionality
 			w = String(table[w])
+		#reform the string
+		w = q + w
 	
-	#assume conditional and return it if it doesn't return null
+	#try to evaluate contents as a conditional (starting with "?")
 	var cond:Array = conditional(wrds, length, string)
-	#if return is not a boolean(?) it will be a vector, so return that
+	#if conditional evaluates to true, it will recursively call vectorize() can return a vector
+	#this will generate a non-empty result, which can be returned as-is
 	if !cond.empty():
 		return cond
-
+	
+	#create return object
 	var nums = Array()
 	
-	#check each word in the line
+	#check each word in the line and parse it into a float
 	for i in wrds.size():
-		var w = wrds[i].strip_edges()
+		#this line should be unnecesary, test later
+		#var w = wrds[i].strip_edges()
+		
 		var n = parse(w)
-		if (n != null): 
-			nums.append(n)
+		nums.append(n)
 			
-	#if length is two, set up a Vector2 array, otherwize set up a matrix
-	var v = nums
-	#Instructions default to an L shape, line = 1 makes the shape diagonal,
-	#line = 2 maks and infinite diagonal
+	#last element determines line type, this should probably be moved to handling entirely on the end of the Board object
 	if nums.size() > length:
 		if nums[nums.size() - 1] == 2:
 			line = 2
 		elif nums[nums.size() - 1] == 1:
 			line = 1
-	return v
+	return nums
 
+#WIP evaluate conditional statements, made up of a wrds Array of length 2 or more that can solve inequalities or check pieces on the Board
 func conditional(var wrds:Array=[""], var length:int=2, var string:String=contents):
-	#enter conditional state if neccesary
-	var w = wrds[0]
-	if w.begins_with("?"):
-		#remove question mark from wrds[0]
-		wrds[0] = wrds[0].substr(1)
-		#conditionals need 3 wrds to evaluate and at least another term after them to return anything
-		if wrds.size() > 3:
-			var u = parse(wrds[0].strip_edges())
-			var v = parse(wrds[1].strip_edges())
-			#if first word is not a number, then a conditional cannot be formed and false is assumed
-			if u == null: return []
-			
-			#if second word is a number and table has px and py vars, 
-			#a vector is being checked from pieces
-			var x:Vector2
-			if v != null && "px" in table && "py" in table:
-				x = Vector2(table["px"], table["py"])
-				#if the relative position of the position from the piece is filled
-				#return true
-				var y:Vector2 = Vector2(u, v)
-				y = y.rotated(table["angle"])
-				if x + y in pieces:
-					return vectorize(2, length, string)
-				#otherwise return false
-				return []
-				
-			#if next word is a conditional, a value is being checked next to "?"
-			if SYMBL.find(v) != -1:
-				var s = wrds.slice(0, 2)
-				if (evaluate(s)):
-					#vectorize after the conditional if the statement passes
-					return vectorize(3, length, string)
-	return []
+	
+	#if input is not a conditional, return blank Array
+	if !w.begins_with("?"):
+		return []
+	
+	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
+	if wrds.size() < 3:
+		return []
+		
+	#remove question mark from wrds[0]
+	wrds[0] = wrds[0].substr(1)
+	
+	#take parsed versions of first and second wrds to determine the type of conditional
+	var u = parse(wrds[0])
+	var v = parse(wrds[1])
+	
+	#TODO: use piece table to add checks of other piece variables with the format "x y var op val"
+	#if second word is a number and table has px and py vars, 
+	#a vector is being checked from pieces
+	var x:Vector2
+	if "px" in table && "py" in table:
+		x = Vector2(table["px"], table["py"])
+		#if the relative position of the position from the piece is filled
+		#return true
+		var y:Vector2 = Vector2(u, v)
+		y = y.rotated(table["angle"])
+		if x + y in pieces:
+			return vectorize(2, length, string)
+		#otherwise return false
+		return []
+
+	#if next word is a conditional, the value with "?" is being compared to another on the other side of the conditional
+	if SYMBL.find(wrds[1]) != -1:
+		var s = wrds.slice(0, 2)
+		if (evaluate(s)):
+			#vectorize after the conditional if the statement passes
+			return vectorize(3, length, string)
 
 #evaluate conditional of an array of strings of length 3 or 4
 func evaluate(var wrds:Array = [""]):
@@ -132,17 +148,24 @@ func evaluate(var wrds:Array = [""]):
 		
 	return false
 
+#convert a single word string (no " " or "\n" characters) into a float using the Expression class
 func parse(var string=contents):
-	#parse text expressions as numerics
+	#create Expression to parse off of
 	var expression = Expression.new()
 	
+	#use parse method and then execute method
 	expression.parse(string)
-	#if the parse was "successful", add the result
-	#this could be the cause of some bullshit later
+	#old comments from when this function was nullable, I love when im right!
+		#if the parse was "successful", add the result
+		#this could be the cause of some bullshit later
+	#I assume parse breaks up the string into numbers and operators, and execute takes those and does the computation
 	var n = expression.execute()
 	if (n != null):
 		return n
-	return null
+	
+	#never return null so other code doesn't have to type-check the result
+	var default:float = 0
+	return default
 
 #convert instruction text to string array of words for easier parsing
 func to_string_array(var c:String = contents, var s:int = 0, var delims:String = " ,"):
