@@ -8,6 +8,7 @@ class_name Instruction
 #TODO merge table with pieces because their keys will never intersect
 
 var contents = ""
+var wrds:Array = []
 
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=="
@@ -15,108 +16,122 @@ const SYMBL : String = ">=<=="
 var table:Dictionary = {}
 var pieces:Dictionary = {}
 
-#store whether the last vectorize() call demanded an L-line as opposed to the default diagonal (1) or an infinite line (2)
-#line doesn't mean anything to the Instruction class directly, but is used by a Board object to generate a line of positions
-var line:int = 0
-
-
 #fill variables of the object fully
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
 	contents = _contents
 	table = _table
 	pieces = _pieces
-
-#convert contents into an Array of floats, starting from a word index start
-#TODO: separate formatting part of function into separate format() function for faster recursive calls
-func vectorize(var start = 0, var length = 2, var string = contents):
-
+	
+	#format contents into wrds
+	format()
+	
+#format a string into the wrds Array
+func format(var start = 0, var square = null, var string = contents):
+	
+	#take table from another square if a square is specified
+	if square in pieces:
+		table = pieces[square].table
+		print(table)
+	
 	#convert string to sequence of numbers
-	var wrds = to_string_array(string, start)
+	wrds = to_string_array(string, start)
 	
 	#return empty for empty contents
 	if wrds.size() == 0: return []
-	
-	#reset line
-	line = 0
-	
+
 	#replace terms in table key set with their value pairs
-	for w in wrds:
+	for i in wrds.size():
+		var w:String = wrds[i]
 		#help parser later by stripping edges in each word
 		w = w.strip_edges()
 		#take conditional indicator into secondary String so w can be added back onto it later
 		var q:String = ""
 		if w.begins_with("?"):
 			w = w.substr(1)
+			q = "?"
 		if w in table:
 			#String replacement is a little awkward, 
 			#but it must be done before wrds is parsed for full functionality
 			w = String(table[w])
 		#reform the string
 		w = q + w
+		wrds[i] =w
+
+#convert contents into an Array of floats, starting from a word index start
+#TODO: separate formatting part of function into separate format() function for faster recursive calls
+func vectorize(var start = 0):
 	
 	#try to evaluate contents as a conditional (starting with "?")
-	var cond:Array = conditional(wrds, length, string)
+	var cond:Array = conditional(start)
 	#if conditional evaluates to true, it will recursively call vectorize() can return a vector
 	#this will generate a non-empty result, which can be returned as-is
 	if !cond.empty():
 		return cond
+		
+	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
 	#create return object
 	var nums = Array()
 	
 	#check each word in the line and parse it into a float
-	for i in wrds.size():
+	for i in w.size():
 		
-		var n = parse(wrds[i])
+		var n = parse(w[i])
 		nums.append(n)
-			
-	#last element determines line type, this should probably be moved to handling entirely on the end of the Board object
-	if nums.size() > length:
-		if nums[nums.size() - 1] == 2:
-			line = 2
-		elif nums[nums.size() - 1] == 1:
-			line = 1
+
 	return nums
 
 #WIP evaluate conditional statements, made up of a wrds Array of length 2 or more that can solve inequalities or check pieces on the Board
-func conditional(var wrds:Array=[""], var length:int=2, var string:String=contents):
+func conditional(var start:int = 0):
+	
+	#slice from start
+	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
 	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
-	if wrds.size() < 3:
+	if w.size() < 3:
 		return []
 	
 	#if input is not a conditional, return blank Array
-	if !wrds[0].begins_with("?"):
+	if !w[0].begins_with("?"):
 		return []
 		
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
-	wrds[0] = wrds[0].substr(1)
+	w[0] = w[0].substr(1)
 	
 	#take parsed versions of first and second wrds to determine the type of conditional
-	var u = parse(wrds[0])
-	var v = parse(wrds[1])
+	var u = parse(w[0])
+	var v = parse(w[1])
 	
 	#TODO: use piece table to add checks of other piece variables with the format "x y var op val"
-	#if second word is a number and table has px and py vars, 
-	#a vector is being checked from pieces
+	#if second word is a number and table has px and py vars, a vector is being checked from pieces
 	var x:Vector2
 	if "px" in table && "py" in table:
 		x = Vector2(table["px"], table["py"])
-		#if the relative position of the position from the piece is filled
-		#return true
+		#if the relative position of the position from the piece is filled,
+		#a square is being checked on the board, and a relative position is formed
 		var y:Vector2 = Vector2(u, v)
+		#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
 		y = y.rotated(table["angle"])
-		if x + y in pieces:
-			return vectorize(2, length, string)
-		#otherwise return false
-		return []
+		
+		#if square is empty, return nothing
+		if !(x + y in pieces):
+			return []
+		
+		#if square is populated, check if 4th element is a conditional,
+		#if so, an element of the table from a piece at the square is being checked
+		if w.size() > 5 && SYMBL.find(w[3]) != -1:
+			#FIXME reformat and restart the conditional, starting from the reformatted value
+			format(0, x + y)
+			conditional(2)
+			
+		return vectorize(2)
 
 	#if next word is a conditional, the value with "?" is being compared to another on the other side of the conditional
 	if SYMBL.find(wrds[1]) != -1:
 		var s = wrds.slice(0, 2)
 		if (evaluate(s)):
 			#vectorize after the conditional if the statement passes
-			return vectorize(3, length, string)
+			return vectorize(3)
 
 #evaluate conditional of an array of strings of length 3 or 4
 func evaluate(var wrds:Array = [""]):

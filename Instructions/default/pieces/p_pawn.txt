@@ -8,6 +8,8 @@ m
 ?moves < 1 0 2 double 1 #let first move be two, then check double
 ?1 1 1 1 #if a pawn is on the diagonal, move there
 ?-1 1 -1 1
+?1 0 double = 1 ?moves < 2 1 1 #if adjacent pawn has done a double move, allow en passant
+?-1 0 double = 1 ?moves < 2 -1 1
 
 c
 ?double = 1 ?moves >= 6 0 4 0 0 #if double move is made and 6 or more moves are made, create a queen using syntax from g phase of board on top of this piece to "promote" it

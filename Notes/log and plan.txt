@@ -102,3 +102,11 @@
 	 - Added primitive square checking to Instruction
 	NEXT
 	>>3/4/2022
+3/16/2022
+	 - Started building skeleton for movement algorithm
+	 - More or less finished revising comments
+	 - Patched vectorize() to use a separate format() method for faster recursion calls
+	 - expanded featureset of piece instructions to include checking properties of other pieces
+	NEXT
+	>>2/20/2022
+	 - begin Board-side interperetation of mark phase vectors (keep working on movement algorithm)

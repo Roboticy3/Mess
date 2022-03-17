@@ -190,15 +190,29 @@ func is_surrounding(var pos:Vector2):
 	return false
 
 #generate marks for a piece from its position on the board
-func mark_from(var v:Vector2):
+func mark(var v:Vector2):
+	
+	#do not consider empty positions
 	if !(v in pieces):
 		return []
 	
+	#gain a reference to the piece at v
 	var p:Piece = pieces[v]
+	
+	#gain a reference to that piece's marks
 	var m:Array = p.mark
+	
+	#create piece dictionary only involving pieces p considers an enemy depending on p's friendly fire state
+	var ps:Dictionary = pieces.duplicate()
+	if p.table["ff"] == 0:
+		var t:Dictionary = teams[p.team].pieces
+		for pos in t:
+			ps.erase(pos)
+			
 	for i in m.size():
-		m[i].pieces = pieces
+		m[i].pieces = ps
 		m[i].table = p.table
+		m[i].vectorize()
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():

@@ -26,7 +26,7 @@ var relocate:Instruction
 #any property kept in table is accessible by the Instruction class in its vectorize() function
 var table = {"key": 0, "moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
-			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0}
+			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "read_allies":0}
 
 #piece types considered by the creation phase, indicated by their string path
 var piece_types = []
@@ -53,7 +53,7 @@ func _ready():
 	#use Reader to interperet the instruction file into usable behavior 
 	var r:Reader = Reader.new(self, funcs, path)
 	r.read()
-		
+
 func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 	#break up string by spaces
 	var s:Array = I.to_string_array()
