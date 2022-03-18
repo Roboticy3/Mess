@@ -193,8 +193,7 @@ func request_square(var event:InputEventMouseButton):
 				board_mesh.transform, transform, r["position"])
 			
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
-		
-		board.mark(square)
-		board_mesh.highlight_square([square])
+
+		board_mesh.mark_from(square)
 		return square
 	return null

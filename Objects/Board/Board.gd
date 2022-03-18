@@ -206,12 +206,11 @@ func mark(var v:Vector2):
 		m[i].pieces = pieces
 		m[i].table = p.table
 		var a:Array = m[i].vectorize()
-		print(":" + String(a))
 		
 		var s:Vector2
 		if a.size() > 1:
 			s = Vector2(a[0], a[1])
-			pos.append(s)
+			pos.append(p.relative_to_square(s))
 	
 	return pos
 

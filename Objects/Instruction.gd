@@ -62,7 +62,6 @@ func vectorize(var start:int = 0):
 	
 	#slice from start
 	var w:Array = wrds.slice(start, wrds.size() - 1)
-	print(w)
 	
 	#only try to work with non-empty arrays
 	if w.empty():
@@ -84,17 +83,13 @@ func vectorize(var start:int = 0):
 	var v = parse(w[1])
 	
 	#if second word is a number and table has px and py vars, a vector is being checked from pieces
-	var x:Vector2
 	if "px" in table && "py" in table:
 		#form square to check from this Instruction's Piece's position, direction, and vector from u and v
-		x = Vector2(table["px"], table["py"])
-		var y:Vector2 = Vector2(u, v)
+		var x:Vector2 = Vector2(table["px"], table["py"])
 		#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
-		y = y.rotated(table["angle"])
-		
-		#add x and y together to get the real position being checked for
-		x = (x + y).floor() #goddammit floating point
-		
+		var y:Vector2 = Vector2(u, v).rotated(table["angle"])
+		x = (x + y).floor()
+			
 		#if square is empty, return an empty array
 		if !pieces.has(x):
 			return []
