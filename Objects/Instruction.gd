@@ -11,14 +11,14 @@ var contents = ""
 var wrds:Array = []
 
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
-const SYMBL : String = ">=<=="
+const SYMBL : String = ">=<="
 
 var table:Dictionary = {}
 var pieces:Dictionary = {}
 
 #fill variables of the object fully
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
-	contents = _contents
+	contents = _contents.strip_edges()
 	table = _table
 	pieces = _pieces
 	
@@ -31,7 +31,6 @@ func format(var start = 0, var square = null, var string = contents):
 	#take table from another square if a square is specified
 	if square in pieces:
 		table = pieces[square].table
-		print(table)
 	
 	#convert string to sequence of numbers
 	wrds = to_string_array(string, start)
@@ -57,42 +56,24 @@ func format(var start = 0, var square = null, var string = contents):
 		w = q + w
 		wrds[i] =w
 
-#convert contents into an Array of floats, starting from a word index start
-#TODO: separate formatting part of function into separate format() function for faster recursive calls
-func vectorize(var start = 0):
-	
-	#try to evaluate contents as a conditional (starting with "?")
-	var cond:Array = conditional(start)
-	#if conditional evaluates to true, it will recursively call vectorize() can return a vector
-	#this will generate a non-empty result, which can be returned as-is
-	if !cond.empty():
-		return cond
-		
-	var w:Array = wrds.slice(start, wrds.size() - 1)
-	
-	#create return object
-	var nums = Array()
-	
-	#check each word in the line and parse it into a float
-	for i in w.size():
-		
-		var n = parse(w[i])
-		nums.append(n)
-
-	return nums
-
-#WIP evaluate conditional statements, made up of a wrds Array of length 2 or more that can solve inequalities or check pieces on the Board
-func conditional(var start:int = 0):
+#WIP evaluate conditional statements, made up of a wrds Array of length 3 or more that can solve inequalities
+#returning [] is equivalent to returning false and anything else is equivalent to true
+func vectorize(var start:int = 0):
 	
 	#slice from start
 	var w:Array = wrds.slice(start, wrds.size() - 1)
+	print(w)
 	
-	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
-	if w.size() < 3:
+	#only try to work with non-empty arrays
+	if w.empty():
 		return []
 	
-	#if input is not a conditional, return blank Array
+	#if input is not a conditional, return parsed array
 	if !w[0].begins_with("?"):
+		return array_parse(start)
+		
+	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
+	if w.size() < 3:
 		return []
 		
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
@@ -102,47 +83,64 @@ func conditional(var start:int = 0):
 	var u = parse(w[0])
 	var v = parse(w[1])
 	
-	#TODO: use piece table to add checks of other piece variables with the format "x y var op val"
 	#if second word is a number and table has px and py vars, a vector is being checked from pieces
 	var x:Vector2
 	if "px" in table && "py" in table:
+		#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 		x = Vector2(table["px"], table["py"])
-		#if the relative position of the position from the piece is filled,
-		#a square is being checked on the board, and a relative position is formed
 		var y:Vector2 = Vector2(u, v)
 		#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
 		y = y.rotated(table["angle"])
 		
-		#if square is empty, return nothing
-		if !(x + y in pieces):
+		#add x and y together to get the real position being checked for
+		x = (x + y).floor() #goddammit floating point
+		
+		#if square is empty, return an empty array
+		if !pieces.has(x):
 			return []
 		
 		#if square is populated, check if 4th element is a conditional,
 		#if so, an element of the table from a piece at the square is being checked
 		if w.size() > 5 && SYMBL.find(w[3]) != -1:
-			#FIXME reformat and restart the conditional, starting from the reformatted value
-			format(0, x + y)
-			conditional(2)
-			
-		return vectorize(2)
+			#reformat wrds from the table of the piece being read
+			format(start, x)
+			#then evaluate the conditional from w[2] to w[4]
+			if evaluate(w, 2):
+				return vectorize(start + 5)
+			pass
+		
+		return vectorize(start + 3)
 
-	#if next word is a conditional, the value with "?" is being compared to another on the other side of the conditional
+	#if next word is a conditional, the conditional consists of a simple comparison
 	if SYMBL.find(wrds[1]) != -1:
-		var s = wrds.slice(0, 2)
-		if (evaluate(s)):
-			#vectorize after the conditional if the statement passes
-			return vectorize(3)
-
-#evaluate conditional of an array of strings of length 3 or 4
-func evaluate(var wrds:Array = [""]):
-	#FIXME returns null when it isnt supposed to 
-	#create an array of values to store integers or calls to table fucking hell i love polymorphism
-	var a = Array()
-	for w in wrds:
-		w = parse(w)
-		if (w != null): a.append(w)
+		if (evaluate(w)):
+			return vectorize(start + 2)
+			
+func array_parse(var start:int = 0):
+	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
-	var sgn = wrds[1].strip_edges()
+	#create return object
+	var nums = Array()
+	
+	#check each word in the line and parse it into a float
+	for i in w.size():
+		var n = parse(w[i])
+		nums.append(n)
+
+	return nums
+
+#evaluate conditional of a slice of an array of strings of length 3
+func evaluate(var w:Array = [], var start:int = 0):
+	#remove unnecesary component of the array
+	w = w.slice(start, start + 2)
+	
+	#create an array of values to store integers or calls to table
+	var a = Array()
+	for s in w:
+		s = parse(s)
+		if (s != null): a.append(s)
+	
+	var sgn = w[1].strip_edges()
 	
 	#if conditional is in the right format and has valid variable calls, evaluate it
 	if (SYMBL.find(sgn) != -1) && a.size() > 1:
@@ -181,27 +179,23 @@ func parse(var string=contents):
 	return default
 
 #convert instruction text to string array of words for easier parsing
-func to_string_array(var c:String = contents, var s:int = 0, var delims:String = " ,"):
-	c = c.substr(0, c.find("#")) + " "
+func to_string_array(var c:String = contents, var s:int = 0):
+
+	#cut spaces so that spaces between final whitespace is not counted
+	c = c.substr(0, c.find("#")).strip_edges()
 	
-	#initialize word array
-	var a = Array()
-	#initialize split position array
-	var pos = [0]
-	
-	#add split positions
-	for i in c.length():
-		if (delims.find(c[i]) != -1):
-			pos.append(i)
-	
-	#if there is more than one word
-	if (pos.size() > 0):
-		for i in pos.size():
-			a.append(c.substr(pos[i - 1], pos[i] - pos[i - 1]))
-	
-	for i in s + 1:
-		a.remove(0)
-		
+	#keep array of invalid words and array of words to return
+	var r:PoolIntArray = []
+	var a:Array = c.split(" ")
+	#"clean" elements by removing spaces left over from split() and catching empty entries
+	for i in a.size():
+		a[i] = a[i].strip_edges()
+		if a[i].length() == 0:
+			r.append(i)
+	#remove empty entries
+	for i in r.size():
+		a.remove(r[i] - i)
+	#return array
 	return a
 
 #take in a table to update with self
@@ -212,9 +206,13 @@ func update_table(var t:Dictionary=table):
 	if s.size() > 1:
 		var i:int = s.size() - 2
 		var j:int = s.size() - 1
+		#try to parse values
 		var n = [parse(s[i]), parse(s[j])]
-		if n[0] == null && n[1] != null:
-			t[s[i]] = n[1]
+		#keys must be strings, but values can be floats or strings (jank)
+		if n[0] == null:
+			var a = n[1]
+			if a == null: a = s[j]
+			t[s[i]] = a
 
 func _to_string():
 	return contents

@@ -116,6 +116,7 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 			var y1:float = c.y
 			
 			#check if range and domain intersect, pass computations if not
+			#ick
 			var may1:float = max(y1, d.y)
 			var miy0:float = min(y0, b.y)
 			var max1:float = max(x1, d.x)
@@ -124,8 +125,8 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 			var mix1:float = min(x1, d.x)
 			var may0:float = max(y0, b.y)
 			var miy1:float = min(y1, d.y)
+			#yuck
 			if !(may1 >= miy0 && may0 >= miy1 && max1 >= mix0 && max0 >= mix1):
-				
 				continue
 			
 			#if lines a parallel, plug 0 into both line equations to see if they are the same

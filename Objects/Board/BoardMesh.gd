@@ -142,13 +142,13 @@ func create_piece(var p:Piece, var v:Vector2):
 #highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
-func highlight_square(var vs:PoolVector2Array, var mode:int = 0):
+func highlight_square(var vs:PoolVector2Array, var mode:int = 1):
 	#hide everything to start if mode is 1
 	if mode == 1:
 		for c in get_children():
 			if c.name.find("Square") != -1:
 				c.visible = false
-	
+
 	for v in vs:
 		#if a square mesh for this square has already been created, just unhide it
 		if square_meshes.has(v):
@@ -158,7 +158,10 @@ func highlight_square(var vs:PoolVector2Array, var mode:int = 0):
 			else: csg.visible = true
 		else:
 			var csg = BoardConverter.square_to_child(self, mdt, board.size, v)
+			square_meshes[v] = csg
 			if mode == 2: csg.visible = false
 		
-	
+func mark_from(var v:Vector2):
+	var pos = board.mark(v)
+	highlight_square(pos)
 

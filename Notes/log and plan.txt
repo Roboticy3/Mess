@@ -110,3 +110,8 @@
 	NEXT
 	>>2/20/2022
 	 - begin Board-side interperetation of mark phase vectors (keep working on movement algorithm)
+3/17/2022
+	 - realized everything i did yesterday doesn't work
+	 - cleaned up format() and to_string_array() methods in Instruction.gd
+	NEXT
+	 - fix reading other piece squares for the love of god

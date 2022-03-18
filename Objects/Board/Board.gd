@@ -5,7 +5,6 @@ extends Node
 #created in November 2021
 
 #store pairs of pieces and their location
-#FIX: this is data-redundant because pieces also store their location
 var pieces:Dictionary = {}
 #store the types of pieces on the board to avoid having to load pieces from scratch every time
 var piece_types = []
@@ -201,18 +200,20 @@ func mark(var v:Vector2):
 	
 	#gain a reference to that piece's marks
 	var m:Array = p.mark
+	var pos:PoolVector2Array = []
 	
-	#create piece dictionary only involving pieces p considers an enemy depending on p's friendly fire state
-	var ps:Dictionary = pieces.duplicate()
-	if p.table["ff"] == 0:
-		var t:Dictionary = teams[p.team].pieces
-		for pos in t:
-			ps.erase(pos)
-			
 	for i in m.size():
-		m[i].pieces = ps
+		m[i].pieces = pieces
 		m[i].table = p.table
-		m[i].vectorize()
+		var a:Array = m[i].vectorize()
+		print(":" + String(a))
+		
+		var s:Vector2
+		if a.size() > 1:
+			s = Vector2(a[0], a[1])
+			pos.append(s)
+	
+	return pos
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
