@@ -115,3 +115,8 @@
 	 - cleaned up format() and to_string_array() methods in Instruction.gd
 	NEXT
 	 - fix reading other piece squares for the love of god
+3/18/2022
+	 - I'm not quite sure what I did and did not fix
+	 - added debugging for piece marks using bad stb
+	NEXT
+	 - keep debugging pieces

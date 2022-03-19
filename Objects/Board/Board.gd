@@ -200,18 +200,33 @@ func mark(var v:Vector2):
 	
 	#gain a reference to that piece's marks
 	var m:Array = p.mark
+	
+	#store a set of positions to return so BoardMesh can display a set of selectable squares
 	var pos:PoolVector2Array = []
 	
+	#debug dictionary of instruction wrds next to element in pos
+	var d:Dictionary = {}
+	
+	#loop through instructions in a p's marks
 	for i in m.size():
+		#give instruction reference to pieces and p.table so variables can be processed
 		m[i].pieces = pieces
 		m[i].table = p.table
+		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
 		
-		var s:Vector2
+		#vectors for marks must be of at least size 2
 		if a.size() > 1:
-			s = Vector2(a[0], a[1])
-			pos.append(p.relative_to_square(s))
+			#create a Vector2 object from the first two entries in a
+			var s:Vector2 = Vector2(a[0], a[1])
+			s = p.relative_to_square(s)
+			
+			#append s to pos and add entry in debug dictionary
+			pos.append(s)
+			d[m[i].wrds] = s
 	
+	print(p,p.get_pos())
+	print(d)
 	return pos
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name

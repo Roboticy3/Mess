@@ -105,7 +105,7 @@ func relative_to_square(var pos:Vector2):
 	var x:Vector2 = get_pos()
 	#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
 	pos = pos.rotated(table["angle"])
-	return (x + pos).floor()
+	return (x + pos).round()
 	
 func _to_string():
 	return name + " " + String(team)

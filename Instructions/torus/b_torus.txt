@@ -7,6 +7,9 @@ oogabooga 1
 b
 0 0 7 7
 
+p
+0 0 0 7 7 0 7 7 0 1
+
 g
 default/p_pawn.txt
 default/p_rook.txt
