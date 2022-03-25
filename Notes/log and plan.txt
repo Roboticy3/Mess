@@ -120,3 +120,20 @@
 	 - added debugging for piece marks using bad stb
 	NEXT
 	 - keep debugging pieces
+3/19/2022
+	 - Finished skeleton of the mark() method
+	 - fixed Piece.relative_to_square to not have so many rounding errors
+	NEXT
+	 - add syntax for different types of moves (diagonal, L-path, jump, infinite) to be interpereted by mark() and update wiki to match
+	 - optimize stb so I can keep working on it later
+3/23/2022
+	 - started mark_step() method
+	 - redid like half of vectorize() (its better now)
+	NEXT
+	 - optimize stb
+	 - keep working on mark_step()
+3/25/2022
+	 - finished basics of mark_step
+	NEXT
+	 - fix conditionals (again >:'|)
+	 - optimize stb

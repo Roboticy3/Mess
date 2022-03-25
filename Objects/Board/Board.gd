@@ -188,7 +188,7 @@ func is_surrounding(var pos:Vector2):
 	#if no bounds enclosed pos, return false
 	return false
 
-#generate marks for a piece from its position on the board
+#generate marks for a piece as a PoolVector2Array from its position on the board
 func mark(var v:Vector2):
 	
 	#do not consider empty positions
@@ -204,30 +204,102 @@ func mark(var v:Vector2):
 	#store a set of positions to return so BoardMesh can display a set of selectable squares
 	var pos:PoolVector2Array = []
 	
-	#debug dictionary of instruction wrds next to element in pos
-	var d:Dictionary = {}
+	#whether the line of the move is diagonal (0), jumping (1), or infinite diagonal (2)
+	var l:int = 0
 	
 	#loop through instructions in a p's marks
 	for i in m.size():
+		
 		#give instruction reference to pieces and p.table so variables can be processed
 		m[i].pieces = pieces
 		m[i].table = p.table
 		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
+		var s:int = a.size()
 		
+		#get line type from the third number
+		if s > 2:
+			l = a[2]
 		#vectors for marks must be of at least size 2
-		if a.size() > 1:
-			#create a Vector2 object from the first two entries in a
-			var s:Vector2 = Vector2(a[0], a[1])
-			s = p.relative_to_square(s)
-			
-			#append s to pos and add entry in debug dictionary
-			pos.append(s)
-			d[m[i].wrds] = s
+		elif s < 2:
+			continue
+		
+		#create a Vector2 object from the first two entries in a
+		var x:Vector2 = Vector2(a[0], a[1])
+		x = p.relative_to_square(x)
+		
+		#append s to pos and add entry in debug dictionary
+		pos.append_array(mark_step(p, x, l))
 	
-	print(p,p.get_pos())
-	print(d)
 	return pos
+
+#return an array of positions from one to another in an diagonal-shape
+func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
+	
+	#if line mode is jump, just check if to is free or takeable and, if so, return it
+	if line == 1 && is_surrounding(to):
+		if !pieces.has(to) || can_take_from(from, pieces[to]):
+			return [to]
+	
+	#position of piece
+	var pos:Vector2 = from.get_pos()
+	#"to-pos" which the mark function is aiming for
+	var tp:Vector2 = to - pos
+	#"base unit" of the diagonal
+	var d:Vector2 = tp.normalized()
+	
+	#movement array to eventually return
+	#v is relative positions and p is board positions
+	var v:Array = []
+	var p:Array = []
+	
+	#the next vector (x) and position (y) to check, as well as a place to store the last vector
+	var x:Vector2 = d.round()
+	var y:Vector2 = (d + pos).round()
+	var last:Vector2 = Vector2.ZERO
+	
+	#while the length of the total movement is contained in the to-pos, the move is still going
+	#the move could also be marked as infinite, in which case it will go on as long as possible
+	while line == 2 || last.length() < tp.length():
+		
+		#if the movement escapes the board, stop the loop
+		if !is_surrounding(y):
+			break
+		
+		#keep track of whether or not y is filled both before and after the next mark is added
+		var occ:bool = false
+		if pieces.has(y):
+			occ = true
+			#before making the next mark, break if occupied square cannot be taken
+			#a square cannot be taken if it is the same team as this square's, and this square does not have friendly fire
+			#if line mode is jump
+			if !can_take_from(from, pieces[y]):
+				break
+
+		#add the mark and update last
+		v.append(x)
+		p.append(y)
+		last = x
+		
+		#after making the next mark, break on takeable pieces
+		if occ && can_take_from(from, pieces[y]):
+			break
+		
+		#next relative position in the direction of to-pos
+		x = (last + d).round()
+		#position of the current mark on the board
+		y = (x + pos).round()
+		
+	print(from,p)
+
+	return p
+
+#return true if square can be taken by Piece from
+func can_take_from(var from:Piece, var to:Piece):
+	if to.team == from.team && from.table["ff"] == 0:
+		return false
+	return true
+	
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():

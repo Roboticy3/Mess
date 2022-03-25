@@ -104,8 +104,12 @@ func relative_to_square(var pos:Vector2):
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 	var x:Vector2 = get_pos()
 	#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
-	pos = pos.rotated(table["angle"])
-	return (x + pos).round()
+	pos = rotate_to_forward(pos)
+	return (x + pos)
+
+#rotate a direction to match the forward direction of this
+func rotate_to_forward(var direction:Vector2):
+	return direction.rotated(table["angle"]).round()
 	
 func _to_string():
 	return name + " " + String(team)
