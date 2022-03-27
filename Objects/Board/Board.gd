@@ -238,7 +238,7 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 	
 	#if line mode is jump, just check if to is free or takeable and, if so, return it
 	if line == 1 && is_surrounding(to):
-		if !pieces.has(to) || can_take_from(from, pieces[to]):
+		if !pieces.has(to) || Instruction.can_take_from(from.team, pieces[to].team, from.table):
 			return [to]
 	
 	#position of piece
@@ -273,7 +273,7 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 			#before making the next mark, break if occupied square cannot be taken
 			#a square cannot be taken if it is the same team as this square's, and this square does not have friendly fire
 			#if line mode is jump
-			if !can_take_from(from, pieces[y]):
+			if !Instruction.can_take_from(from.team, pieces[y].team, from.table):
 				break
 
 		#add the mark and update last
@@ -282,7 +282,7 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 		last = x
 		
 		#after making the next mark, break on takeable pieces
-		if occ && can_take_from(from, pieces[y]):
+		if occ && Instruction.can_take_from(from.team, pieces[y].team, from.table):
 			break
 		
 		#next relative position in the direction of to-pos
@@ -293,12 +293,6 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 	print(from,p)
 
 	return p
-
-#return true if square can be taken by Piece from
-func can_take_from(var from:Piece, var to:Piece):
-	if to.team == from.team && from.table["ff"] == 0:
-		return false
-	return true
 	
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name

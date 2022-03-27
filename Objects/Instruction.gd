@@ -88,28 +88,36 @@ func vectorize(var start:int = 0):
 		var x:Vector2 = Vector2(table["px"], table["py"])
 		#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
 		var y:Vector2 = Vector2(u, v).rotated(table["angle"])
-		x = (x + y).floor()
+		y = (x + y).floor()
 			
 		#if square is empty, return an empty array
-		if !pieces.has(x):
+		if !pieces.has(y):
 			return []
 		
 		#if square is populated, check if 4th element is a conditional,
 		#if so, an element of the table from a piece at the square is being checked
 		if w.size() > 5 && SYMBL.find(w[3]) != -1:
-			#reformat wrds from the table of the piece being read
-			format(start, x)
-			#then evaluate the conditional from w[2] to w[4]
-			if evaluate(w, 2):
-				return vectorize(start + 5)
-			pass
+			if can_take_from(pieces[x].team, pieces[y].team, pieces[x].table):
+				
+				print(wrds)
+				#reformat wrds from the table of the piece being read
+				format(start, y)
+				#then evaluate the conditional from w[2] to w[4]
+				if evaluate(w, 2):
+					return vectorize(start + 5)
 		
+		#if there is no conditional statement, a square is being checked for presence, a check which has already passed
 		return vectorize(start + 3)
 
 	#if next word is a conditional, the conditional consists of a simple comparison
 	if SYMBL.find(wrds[1]) != -1:
 		if (evaluate(w)):
 			return vectorize(start + 2)
+
+static func can_take_from(var from:int, var to:int, var t:Dictionary=table):
+	if to == from && t["ff"] == 0:
+		return false
+	return true
 			
 func array_parse(var start:int = 0):
 	var w:Array = wrds.slice(start, wrds.size() - 1)
