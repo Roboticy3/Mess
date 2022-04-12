@@ -65,8 +65,9 @@ func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 		if name == "":
 			name = s[0].strip_edges()
 		#try and set the piece's model path
-		if f.file_exists(path + s[0]):
-			mesh = path + s[0]
+		var p:String = path.substr(0, path.find_last("pieces/"))
+		if f.file_exists(p + s[0]):
+			mesh = p + s[0]
 	
 	#try to update table from metadata line, essentially initializing the table
 	#the table also handles data like forward direction in the "fx" and "fy" registers

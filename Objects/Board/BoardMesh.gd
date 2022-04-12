@@ -7,7 +7,7 @@ extends Node
 #a BoardMesh is set up after its Board, and handles how pieces will display on a mesh in-game
 
 #reference to a Board
-var board = null
+var board:Board
 
 #board instruction path, mesh object, mdt object (for BoardConverter), and default mesh path meant to be set in the editor
 export (String) var path:String = "Instructions/cube"
@@ -26,6 +26,11 @@ export (Resource) var shader = null
 var piece_types:Dictionary = {}
 #this collection prevents BoardConverter from having to run square_to_box on the same square multiple times
 var square_meshes:Dictionary = {}
+
+#a margin from the edges of (0, 0) and (1, 1) in uv space that uv values will be clamped to
+var uv_margin:float = 0.0001
+#store duplicate vertices for more efficient mesh searching
+var duplicates:Dictionary = {}
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -57,7 +62,8 @@ func _ready():
 	var m = mesh
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(m, 0)
-	
+	duplicates = BoardConverter.find_duplicates(mdt)
+
 	#create the board's collision shape
 	var shape = BoardConverter.mesh_to_shape(m)
 	
@@ -143,6 +149,7 @@ func create_piece(var p:Piece, var v:Vector2):
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
 func highlight_square(var vs:PoolVector2Array, var mode:int = 1):
+	
 	#hide everything to start if mode is 1
 	if mode == 1:
 		for c in get_children():
@@ -157,11 +164,12 @@ func highlight_square(var vs:PoolVector2Array, var mode:int = 1):
 			#mode 2 hides selection
 			else: csg.visible = true
 		else:
-			var csg = BoardConverter.square_to_child(self, mdt, board.size, v)
+			var csg = BoardConverter.square_to_child(self, v)
 			square_meshes[v] = csg
 			if mode == 2: csg.visible = false
 		
 func mark_from(var v:Vector2):
-	var pos = board.mark(v)
+	print(v)
+	var pos = board.mark(v).keys()
 	highlight_square(pos)
 

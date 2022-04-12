@@ -137,3 +137,29 @@
 	NEXT
 	 - fix conditionals (again >:'|)
 	 - optimize stb
+3/31/2022
+	 - did some debugging here and there
+	NEXT
+	 - keep working on stb
+	 - start setting up movement
+4/2/2022
+	 - kept working on stb
+	NEXT
+	 - keep working on stb
+	 - start setting up movement
+4/4/2022
+	 - reworked uv_to_mdata to be more flexible, runs slower
+	 - kept working on stb
+	NEXT
+	 - take a break from stb to start setting up movement
+	 - make uv_to_mdata run quickly with a node graph of the mesh
+4/5/2022
+	 - began redesigning stb on a new, more efficient path
+	 - made models for the individual pieces
+	NEXT
+	 - rework edge_set_intersection to return intersection points as well as indices
+	 - START WORKING ON PIECE MOVEMENT YOU LAZY BASTARD
+4/10/2022
+	 - quit work on stb, meshes are totally beyond me and I keep just getting mad instead of getting any work done
+	NEXT
+	 - start working on piece movement

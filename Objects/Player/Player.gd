@@ -35,7 +35,7 @@ var momentum:Dictionary = {"z":0, "x":0, "y":0, "zoom":0}
 export (float) var accel = 50.0
 
 #speed of the player in u/s
-export (float) var speed = 5.0
+export (float) var speed = 4.0
 
 #sensitivity of the player in rad/100pix
 export (float) var sens = 0.75
@@ -48,6 +48,7 @@ var looking:bool = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	
 	#find camera in children
 	var children = get_children()
 	for c in children:
@@ -178,6 +179,8 @@ func set_target_motion(var on_off:bool = true, var key:String = "z"):
 		
 #try to select a uv from the board
 func request_square(var event:InputEventMouseButton):
+	
+	#create raycast data
 	var r = BoardConverter.raycast(event.position, camera, 
 		get_world(), vision)
 	
@@ -194,6 +197,7 @@ func request_square(var event:InputEventMouseButton):
 			
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
+		#board_mesh.mark_from(square)
 		board_mesh.mark_from(square)
 		return square
 	return null

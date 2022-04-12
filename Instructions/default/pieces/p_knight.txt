@@ -1,4 +1,5 @@
 knight
+meshes/knight.obj
 
 m
 1 2 1

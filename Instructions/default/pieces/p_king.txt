@@ -1,5 +1,7 @@
 King
 
+meshes/king.obj
+
 hasmoved 0
 key 1
 

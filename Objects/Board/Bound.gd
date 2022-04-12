@@ -9,14 +9,29 @@ class_name Bound
 var a:Vector2
 var b:Vector2
 
-#automatically sort inputs into a and b correctly
+#automatically sort inputs into a and b so a is the top right corner and b the bottom left
 func _init(var _a:Vector2 = Vector2.ZERO, var _b:Vector2 = Vector2.ZERO):
-	if (_a > _b):
-		a = _a
-		b = _b
+	var v = ab_to_rect(_a, _b)
+	a = v[1]
+	b = v[0]
+		
+func ab_to_rect(var _a:Vector2 = Vector2.ZERO, var _b:Vector2 = Vector2.ZERO):
+	var v:PoolVector2Array = [Vector2.ZERO, Vector2.ZERO]
+	if (_a.x > _b.x):
+		if _a.y > _b.y:
+			v[1] = _a
+			v[0] = _b
+		else:
+			v[1] = Vector2(_a.x, _b.y)
+			v[0] = Vector2(_b.x, _a.y)
+	elif _a.y > _b.y:
+		v[1] = Vector2(_b.x, _a.y)
+		v[0] = Vector2(_a.x, _b.y)
 	else:
-		a = _b
-		b = _a
+		v[1] = _b
+		v[0] = _a
+	
+	return v
 		
 #check where or not a Vector2 is within the bound
 func is_surrounding(var v:Vector2, var inclusive:bool = true):
@@ -43,7 +58,8 @@ func is_zero():
 
 #get Vector2 array of corners
 func get_corners():
-	return [Vector2(b.x, a.y), a, Vector2(a.x, b.y), b]
+	var v:PoolVector2Array = [Vector2(b.x, a.y), a, Vector2(a.x, b.y), b]
+	return v
 
 #get 2D Vector2 array of edges
 func get_edges():
@@ -51,16 +67,22 @@ func get_edges():
 	var d = Vector2(a.x, b.y)
 	return [[a, c], [c, b], [b, d], [d, a]]
 
-#check if bound intersects with an object, runs differently depending on type of input
+#WIP check if bound intersects with an object, runs differently depending on type of input
 #currently the only object type which works is Array
 #returns an array of intersections
-func intersection(var X = null, var args:Array = []):
+#negate will return the non-intersections
+#mode = 0 will interperet X as PoolVector2Array as an edge set
+#mode = 1 will interperet X as an edge set cyclically, so the last and first index form an edge
+#mode = 2 will interperet X as a set of points, and record the points self is surrounding
+func intersection(var X = null, 
+	var mode:int = 0):
+		
 	if X == null:
 		return []
 		
 	if X is Array || X is PoolVector2Array:
-		var c:bool = false
-		if args.size() > 0 and args[0] is bool: c = args[0]
+		if mode == 2: return point_set_intersection(X)
+		var c:bool = mode == 1
 		return edge_set_intersection(X, c)
 
 #return intersecting edges with bound edges from a set
@@ -89,13 +111,14 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 		blines[i][2] = b
 	
 	#create intersection array
-	var intersections:PoolIntArray = []
+	var intersections:PoolVector2Array = []
 	
+	#if cyclic is not checked, only loop upto the second-to-last element
 	var s:int = -1
 	if cyclic: s = 0
 	
 	for i in range(0, edges.size() + s):
-		#translate line segment to point-slope form from element of edges
+		#translate line segment to ax + by = c form from element of edges
 		var a:Vector2 = edges[i]
 		var b:Vector2 = edges[(i + 1) % edges.size()]
 		var b0:float
@@ -115,28 +138,24 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 			var x1:float = c.x
 			var y1:float = c.y
 			
-			#check if range and domain intersect, pass computations if not
-			#ick
-			var may1:float = max(y1, d.y)
-			var miy0:float = min(y0, b.y)
-			var max1:float = max(x1, d.x)
-			var mix0:float = min(x0, b.x)
-			var max0:float = max(x0, b.x)
-			var mix1:float = min(x1, d.x)
-			var may0:float = max(y0, b.y)
-			var miy1:float = min(y1, d.y)
-			#yuck
-			if !(may1 >= miy0 && may0 >= miy1 && max1 >= mix0 && max0 >= mix1):
+			#check if range and domain intersect, skip computations if not
+			var v0 = ab_to_rect(a, b)
+			var v1 = ab_to_rect(c, d)
+			if !(is_gtoet(v1[1], v0[0]) && is_gtoet(v0[1], v1[0])):
 				continue
 			
 			#if lines a parallel, plug 0 into both line equations to see if they are the same
 			if b1 == b0:
+				
+				#average of points with equal slopes will always intersect
+				var x:Vector2 = (a + b + c + d) / 4
+				
 				#check lines are vertical
 				if b1 == INF:
-					intersections.append(i)
+					intersections.append(x)
 				#check lines have same height
 				elif -x0 * b0 + y0 == -x1 * b1 + y1:
-					intersections.append(i)
+					intersections.append(x)
 				
 				#if neither of these are true, the lines cannot be intersecting
 				continue
@@ -157,11 +176,27 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 				y = (-b1 * (b0 * x0 - y0) + b0 * (b1 * x1 - y1)) * discriminant
 			
 			#if solution is in range of both lines, return true
-			if min(mix0, mix1) <= x && x <= max(max0, max1):
-				if min(miy0, miy1) <= y && y <= max(may0, may1):
-					intersections.append(i)
+			var k = ab_to_rect(v1[1], v0[1])
+			var j = ab_to_rect(v1[0], v0[1])
+			var xy = Vector2(x, y)
+			if is_surrounding(xy):
+				intersections.append(xy)
 			
 	return intersections
+	
+func point_set_intersection(var points:PoolVector2Array):
+	
+	var intersections:PoolIntArray = []
+	
+	for i in points.size():
+		if is_surrounding(points[i]):
+			intersections.append(i)
+
+#compare two Vector2 objects and return true if and only if both elements of a are greater than or equal to both elements of b
+func is_gtoet(var _a:Vector2, var _b:Vector2):
+	if _a.x >= _b.x && _a.y >= _b.y:
+		return true
+	return false
 
 #convert bound to string in least to greatest order
 func _to_string():

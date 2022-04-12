@@ -31,6 +31,9 @@ var size = Vector2.ONE
 #store a set of variables declared in metadata phase
 var table:Dictionary = {"scale":1, "piece_scale":0.2}
 
+#an Vector2 Dictionary of Vector2 Dictionaries representing the marks each piece has on the board
+var marks:Dictionary = {}
+
 func _ready():
 	
 	#store the following values across multiple lines in Reade object
@@ -180,20 +183,31 @@ func set_bound(var i:Array):
 	return Bound.new(p, q)
 
 #check if a square is inside of the board's bounds
-func is_surrounding(var pos:Vector2):
+func is_surrounding(var pos:Vector2, var inclusive:bool = true):
 	#loop through bounds
 	for b in bounds:
-		if b.is_surrounding(pos):
+		if b.is_surrounding(pos, inclusive):
 			return true
 	#if no bounds enclosed pos, return false
 	return false
+
+#find bounds surrounding a position on the board
+func find_surrounding(var pos:Vector2, var inclusive:bool = true):
+	#array of surrounding boundaries
+	var surrounding:PoolIntArray = []
+	#loop through bounds
+	for i in bounds.size():
+		var b:Bound = bounds[i]
+		if b.is_surrounding(pos, inclusive):
+			surrounding.append(i)
+	return surrounding
 
 #generate marks for a piece as a PoolVector2Array from its position on the board
 func mark(var v:Vector2):
 	
 	#do not consider empty positions
 	if !(v in pieces):
-		return []
+		return {}
 	
 	#gain a reference to the piece at v
 	var p:Piece = pieces[v]
@@ -202,7 +216,7 @@ func mark(var v:Vector2):
 	var m:Array = p.mark
 	
 	#store a set of positions to return so BoardMesh can display a set of selectable squares
-	var pos:PoolVector2Array = []
+	var pos:Dictionary = {}
 	
 	#whether the line of the move is diagonal (0), jumping (1), or infinite diagonal (2)
 	var l:int = 0
@@ -229,17 +243,19 @@ func mark(var v:Vector2):
 		x = p.relative_to_square(x)
 		
 		#append s to pos and add entry in debug dictionary
-		pos.append_array(mark_step(p, x, l))
+		mark_step(p, x, pos, l)
+	
+	print(pos)
 	
 	return pos
 
-#return an array of positions from one to another in an diagonal-shape
-func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
+#WIP return a Vector2 Dictionary of positions with data about each mark attached
+func mark_step(var from:Piece, var to:Vector2, var s:Dictionary, var line:int = 0):
 	
 	#if line mode is jump, just check if to is free or takeable and, if so, return it
 	if line == 1 && is_surrounding(to):
 		if !pieces.has(to) || Instruction.can_take_from(from.team, pieces[to].team, from.table):
-			return [to]
+			s[to] = 0
 	
 	#position of piece
 	var pos:Vector2 = from.get_pos()
@@ -249,9 +265,8 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 	var d:Vector2 = tp.normalized()
 	
 	#movement array to eventually return
-	#v is relative positions and p is board positions
+	#v is relative positions and s (from method args) is board positions
 	var v:Array = []
-	var p:Array = []
 	
 	#the next vector (x) and position (y) to check, as well as a place to store the last vector
 	var x:Vector2 = d.round()
@@ -278,7 +293,7 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 
 		#add the mark and update last
 		v.append(x)
-		p.append(y)
+		s[y] = 0
 		last = x
 		
 		#after making the next mark, break on takeable pieces
@@ -289,10 +304,6 @@ func mark_step(var from:Piece, var to:Vector2, var line:int = 0):
 		x = (last + d).round()
 		#position of the current mark on the board
 		y = (x + pos).round()
-		
-	print(from,p)
-
-	return p
 	
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name

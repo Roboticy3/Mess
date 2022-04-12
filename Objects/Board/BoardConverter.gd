@@ -7,90 +7,72 @@ class_name BoardConverter
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
 #return the face index, position in space and normal of mesh from a uv coordinate pos
-#optionally send in a mask of face indices to exclude (mask_type == 0), include (mask_type == 1), or search first (mask_type == 2)
-#TODO make search first into separate function which searches faces recursively from a starting face in mask through its connected faces
 static func uv_to_mdata(var mdt:MeshDataTool, var pos:Vector2 = Vector2.ZERO, 
-	var mask:Array = [], var mask_type:int = 2):
-	
-	#don't try to work with null positions
-	if pos == null: 
-		return null
-	
-	#integer array to convert from index to real index in mdt using mask
-	#not setting anything to true_indices will lead to it being ignored in favor of regular ones
-	var true_indices = []
-	var size:int = 0
-	
-	#mask type 2 iterates through verts in the mask first
-	if mask_type == 2:
-		#same number of iterations as face count because every face can be searched eventually
-		size = mdt.get_face_count()
-		#check for indices of mdt faces in mask, and add them to the front of true indices
-		#this is slower for larger masks because push_front causes a lot of re-indexing
-		for i in mdt.get_face_count():
-			if i in mask:
-				true_indices.push_front(i)
-			else:
-				true_indices.append(i)
-		
-	#ignore empty masks in other modes, even if mask_type == 1 and mask.empty() should cause and empty loop
-	elif mask.empty(): 
-		size = mdt.get_face_count()
-	
-	#otherwise, create a mask
-	else:
-		#mask type 0 excludes verts in the mask
-		if mask_type == 0:
-			for i in mdt.get_face_count():
-				if !(i in mask):
-					true_indices.append(i)
-			size = true_indices.size()
-		#mask type 1 includes only verts in the mask
-		elif mask_type == 1:
-			size = mask.size()
-			true_indices = mask
+	var mask:Array = []):
 	
 	#convert pos into Vector3 with y=0 to be compatible with Triangle's Vector3 components
 	var p:Vector3 = Vector3(pos.x, 0, pos.y)
 	
-	for j in size:
-		#assume size is the same as face count
-		var i = j
-		#if j fits in true_indices, reassign i to the true index
-		if j < true_indices.size(): 
-			i = true_indices[j]
+	#closest distance between p and a triangle
+	var distance:Array = [INF]
+	#closest triangle
+	var closest = null
+	
+	#loop through each face, looking for a triangle closer than distance to p
+	for i in mdt.get_face_count():
+		var found = uv_to_mdata_step(mdt, i, [p], distance)
+		#if one is found, assign it to closest
+		if found != null:
+			closest = found
+			#check if a surrounding triangle was found, and return early if so
+			if closest[3]: return closest
+	
+	return closest
+
+#check a face to see if it surrounds uv
+#WIP if not, move onto another face
+static func uv_to_mdata_step(var mdt:MeshDataTool, var i:int, var uv:PoolVector3Array,
+	var distances:Array = []):
+	
+	#get positions and uvs of the triangle
+	var t = get_face_vertices(mdt, i)
+	#copy positions of t into another triangle to calculate position later
+	var u:PoolVector3Array = t[0]
+	
+	#convert uvs into Vector3 with y=0
+	for k in t[1].size():
+		t[1][k] = Vector3(t[1][k].x, 0, t[1][k].y)
+	#send expanded uvs into t
+	t = Triangle.new(t[1])
+	
+	var c:Vector3 = t.center()
+	
+	#check uv set for anything contained in the face
+	for j in uv.size():
+		#get the barycentric coordinates of p in t
+		var b = t.barycentric(uv[j])
+		#weight distance of uv to center by the magnitude of the barycentric coords
+		var d:float = uv[j].distance_to(c)
 		
-		#get positions and uvs of the triangle
-		var t = get_face_vertices(mdt, i)
-		#copy positions of t into another triangle to calculate position later
-		var u = t[0]
-		
-		#convert uvs into Vector3 with y=0
-		for k in t[1].size():
-			t[1][k] = Vector3(t[1][k].x, 0, t[1][k].y)
-		#send uvs expanded into 3D into t
-		t = Triangle.new(t[1])
-		
-		#check if the right triangle has been found
-		if t.is_surrounding(p):
-			#get the barycentric coordinates of p in t
-			var b = t.barycentric(p)
-			#then use the bcoords to weigh the positions of the tri's verts into an average for output
-			#this is why the position copy was made earlier
+		#whether uv[j] is closer to t or not, assume not
+		var closer:bool = false
+		#if distances were fed into the method, check for a closer distance
+		if distances.size() > j:
+			if d < distances[j]:
+				distances[j] = d
+				closer = true
+		#check if t is surrounding uv[j], but a closer distance can circumvent this measure
+		var surrounding:bool = t.is_surrounding(uv[j])
+		if surrounding || closer:
+			#reconstruct the 3d position of uv[j] from b and u
 			var out:Vector3 = b[0] * u[0] + b[1] * u[1] + b[2] * u[2]
-			#if mask mode is 2, add surrounding faces to mask so the same mask so other functions can use the same mask multiple times for faster search
-			if mask_type == 2:
-				var faces:PoolIntArray = []
-				for v in range(0, 3):
-					faces.append_array(mdt.get_vertex_faces(mdt.get_face_vertex(i, v)))
-				mask.append_array(faces)
-			mask.append(i)
 			#return data about the triangle
-			return [i, out, mdt.get_face_normal(i), j]
-	
-	#if no solution is found, return null
+			#encode the face index, position of uv[j] in 3D normal and the surrounding boolean into the result
+			return [i, out, mdt.get_face_normal(i), surrounding]
+
+	#if no more uvs can be checked, return null
 	return null
-	
+				
 #retrieve an Arrays object from a face index of a MeshDataTool
 static func get_face_vertices(var mdt:MeshDataTool, var i:int):
 	return [[mdt.get_vertex(mdt.get_face_vertex(i, 0)),
@@ -189,7 +171,7 @@ static func square_to_basis(var mdt:MeshDataTool, var board:Board,
 	var rt = up.cross(fd)
 	
 	#to force fd to be orthogonal to up, cross up with right
-	fd = up.cross(rt)
+	fd = rt.cross(up)
 	
 	#finally, send the basis as a transform into self.transform
 	var b:Basis = Basis(rt, up, fd)
@@ -197,92 +179,102 @@ static func square_to_basis(var mdt:MeshDataTool, var board:Board,
 	return b
 
 #run square to box and add mesh as a CSGMesh child of an input parent node
-static func square_to_child(var parent:Node, var mdt:MeshDataTool, var size:Vector2, 
+static func square_to_child(var parent:Node, 
 	var square:Vector2=Vector2.ZERO, var material:Material = SpatialMaterial.new(), var name:String = ""):
 	
-	var m = square_to_box(mdt, size, square, parent)
+	var m = square_to_box(parent, square)
 	var csg = CSGMesh.new()
 	csg.mesh = m
 	csg.material = material
-	if name.empty(): name = "Square " + String(size)
+	if name.empty(): name = "Square " + String(parent.board.size)
 	csg.name = name
 	parent.add_child(csg)
 	
 	return csg
 
 #WIP return a convex cube mesh bounding a square
-static func square_to_box(var mdt:MeshDataTool, var size:Vector2, var square:Vector2=Vector2.ZERO,
-	#node input is only used for debugging, usually ignore
-	var node:Node = null):
+static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
+	
+	#size and mesh of the board
+	var size:Vector2 = board.size
+	var mdt:MeshDataTool = board.mdt
+	#bound and uv corners of the square
+	var b:Bound = square_to_bound(size ,square)
+	var c:PoolVector2Array = b.get_corners()
+	
+	#surface builder st and mesh m for st to push into when the box is finished being constructed
+	var m:ArrayMesh = ArrayMesh.new()
+	var st:SurfaceTool = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	
+	#mdata of each uv corner
+	var coverts:Array = []
+	coverts.resize(4)
+	for i in range(0, 4):
+		#get mdata of each corner
+		coverts[i] = uv_to_mdata(mdt, c[i])
+		#convert coverts to vert arrays
+		var v:Vector3 = coverts[i][1]
+		var u:Vector2 = c[i]
+		var n:Vector3 = coverts[i][2]
+		var a:PoolRealArray = [v.x, v.y, v.z, n.x, n.y, n.z, u.x, u.y]
+		coverts[i] = a
 		
-	#get uv bound of square
-	var b:Bound = square_to_bound(size, square)
+		#add verts into surface tool
+		st.add_normal(n)
+		st.add_uv(u)
+		st.add_vertex(v)
+		
+	#PoolRealArray Dictionary of PoolIntArrays represeting indices of mdt with duplicate data
+	var duplicates:Dictionary = board.duplicates
+	#int Dictionary of ints representing indices of mdt being matched with indices of st
+	var indexmap:Dictionary = {}
+	#keep track of the number of verts in st
+	var count:int = 4
+	#Array of vertex arrays which are inside b
+	var inners:Array = []
 	
-	#keep faces intersecting square as indices keying arrays of inner verts
-	var faces:Dictionary = {}
-	#keep vertices connected to verts in the square as indices keying position
-	var verts:Dictionary = {}
-	#keep verts which are outside the square to know which ones to move late
-	var outside:Dictionary = {}
-	
-	#loop through verts of faces and add every face connected to a vert inside the square
+	#get faces with vertices inside b, and add them to st
 	for i in mdt.get_face_count():
+		#whether or not face i is intersecting with b
+		var touching:bool = false
+		#loop through face vertices to see if any are inside b
+		for j in range(0, 3):
+			#get vertex data
+			var v:int = mdt.get_face_vertex(i, j)
+			var uv:Vector2 = mdt.get_vertex_uv(v)
+			#if b is surrounding uv position of v, add inners and change touching to true
+			if b.is_surrounding(uv): 
+				inners.append(vert_to_array(mdt, v))
+				touching = true
+				continue
 		
-		#loop through verts/edges of i
+		#if i is touching b, add verts of i to indexmap
+		if !touching: continue
 		for j in range(0, 3):
 			var v:int = mdt.get_face_vertex(i, j)
-			#skip verts that have already been handled
-			if v in verts:
-				continue
+			var a:PoolRealArray = vert_to_array(mdt, v)
+			st.add_normal(array_to_vert(a, 1))
+			st.add_uv(array_to_vert(a, 2))
+			st.add_vertex(array_to_vert(a, 0))
+			st.add_index(count)
+			count += 1
 			
-			#if vertex is in b, add connected faces and their vertices to dicts
-			var uv:Vector2 = mdt.get_vertex_uv(v)
-			if b.is_surrounding(uv):
-				vert_to_triangle_fan(mdt, v, verts, faces)
-			
-			#otherwise, check if uv edge between v and the next face vertex intersects b
-			else:
-				#get edge and verts
-				var e:int = mdt.get_face_edge(i,j)
-				v = mdt.get_edge_vertex(e, 0)
-				uv = mdt.get_vertex_uv(v)
-				var u:int = mdt.get_edge_vertex(e, 1)
-				var uv2:Vector2 = mdt.get_vertex_uv(u)
-				
-				#cursedmathgames
-				var cross = b.edge_set_intersection([uv, uv2])
-				if !cross.empty():
-					#add verts connected to both v and u
-					vert_to_triangle_fan(mdt, e, verts, faces, true)
+	print(indexmap)
 	
-	#set outside verts by checking through keys
-	for v in verts.keys():
-		var uv:Vector2 = mdt.get_vertex_uv(v)
-		if !b.is_surrounding(uv):
-			outside[v] = mdt.get_vertex(v)
-	
-	#TODO slide vertices into corners of square
-	
-	#get vertex corners of the square
-	var corners:Array = []
-	var c = b.get_corners()
-	corners.resize(4)
-	var mask:Array = Array()
-	#loop through each corner and retrieve their mdata
-	for i in range(0, 4):
-		#clamp uvs to a range that is less likely return null for being OOB
-		c[i].y = max(min(c[i].y, 0.999), 0.001)
-		c[i].x = max(min(c[i].x, 0.999), 0.001)
-		corners[i] = uv_to_mdata(mdt, c[i], mask)
+#	#if square is flat, index faces into two triangles like so
+#	st.add_index(2)
+#	st.add_index(1)
+#	st.add_index(0)
+#	st.add_index(3)
+#	st.add_index(2)
+#	st.add_index(0)
 		
-	
-	#find largest and smallest uvs of the outer verts to make up the corners
-	
-	#construct a mesh from inner verts and connected outer verts
-	var st = slice_mesh(mdt, verts.keys(), faces.keys(), verts)
-
-	var m:Mesh = Mesh.new()
-	return st.commit(m)
+	#commit st to m and return it
+	st.commit(m)
+	var md = MeshDataTool.new()
+	md.create_from_surface(m, 0)
+	return m
 
 #convert a square in uv space to a Bound object
 static func square_to_bound(var size:Vector2, var square:Vector2):
@@ -368,45 +360,6 @@ static func path_to_mesh(var path:String = "", var debug:bool = false):
 static func mesh_to_shape(var m:Mesh):
 	return m.create_trimesh_shape()
 
-#slice mesh in mdt into a smaller mesh from an array of vertex indices and face indices to take from
-#the last argument can be used to send in new positions for vertices
-#returns a surface tool
-static func slice_mesh(var mdt:MeshDataTool, var vertex_indices:PoolIntArray,
-		var face_indices:PoolIntArray, var positions:Dictionary = {}):
-	
-	#construct a mesh using surface tool
-	var st:SurfaceTool = SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES) 
-	var m:Mesh = Mesh.new()
-	
-	#"sift" vertex indices into an integer range from 0 to n, link to original indices with a key
-	var indexmap:Dictionary = {}
-	var sorted:Array = Array(vertex_indices)
-	sorted.sort()
-	for i in sorted.size():
-		indexmap[sorted[i]] = i
-		i += 1
-	
-	#go through sorted verts and add them to the surface tool
-	for v in sorted:
-		st.add_normal(mdt.get_vertex_normal(v))
-		st.add_uv(mdt.get_vertex_uv(v))
-		var pos:Vector3
-		#use position dictionary so new positions can be sent in by other functions
-		if v in positions:
-			pos = positions[v]
-		else:
-			pos = mdt.get_vertex(v)
-		st.add_vertex(pos)
-	
-	#use sifted indices to index faces in groups of 3
-	for f in face_indices:
-		for i in range(0, 3):
-			var v = mdt.get_face_vertex(f, i)
-			st.add_index(indexmap[v])
-	
-	return st
-
 #get all verts and faces connected to an index in mdt
 #return [0] is vert dictionary, return [1] is face dicitonary
 static func vert_to_triangle_fan(var mdt:MeshDataTool, var i:int = 0, 
@@ -426,10 +379,87 @@ static func vert_to_triangle_fan(var mdt:MeshDataTool, var i:int = 0,
 		for j in range(0, 3):
 			var v = mdt.get_face_vertex(f, j)
 			#same deal as faces
-			verts[v] = mdt.get_vertex(v)
+			verts[v] = [f, mdt.get_vertex(v), mdt.get_vertex_normal(v)]
 	
 	#in case vert_to_triangle_fan doesnt have dictionary args, return them back out
 	return [verts, faces]
+
+#return a Dictionary of PoolRealArray and PoolIntArrays keying sets of vertices to positions
+static func find_duplicates(var mdt:MeshDataTool):
+	
+	var verts:Dictionary= {}
+	
+	#loop through each face
+	for i in mdt.get_face_count():
+		#see if each vertex of each face already exists
+		for j in range(0, 3):
+			var k:int = mdt.get_face_vertex(i, j)
+			#key vertex by its properties, preserving split edges
+			var v:PoolRealArray = vert_to_array(mdt, k)
+		
+			#if vertex already exists, add a match
+			if verts.has(v):
+				verts[v].append(k)
+			#if not, add vertex position with index as first match
+			else:
+				#add vertex position to dictionary
+				verts[v] = [k]
+	
+	return verts
+
+#copy a set of duplicate vertices (i in duplicates) into an indexmap,
+#then increment the number of unique vertices in the indexmap, returns new count
+static func map_duplicates(var duplicates:Dictionary, var indexmap:Dictionary,
+	var i:PoolRealArray, var count:int = 0):
+	
+	var a:PoolIntArray = duplicates[i]
+	for j in a.size():
+		indexmap[a[j]] = count
+	return count + 1
+
+#fit uv to the square between Vector2.ZERO and Vector2.ONE
+static func clamp_uv(var uv:Vector2):
+	uv.x = fmod(uv.x, 1)
+	uv.y = fmod(uv.y, 1)
+	return uv
+
+#convert a vertex on an mdt to a PoolRealArray of properties
+#can also create an array from a larger array of multiple vertices
+static func vert_to_array(var data, var i:int = 0):
+	
+	if data is MeshDataTool:
+		var p:Vector3 = data.get_vertex(i)
+		var n:Vector3 = data.get_vertex_normal(i)
+		var u:Vector2 = data.get_vertex_uv(i)
+		var v:PoolRealArray = [p.x, p.y, p.z, n.x, n.y, n.z, u.x, u.y]
+		return v
+	if data is PoolRealArray:
+		var v:PoolRealArray = PoolRealArray()
+		v.resize(8)
+		for j in range(0, 8):
+			v[j] = data[j + i]
+		return v
+	else:
+		return PoolRealArray()
+
+#decode an array from vert_to_array() back into a position (0), normal (1), or uv (2) based on mode
+#start is the starting index in a from which to decode
+static func array_to_vert(var a:PoolRealArray, var mode:int = 0, var start:int = 0):
+	#if array is too small, return null
+	if a.size() < start + 8: return null
+	#return parts of the array relevant to mode
+	if mode == 2:
+		return Vector2(a[start + 6], a[start + 7])
+	elif mode == 1:
+		return Vector3(a[start + 3], a[start + 4], a[start + 5])
+	else:
+		return Vector3(a[start], a[start + 1], a[start + 2])
+		
+#add a vertex array from vert_to_array() into a SurfaceTool
+static func add_array_to_surface(var st:SurfaceTool, var a:PoolRealArray):
+	st.add_normal(array_to_vert(a, 1))
+	st.add_uv(array_to_vert(a, 2))
+	st.add_vertex(array_to_vert(a, 0))
 
 #cast out a ray from the camera, given a physics state s
 static func raycast(var p:Vector2, var c:Camera, 
@@ -447,19 +477,44 @@ static func raycast(var p:Vector2, var c:Camera,
 	return null
 
 #add CSGsphere children to node at relative positions
-static func debug_positions(var node:Node = null, var positions:PoolVector3Array = [], 
-	var radius:float = 0.1, var material:Material = SpatialMaterial.new()):
+#setting mode to 1 will stop the method from deleting old csgballs
+static func debug_positions(var node:Node = null, var positions:Array = [], 
+	var mode:int = 0, var radius:float = 0.1):
+	
+	#material to apply to the CSGBalls
+	var material:Material = SpatialMaterial.new()
 	
 	#remove old debug objects
-	for c in node.get_children():
-		if c.name.find("debug") != -1:
-			node.remove_child(c)
+	if mode != 1:
+		for c in node.get_children():
+			if c.name.find("debug") != -1:
+				node.remove_child(c)
+				
+	var t:bool = positions is Array
 	
 	#add new ones
-	for p in positions:
+	for p in positions: 
+		if t:
+			p = array_to_vert(p)
+		
 		var csg = CSGSphere.new()
 		csg.radius = radius
 		csg.material = material
 		csg.transform.origin = p
 		csg.name = "debug " + String(p)
 		node.add_child(csg)
+
+#debug positions alternative which instead takes a MeshDataTool and an array of vertex indices as arguments
+static func debug_vertices(var node:Node, var mdt:MeshDataTool, var positions:PoolIntArray = [],
+	var mode:int = 0, var radius:float = 0.1):
+		
+	if positions.size() == 0:
+		return
+	
+	var p:PoolVector3Array = PoolVector3Array()
+	p.resize(positions.size())
+	
+	for i in p.size():
+		p[i] = mdt.get_vertex(positions[i])
+	
+	debug_positions(node, p, mode, radius)

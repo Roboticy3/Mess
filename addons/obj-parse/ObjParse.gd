@@ -146,6 +146,7 @@ static func parse_obj(obj_path, mtl_path, var debug:bool = false):
 							face["vn"].append(point2[2])
 							face["vn"].append(point1[2])
 							faces[mat_name].append(face)
+				
 
 	# Make tri
 	for matgroup in faces.keys():

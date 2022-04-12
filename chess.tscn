@@ -22,6 +22,7 @@ collision_layer = 2
 script = ExtResource( 1 )
 
 [node name="CollisionShape" type="CollisionShape" parent="KinematicBody"]
+transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0 )
 shape = SubResource( 2 )
 
 [node name="Player Camera" type="Camera" parent="KinematicBody"]
@@ -29,7 +30,7 @@ shape = SubResource( 2 )
 [node name="StaticBody" type="StaticBody" parent="."]
 collision_mask = 2
 script = ExtResource( 3 )
-path = "Instructions/torus/"
+path = "Instructions/torus"
 
 [node name="Board Shape" type="CSGMesh" parent="StaticBody"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.38419e-07, 0 )

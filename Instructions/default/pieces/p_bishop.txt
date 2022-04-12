@@ -1,4 +1,5 @@
 bishop
+meshes/bishop.obj
 
 m
 1 1 2

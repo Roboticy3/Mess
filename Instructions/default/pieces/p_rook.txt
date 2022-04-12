@@ -1,4 +1,6 @@
 rook
+meshes/rook.obj
+
 hasmoved 0
 
 m
