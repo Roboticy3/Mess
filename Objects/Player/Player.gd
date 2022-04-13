@@ -197,7 +197,7 @@ func request_square(var event:InputEventMouseButton):
 			
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
-		#board_mesh.mark_from(square)
-		board_mesh.mark_from(square)
+		#handle square selection
+		team = board_mesh.handle(square, team)
 		return square
 	return null

@@ -233,11 +233,10 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	var count:int = 4
 	#Array of vertex arrays which are inside b
 	var inners:Array = []
+	var touching:PoolIntArray = []
 	
 	#get faces with vertices inside b, and add them to st
 	for i in mdt.get_face_count():
-		#whether or not face i is intersecting with b
-		var touching:bool = false
 		#loop through face vertices to see if any are inside b
 		for j in range(0, 3):
 			#get vertex data
@@ -246,29 +245,28 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 			#if b is surrounding uv position of v, add inners and change touching to true
 			if b.is_surrounding(uv): 
 				inners.append(vert_to_array(mdt, v))
-				touching = true
+				touching.append(i)
 				continue
-		
-		#if i is touching b, add verts of i to indexmap
-		if !touching: continue
-		for j in range(0, 3):
-			var v:int = mdt.get_face_vertex(i, j)
-			var a:PoolRealArray = vert_to_array(mdt, v)
-			st.add_normal(array_to_vert(a, 1))
-			st.add_uv(array_to_vert(a, 2))
-			st.add_vertex(array_to_vert(a, 0))
-			st.add_index(count)
-			count += 1
-			
-	print(indexmap)
-	
-#	#if square is flat, index faces into two triangles like so
-#	st.add_index(2)
-#	st.add_index(1)
-#	st.add_index(0)
-#	st.add_index(3)
-#	st.add_index(2)
-#	st.add_index(0)
+				
+	#if square is flat, index faces into two triangles like so
+	if inners.empty():
+		st.add_index(2)
+		st.add_index(1)
+		st.add_index(0)
+		st.add_index(3)
+		st.add_index(2)
+		st.add_index(0)
+	else:
+		#loop through touching faces
+		for i in touching:
+			for j in range(0, 3):
+				var v:int = mdt.get_face_vertex(i, j)
+				var a:PoolRealArray = vert_to_array(mdt, v)
+				st.add_normal(array_to_vert(a, 1))
+				st.add_uv(array_to_vert(a, 2))
+				st.add_vertex(array_to_vert(a, 0))
+				st.add_index(count)
+				count += 1
 		
 	#commit st to m and return it
 	st.commit(m)

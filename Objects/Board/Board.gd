@@ -31,8 +31,10 @@ var size = Vector2.ONE
 #store a set of variables declared in metadata phase
 var table:Dictionary = {"scale":1, "piece_scale":0.2}
 
-#an Vector2 Dictionary of Vector2 Dictionaries representing the marks each piece has on the board
+#a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
+#Vector2 of the piece in pieces marks belongs to
+var select:Vector2
 
 func _ready():
 	
@@ -216,6 +218,7 @@ func mark(var v:Vector2):
 	var m:Array = p.mark
 	
 	#store a set of positions to return so BoardMesh can display a set of selectable squares
+	#values of dictionary contain extra propterties of the move in an array
 	var pos:Dictionary = {}
 	
 	#whether the line of the move is diagonal (0), jumping (1), or infinite diagonal (2)
@@ -245,7 +248,9 @@ func mark(var v:Vector2):
 		#append s to pos and add entry in debug dictionary
 		mark_step(p, x, pos, l)
 	
-	print(pos)
+	#set positions to board mark dictionary
+	marks = pos
+	select = v
 	
 	return pos
 
@@ -338,6 +343,22 @@ func _to_string():
 		s += "\n"
 		i -= 1
 	return s
+
+#execute a turn by moving a piece, updating both the piece's table and the board's pieces
+#the only argument taken is a mark to select from marks
+#assumes both v is in pieces and v is in bounds
+#returns a table of movements to be used by this' containing BoardMesh
+func execute_turn(var v:Vector2):
+	pieces[v] = pieces[select]
+	pieces.erase(select)
+	turn += 1
+	
+	var moves:Dictionary = {select:v}
+	return moves
+
+#get the team of the current turn by taking turn % teams.size()
+func get_team():
+	return turn % teams.size()
 
 func _init(var _path:String):
 	path = _path

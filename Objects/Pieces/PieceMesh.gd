@@ -58,8 +58,6 @@ func _ready():
 	#commit the material
 	csg.material = mat
 	add_child(csg)
-	
-	#print(get_children())
 
 func _to_string():
 	return piece._to_string()

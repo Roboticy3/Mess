@@ -163,3 +163,8 @@
 	 - quit work on stb, meshes are totally beyond me and I keep just getting mad instead of getting any work done
 	NEXT
 	 - start working on piece movement
+4/12/2022
+	 - finished JHSSF scholarship (lmao)
+	 - got piece selection and logic movement skeleton working
+	NEXT
+	 - get visual movement working and add movement events
