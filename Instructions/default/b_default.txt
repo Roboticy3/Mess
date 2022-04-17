@@ -3,6 +3,8 @@
 
 default_board
 
+piece_scale 0.1
+
 b
 #this phase sets boundries that define the shape of the board
 #if a piece tries to move to a spot with no encompassing boundries, the option will not appear

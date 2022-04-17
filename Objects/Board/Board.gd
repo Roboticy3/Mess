@@ -258,9 +258,13 @@ func mark(var v:Vector2):
 func mark_step(var from:Piece, var to:Vector2, var s:Dictionary, var line:int = 0):
 	
 	#if line mode is jump, just check if to is free or takeable and, if so, return it
-	if line == 1 && is_surrounding(to):
-		if !pieces.has(to) || Instruction.can_take_from(from.team, pieces[to].team, from.table):
-			s[to] = 0
+	if line == 1:
+		if is_surrounding(to):
+			if !pieces.has(to) || Instruction.can_take_from(from.team, pieces[to].team, from.table):
+				s[to] = 0
+		#if line is type 1, do not do the rest of the mark_step method
+		return 0
+		
 	
 	#position of piece
 	var pos:Vector2 = from.get_pos()
@@ -349,10 +353,18 @@ func _to_string():
 #assumes both v is in pieces and v is in bounds
 #returns a table of movements to be used by this' containing BoardMesh
 func execute_turn(var v:Vector2):
+	#move the piece in pieces
 	pieces[v] = pieces[select]
 	pieces.erase(select)
+	#update the piece's local position and increment its move count
+	pieces[v].set_pos(v)
+	#increment turn
 	turn += 1
 	
+	#clear the marks dictionary
+	marks.clear()
+	
+	#return a set of movements based on the piece's instructions
 	var moves:Dictionary = {select:v}
 	return moves
 

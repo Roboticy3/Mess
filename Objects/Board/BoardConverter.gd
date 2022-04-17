@@ -487,8 +487,9 @@ static func debug_positions(var node:Node = null, var positions:Array = [],
 		for c in node.get_children():
 			if c.name.find("debug") != -1:
 				node.remove_child(c)
-				
-	var t:bool = positions is Array
+	
+	#checks if positions is an Array of PoolRealArray, assumes all elements are of same type
+	var t:bool = positions[0] is PoolRealArray
 	
 	#add new ones
 	for p in positions: 

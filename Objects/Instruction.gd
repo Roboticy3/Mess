@@ -78,6 +78,11 @@ func vectorize(var start:int = 0):
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
 	w[0] = w[0].substr(1)
 	
+	#if next word is a conditional, the conditional consists of a simple comparison
+	if SYMBL.find(wrds[1]) != -1:
+		if evaluate(w, start):
+			return vectorize(start + 3)
+	
 	#take parsed versions of first and second wrds to determine the type of conditional
 	var u = parse(w[0])
 	var v = parse(w[1])
@@ -88,9 +93,9 @@ func vectorize(var start:int = 0):
 		var x:Vector2 = Vector2(table["px"], table["py"])
 		#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
 		var y:Vector2 = Vector2(u, v).rotated(table["angle"])
-		y = (x + y).floor()
-			
-		#if square is empty, return an empty array
+		y = (x + y).round()
+		
+		#if square is empty, check cannot proceed, so return empty array
 		if !pieces.has(y):
 			return []
 		
@@ -98,8 +103,6 @@ func vectorize(var start:int = 0):
 		#if so, an element of the table from a piece at the square is being checked
 		if w.size() > 5 && SYMBL.find(w[3]) != -1:
 			if can_take_from(pieces[x].team, pieces[y].team, pieces[x].table):
-				
-				print(wrds)
 				#reformat wrds from the table of the piece being read
 				format(start, y)
 				#then evaluate the conditional from w[2] to w[4]
@@ -107,12 +110,7 @@ func vectorize(var start:int = 0):
 					return vectorize(start + 5)
 		
 		#if there is no conditional statement, a square is being checked for presence, a check which has already passed
-		return vectorize(start + 3)
-
-	#if next word is a conditional, the conditional consists of a simple comparison
-	if SYMBL.find(wrds[1]) != -1:
-		if (evaluate(w)):
-			return vectorize(start + 2)
+		return vectorize(start + 2)
 
 static func can_take_from(var from:int, var to:int, var t:Dictionary=table):
 	if to == from && t["ff"] == 0:
@@ -129,7 +127,8 @@ func array_parse(var start:int = 0):
 	for i in w.size():
 		var n = parse(w[i])
 		nums.append(n)
-
+		
+	#return the array
 	return nums
 
 #evaluate conditional of a slice of an array of strings of length 3
@@ -140,30 +139,30 @@ func evaluate(var w:Array = [], var start:int = 0):
 	#create an array of values to store integers or calls to table
 	var a = Array()
 	for s in w:
-		s = parse(s)
-		if (s != null): a.append(s)
+		a.append(parse(s))
 	
 	var sgn = w[1].strip_edges()
 	
 	#if conditional is in the right format and has valid variable calls, evaluate it
-	if (SYMBL.find(sgn) != -1) && a.size() > 1:
+	if (SYMBL.find(sgn) != -1):
 		#check for the conditional symbol
 		if sgn.ends_with("="):
-			if (sgn.find("<") != -1 && a[0] <= a[1]):
+			if (sgn.find("<") != -1 && a[0] <= a[2]):
 				return true
-			elif (a[0] >= a[1]):
+			elif (a[0] >= a[2]):
 				return true
-			elif (a[0] == a[1]):
+			elif (a[0] == a[2]):
 				return true
-		elif (sgn == ">" && a[0] > a[1]):
+		elif (sgn == ">" && a[0] > a[2]):
 			return true
-		elif (sgn == "<" && a[0] < a[1]):
+		elif (sgn == "<" && a[0] < a[2]):
 			return true
 		
 	return false
 
 #convert a single word string (no " " or "\n" characters) into a float using the Expression class
-func parse(var string=contents):
+#nullable bool allows for failed parses to return null instead of 0.0
+func parse(var string=contents, var nullable:bool = false):
 	#create Expression to parse off of
 	var expression = Expression.new()
 	
@@ -177,12 +176,13 @@ func parse(var string=contents):
 	if (n != null):
 		return n
 	
-	#never return null so other code doesn't have to type-check the result
+	#never return null unless user asks for it so other code doesn't have to type-check the result
+	if nullable: return null
 	var default:float = 0
 	return default
 
 #convert instruction text to string array of words for easier parsing
-func to_string_array(var c:String = contents, var s:int = 0):
+func to_string_array(var c:String = contents, var start:int = 0):
 
 	#cut spaces so that spaces between final whitespace is not counted
 	c = c.substr(0, c.find("#")).strip_edges()
@@ -198,19 +198,20 @@ func to_string_array(var c:String = contents, var s:int = 0):
 	#remove empty entries
 	for i in r.size():
 		a.remove(r[i] - i)
-	#return array
-	return a
+		
+	#use start to slice array and return it
+	return a.slice(start, a.size() - 1)
 
 #take in a table to update with self
-func update_table(var t:Dictionary=table):
+func update_table(var t:Dictionary=table, var start:int = 0):
 	#populate piece table by trying taking numbers from the second word
-	var s = to_string_array()
+	var s = to_string_array(contents, start)
 	#check if last two terms in array make up a key pair
 	if s.size() > 1:
 		var i:int = s.size() - 2
 		var j:int = s.size() - 1
 		#try to parse values
-		var n = [parse(s[i]), parse(s[j])]
+		var n = [parse(s[i], true), parse(s[j], true)]
 		#keys must be strings, but values can be floats or strings (jank)
 		if n[0] == null:
 			var a = n[1]

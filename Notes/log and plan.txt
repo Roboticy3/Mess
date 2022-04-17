@@ -168,3 +168,7 @@
 	 - got piece selection and logic movement skeleton working
 	NEXT
 	 - get visual movement working and add movement events
+4/14/2022
+	 - started repairing conditionals and visuals to work with piece movement
+	NEXT
+	 - add variable updating via appending variable assigns onto the end of marks

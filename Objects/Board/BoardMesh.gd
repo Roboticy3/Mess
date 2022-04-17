@@ -145,21 +145,33 @@ func create_piece(var p:Piece, var v:Vector2):
 			)
 	add_child(pm)
 	
-	#set transforms and return pm to be added to table
+	#set pm's reference to its piece and transforms and return pm to be added to table
+	pm.piece = p
 	pm.transform = pdata["transform"]
 	return pm
 
 #transform the piece in from to to, change location, rotation, and scale accordingly
 func move_piece(var from:Vector2, var to:Vector2):
 	
+	#if to contains a PieceMesh, remove that object before continuing
+	if pieces.has(to):
+		remove_child(pieces[to])
+		pieces.erase(to)
+	
 	#update the dictionary
 	pieces[to] = pieces[from]
 	pieces.erase(from)
+	
+	#move the PieceMesh object into the right spot
+	var p:PieceMesh = pieces[to]
+	p.transform = BoardConverter.square_to_transform(mdt, board, p.piece)
+	
+	BoardConverter.debug_positions(self, [p.transform.origin])
 
 #highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
-func highlight_square(var vs:PoolVector2Array, var mode:int = 1):
+func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1):
 	
 	#hide everything to start if mode is 1
 	if mode == 1:
@@ -187,8 +199,8 @@ func mark_from(var v:Vector2):
 #run this method whenever a player clicks on a square
 #generally handles all interactions a Player object could have with the main Board object
 func handle(var v:Vector2, var team:int = 0):
-	var p:Dictionary = board.pieces
 	
+	var p:Dictionary = board.pieces
 	
 	#check if square is a selectable piece
 	if v in p && team == p[v].team:
@@ -196,11 +208,13 @@ func handle(var v:Vector2, var team:int = 0):
 		mark_from(v)
 	#check if square is a square that can be moved to
 	if v in board.marks:
-		#execute the turn and retrieve a dictionary of movements to apply to the PieceMesh object
+		#execute the turn and retrieve a dictionary of updates for BoardMesh pieces
 		#execute_turn() also update's the board's table and turn
 		var moves:Dictionary = board.execute_turn(v)
 		#move mesh of piece into correct place
 		for i in moves:
 			move_piece(i, moves[i])
+		#clear board marks
+		highlight_square()
 		
 	return board.get_team() #get team from board in case there is one player which has to switch
