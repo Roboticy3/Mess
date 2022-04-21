@@ -12,11 +12,11 @@ For testing out boards, go to Static Body in the Godot scene and change it's pat
 For editing boards and pieces, refer to wiki page "Editing Boards and Pieces"
 
 # Mess roadmap (in order)
- - Make better comments so the code isn't completely unreadable to other GitHub users
+ - impossible :( - Make better comments so the code isn't completely unreadable to other GitHub users
  - Make game comprehensible to look at
- - Add step-wise marking and turns to make the game playable
+ - DONE :) - Add step-wise marking and turns to make the game playable
  - Finish Portal.gd and how other scripts handle it
- - Make docs for piece and board editors
+ - DONE (more or less) :) - Make docs for piece and board editors
  - Add a main menu and level select
  - Make the game compatible with both couch and peer-to-peer multiplayer
  - Release beta branch of project
