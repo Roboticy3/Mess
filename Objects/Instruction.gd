@@ -52,13 +52,17 @@ func format(var start = 0, var square = null, var string = contents):
 			#String replacement is a little awkward, 
 			#but it must be done before wrds is parsed for full functionality
 			w = String(table[w])
+			
 		#reform the string
 		w = q + w
-		wrds[i] =w
+		wrds[i] = w
 
 #WIP evaluate conditional statements, made up of a wrds Array of length 3 or more that can solve inequalities
 #returning [] is equivalent to returning false and anything else is equivalent to true
 func vectorize(var start:int = 0):
+	
+	#reformat content to catch table updates
+	format()
 	
 	#slice from start
 	var w:Array = wrds.slice(start, wrds.size() - 1)

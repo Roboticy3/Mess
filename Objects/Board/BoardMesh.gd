@@ -208,12 +208,11 @@ func handle(var v:Vector2, var team:int = 0):
 		mark_from(v)
 	#check if square is a square that can be moved to
 	if v in board.marks:
-		#execute the turn and retrieve a dictionary of updates for BoardMesh pieces
-		#execute_turn() also update's the board's table and turn
-		var moves:Dictionary = board.execute_turn(v)
+		#get updates to the board to apply to BoardMesh while updating the Board's data as well
+		var moves:Array = board.execute_turn(v)
 		#move mesh of piece into correct place
-		for i in moves:
-			move_piece(i, moves[i])
+		for i in moves[0]:
+			move_piece(i, moves[0][i])
 		#clear board marks
 		highlight_square()
 		

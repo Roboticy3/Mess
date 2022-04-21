@@ -172,3 +172,7 @@
 	 - started repairing conditionals and visuals to work with piece movement
 	NEXT
 	 - add variable updating via appending variable assigns onto the end of marks
+4/20/2022
+	- kept working on piece movement, accidentally broke everything. whoops
+	NEXT
+	 - debug all the shit i broke (mainly mark_step())

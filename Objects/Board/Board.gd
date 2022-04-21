@@ -232,21 +232,17 @@ func mark(var v:Vector2):
 		m[i].table = p.table
 		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
-		var s:int = a.size()
 		
 		#get line type from the third number
-		if s > 2:
+		var size:int = a.size()
+		if size > 2:
 			l = a[2]
 		#vectors for marks must be of at least size 2
-		elif s < 2:
+		elif size < 2:
 			continue
 		
-		#create a Vector2 object from the first two entries in a
-		var x:Vector2 = Vector2(a[0], a[1])
-		x = p.relative_to_square(x)
-		
 		#append s to pos and add entry in debug dictionary
-		mark_step(p, x, pos, l)
+		mark_step(p, a, i, l, pos)
 	
 	#set positions to board mark dictionary
 	marks = pos
@@ -254,66 +250,90 @@ func mark(var v:Vector2):
 	
 	return pos
 
-#WIP return a Vector2 Dictionary of positions with data about each mark attached
-func mark_step(var from:Piece, var to:Vector2, var s:Dictionary, var line:int = 0):
+#interperet an instruction and return a Vector2 Dictionary of indices in pieces[from]'s mark instruction set
+#each key in the returned dictionary represents a possible move created by the instruction in mark
+func mark_step(var from:Piece, var a:Array, var index:int, var line:int, var s:Dictionary):
 	
-	#if line mode is jump, just check if to is free or takeable and, if so, return it
-	if line == 1:
-		if is_surrounding(to):
-			if !pieces.has(to) || Instruction.can_take_from(from.team, pieces[to].team, from.table):
-				s[to] = 0
-		#if line is type 1, do not do the rest of the mark_step method
-		return 0
-		
+	#create a Vector2 object from the first two entries in a
+	var to:Vector2 = Vector2(a[0], a[1])
+	to = from.relative_to_square(to)
 	
 	#position of piece
 	var pos:Vector2 = from.get_pos()
 	#"to-pos" which the mark function is aiming for
 	var tp:Vector2 = to - pos
-	#"base unit" of the diagonal
-	var d:Vector2 = tp.normalized()
 	
-	#movement array to eventually return
-	#v is relative positions and s (from method args) is board positions
-	var v:Array = []
+	#percentage of tp that has been moved along, between 0 and 1
+	#when both hit 1, to has been reached
+	var x:float = 0
+	var y:float = 0
+	#if either move is 0, set them to 1 automatically
+	if tp.x == 0: x = 1
+	if tp.y == 0: y = 1
 	
-	#the next vector (x) and position (y) to check, as well as a place to store the last vector
-	var x:Vector2 = d.round()
-	var y:Vector2 = (d + pos).round()
-	var last:Vector2 = Vector2.ZERO
+	#square to check each loop
+	var square:Vector2 = pos
+	print(from,tp)
 	
-	#while the length of the total movement is contained in the to-pos, the move is still going
-	#the move could also be marked as infinite, in which case it will go on as long as possible
-	while line == 2 || last.length() < tp.length():
+	#directions to move square in
+	var u:Vector2 = Vector2(1, 0) * sign(tp.x)
+	var v:Vector2 = Vector2(0, 1) * sign(tp.y)
+	
+	#whether or not the current square is the last
+	var last:bool = false
+	
+	#move square until the move is done, or move until another break condition if line is infinite
+	while !last || line == 2:
 		
-		#if the movement escapes the board, stop the loop
-		if !is_surrounding(y):
-			break
-		
-		#keep track of whether or not y is filled both before and after the next mark is added
-		var occ:bool = false
-		if pieces.has(y):
-			occ = true
-			#before making the next mark, break if occupied square cannot be taken
-			#a square cannot be taken if it is the same team as this square's, and this square does not have friendly fire
-			#if line mode is jump
-			if !Instruction.can_take_from(from.team, pieces[y].team, from.table):
-				break
+		#check if x or y has less progress
+		if x < y: 
+			square += u
+		elif y < x: 
+			square += v
+		#if they are the same, decide the greater distance to travel in tp has the least progress
+		else:
+			if tp.x > tp.y || tp.y == 0: 
+				square += u
+			elif tp.x < tp.y || tp.x == 0:
+				square += v
+			#if even the size of tp is equivalent, move square diagonally
+			else: 
+				square += u + v
+				
+		#relative square to pos
+		var ts:Vector2 = square - pos
 
-		#add the mark and update last
-		v.append(x)
-		s[y] = 0
-		last = x
+		#then update x and y, this will give the last move one iteration before the loop breaks
+		if tp.x != 0: x = ts.x / tp.x
+		if tp.y != 0: y = ts.y / tp.y
+		#update check for whether this is the last move or not
+		last = x >= 1 && y >= 1
+		print(ts,Vector2(x,y))
 		
-		#after making the next mark, break on takeable pieces
-		if occ && Instruction.can_take_from(from.team, pieces[y].team, from.table):
-			break
+		#if line type is 1, but the final square is not yet being checked, skip to next square
+		var final:bool = line == 1 && last
+		if final: continue
 		
-		#next relative position in the direction of to-pos
-		x = (last + d).round()
-		#position of the current mark on the board
-		y = (x + pos).round()
-	
+		#break the loop if search leaves the board
+		if !is_surrounding(square): break
+		
+		#if the square being checked is occupied, check if the piece can be taken
+		var occ:bool = pieces.has(square)
+		var take:bool = true
+		if occ: 
+			take = Instruction.can_take_from(from.team, pieces[square].team, from.table)
+			
+			#if piece cannot be taken and square is not the final move of a jumping piece,
+			#break the loop before adding the next mark
+			if !take:
+				break
+		
+		#add instruction index to a new position in s
+		s[square] = index
+		
+		#if square is occupied by a takeable piece, break after adding the square
+		if occ && take: break
+		
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
@@ -351,22 +371,41 @@ func _to_string():
 #execute a turn by moving a piece, updating both the piece's table and the board's pieces
 #the only argument taken is a mark to select from marks
 #assumes both v is in pieces and v is in bounds
-#returns a table of movements to be used by this' containing BoardMesh
+#returns an array of Dictionaries
+#	index 0 is the table of moving pieces, keyed by Vector2 squares which were moved with Vector2 squares to move to
+#	index 1 is a table of created pieces, keyed by Vector2 squares to place their matching Piece objects onto
+#	index 2 is an Array of destroyed pieces
 func execute_turn(var v:Vector2):
-	#move the piece in pieces
-	pieces[v] = pieces[select]
-	pieces.erase(select)
-	#update the piece's local position and increment its move count
-	pieces[v].set_pos(v)
-	#increment turn
-	turn += 1
+	
+	#move the selected piece and add to its moves counter
+	move_piece(select, v)
+	
+	#search end of mark that provided move v for table updates
+	var m:Array = pieces[v].mark
+	var I:Instruction = m[marks[v]]
+	var i = I.wrds.size() - 2
+	while i > 0:
+		I.update_table(I.table, i)
+		i -= 2
 	
 	#clear the marks dictionary
 	marks.clear()
 	
-	#return a set of movements based on the piece's instructions
+	#set of movements based on the piece's instructions
 	var moves:Dictionary = {select:v}
-	return moves
+	
+	#increment turn
+	turn += 1
+	#return Board updates
+	return [moves]
+
+#move the piece on from onto to
+func move_piece(var from:Vector2, var to:Vector2):
+	pieces[to] = pieces[from]
+	pieces.erase(from)
+	#update the piece's local position and increment its move count
+	pieces[to].set_pos(to)
+	pieces[to].table["moves"] += 1
 
 #get the team of the current turn by taking turn % teams.size()
 func get_team():
