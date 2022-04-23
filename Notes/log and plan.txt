@@ -176,3 +176,5 @@
 	- kept working on piece movement, accidentally broke everything. whoops
 	NEXT
 	 - debug all the shit i broke (mainly mark_step())
+4/22/2022
+	 - fixed everything (yay!)

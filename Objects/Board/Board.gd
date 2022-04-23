@@ -223,6 +223,8 @@ func mark(var v:Vector2):
 	
 	#whether the line of the move is diagonal (0), jumping (1), or infinite diagonal (2)
 	var l:int = 0
+	#whether the piece can (0), cannot (1), or can, overriding team rules (2) take other pieces
+	var t:int = 0
 	
 	#loop through instructions in a p's marks
 	for i in m.size():
@@ -233,16 +235,23 @@ func mark(var v:Vector2):
 		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
 		
-		#get line type from the third number
-		var size:int = a.size()
-		if size > 2:
+		#get line type from the 3rd number and move type from 4th
+		#only do this if index 2 has not been formatted during vectorize(),
+		#otherwise line and move type may overlap from variable updates
+		if m[i].is_unformatted(2) && a.size() > 2:
 			l = a[2]
+			if m[i].is_unformatted(3) && a.size() > 3:
+				t = a[3]
+			
 		#vectors for marks must be of at least size 2
-		elif size < 2:
+		elif a.size() < 2:
 			continue
+			
+		#create dataset to sent into mark_step from a slice of a
+		a = [a[0], a[1], l, t, i]
 		
 		#append s to pos and add entry in debug dictionary
-		mark_step(p, a, i, l, pos)
+		mark_step(p, a, pos)
 	
 	#set positions to board mark dictionary
 	marks = pos
@@ -250,12 +259,18 @@ func mark(var v:Vector2):
 	
 	return pos
 
-#interperet an instruction and return a Vector2 Dictionary of indices in pieces[from]'s mark instruction set
-#each key in the returned dictionary represents a possible move created by the instruction in mark
-func mark_step(var from:Piece, var a:Array, var index:int, var line:int, var s:Dictionary):
+#mark a path between Piece from's position and the position formed by the first two elements of data
+#the third and fourth indices of the data type indicate the line type and the move type
+#each key in the returned dictionary represents a possible move created by the current instruction, represented by mark
+func mark_step(var from:Piece, var data:Array, var s:Dictionary):
+	
+	#grab line, move type and index from data array
+	var line:int = data[2]
+	var type:int = data[3]
+	var index:int = data[4]
 	
 	#create a Vector2 object from the first two entries in a
-	var to:Vector2 = Vector2(a[0], a[1])
+	var to:Vector2 = Vector2(data[0], data[1])
 	to = from.relative_to_square(to)
 	
 	#position of piece
@@ -285,20 +300,16 @@ func mark_step(var from:Piece, var a:Array, var index:int, var line:int, var s:D
 	#move square until the move is done, or move until another break condition if line is infinite
 	while !last || line == 2:
 		
-		#check if x or y has less progress
-		if x < y: 
+		#check if x or y has less progress, move square accordingly
+		#if the y cannot progress, x is the only available option to move
+		#if they are the same, check which needs a larger total of squares
+		if x < y || tp.y == 0 || (y == x && abs(tp.x) > abs(tp.y)): 
 			square += u
-		elif y < x: 
+		elif y < x || tp.x == 0 ||  (y == x && abs(tp.x) > abs(tp.y)): 
 			square += v
-		#if they are the same, decide the greater distance to travel in tp has the least progress
+		#if x and y are the same, tp is perfectly diagonal and neither x or y are 0, move diagonally
 		else:
-			if tp.x > tp.y || tp.y == 0: 
-				square += u
-			elif tp.x < tp.y || tp.x == 0:
-				square += v
-			#if even the size of tp is equivalent, move square diagonally
-			else: 
-				square += u + v
+			square += u + v
 				
 		#relative square to pos
 		var ts:Vector2 = square - pos
@@ -308,10 +319,10 @@ func mark_step(var from:Piece, var a:Array, var index:int, var line:int, var s:D
 		if tp.y != 0: y = ts.y / tp.y
 		#update check for whether this is the last move or not
 		last = x >= 1 && y >= 1
-		print(ts,Vector2(x,y))
+		print(ts,Vector2(x, y))
 		
-		#if line type is 1, but the final square is not yet being checked, skip to next square
-		var final:bool = line == 1 && last
+		#if line type is 1, and the final square is not yet being checked, skip to next square
+		var final:bool = line == 1 && !last
 		if final: continue
 		
 		#break the loop if search leaves the board
@@ -322,9 +333,10 @@ func mark_step(var from:Piece, var a:Array, var index:int, var line:int, var s:D
 		var take:bool = true
 		if occ: 
 			take = Instruction.can_take_from(from.team, pieces[square].team, from.table)
+			#move type 1 cannot take
+			take = take && type != 1
 			
-			#if piece cannot be taken and square is not the final move of a jumping piece,
-			#break the loop before adding the next mark
+			#if piece cannot be taken, break the loop before adding the next mark
 			if !take:
 				break
 		

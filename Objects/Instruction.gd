@@ -4,17 +4,25 @@ class_name Instruction
 #created November 2021
 
 #An Instruction takes in a single line string (no \n characters) and converts it into an array of numbers
+#Instantiated usually by the Reader class to belong to a Board or Piece
 #It also holds table and pieces Dictionaries of variables and pieces
-#TODO merge table with pieces because their keys will never intersect
 
+#the string contents read literally from a source text file by Reader
 var contents = ""
+#the formatted string array formed from contents
 var wrds:Array = []
+#the starting index of the last vectorize() call, allows other objects to read wrds from this index
+#can also be set to override the default starting index of 0
+var s:int = 0
+
+#table of piece/board properties and pieces on the board, referenced from a Board and/or a Piece object
+#table is used to read and write variables to the user Object
+var table:Dictionary = {}
+#pieces is used to check squares
+var pieces:Dictionary = {}
 
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<="
-
-var table:Dictionary = {}
-var pieces:Dictionary = {}
 
 #fill variables of the object fully
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
@@ -67,16 +75,18 @@ func vectorize(var start:int = 0):
 	#slice from start
 	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
+	#final return statements sent start back to s
 	#only try to work with non-empty arrays
 	if w.empty():
+		s = start
 		return []
-	
 	#if input is not a conditional, return parsed array
 	if !w[0].begins_with("?"):
+		s = start
 		return array_parse(start)
-		
 	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
 	if w.size() < 3:
+		s = start
 		return []
 		
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
@@ -205,6 +215,22 @@ func to_string_array(var c:String = contents, var start:int = 0):
 		
 	#use start to slice array and return it
 	return a.slice(start, a.size() - 1)
+	
+#returns true or false based on whether or not an index in wrds matches its word in contents
+func is_unformatted(var i:int = 0, var start:int = s):
+	i += start
+	
+	if i >= wrds.size(): return false
+	
+	var c:Array = to_string_array()
+	#if i fits in wrds, it should fit in c, 
+	#but contents can be changed between format calls, desyncronizing them
+	if i >= c.size(): return false
+
+	#check if wrds[i] does not match the i'th word of contents because of formatting
+	if wrds[i].match(c[i]):
+		return true
+	return false
 
 #take in a table to update with self
 func update_table(var t:Dictionary=table, var start:int = 0):

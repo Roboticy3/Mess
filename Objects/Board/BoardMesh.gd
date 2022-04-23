@@ -18,8 +18,10 @@ export (Resource) var default = null
 #store the size of the board in squares
 export (Vector2) var size:Vector2 = Vector2.ONE
 
-#shader of the board is meant to be set in the editor
-export (Resource) var shader = null
+#material of the board
+export (Resource) var mat_board = null
+#material of the square highlight
+export (Resource) var mat_highlight = null
 
 #dictionary of a mesh and collision shape of a certain piece, keyed by its name
 #this collection stops each individual piece from having to load its mesh and collision individually
@@ -78,7 +80,7 @@ func _ready():
 			#set mesh to parent object
 			c.set("mesh", mesh)
 			#run uv_from_board after setting the shader so the shader can be sent uv data
-			shader = c.get("material")
+			mat_board = c.get("material")
 			uv_from_board(c)
 			
 		#find child that is a collision shape to set the shape to
@@ -122,7 +124,7 @@ func uv_from_board(var object:Node):
 		material.set_uv1_scale(scale)
 	#otherwise, hope ShaderMaterial has "size" parameter
 	elif material is ShaderMaterial:
-		shader.set_shader_param("size", board.maximum - board.minimum)
+		mat_board.set_shader_param("size", board.maximum - board.minimum)
 		pass
 
 #initialize a PieceMesh p at a position v on the board
@@ -165,8 +167,6 @@ func move_piece(var from:Vector2, var to:Vector2):
 	#move the PieceMesh object into the right spot
 	var p:PieceMesh = pieces[to]
 	p.transform = BoardConverter.square_to_transform(mdt, board, p.piece)
-	
-	BoardConverter.debug_positions(self, [p.transform.origin])
 
 #highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
 #if mode is set to 1, hide all squares outside of the array
@@ -187,7 +187,7 @@ func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1):
 			#mode 2 hides selection
 			else: csg.visible = true
 		else:
-			var csg = BoardConverter.square_to_child(self, v)
+			var csg = BoardConverter.square_to_child(self, v, mat_highlight)
 			square_meshes[v] = csg
 			if mode == 2: csg.visible = false
 

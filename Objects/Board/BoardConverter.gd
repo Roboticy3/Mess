@@ -223,7 +223,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		#add verts into surface tool
 		st.add_normal(n)
 		st.add_uv(u)
-		st.add_vertex(v)
+		st.add_vertex(v + n / 100)
 		
 	#PoolRealArray Dictionary of PoolIntArrays represeting indices of mdt with duplicate data
 	var duplicates:Dictionary = board.duplicates
@@ -264,7 +264,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 				var a:PoolRealArray = vert_to_array(mdt, v)
 				st.add_normal(array_to_vert(a, 1))
 				st.add_uv(array_to_vert(a, 2))
-				st.add_vertex(array_to_vert(a, 0))
+				st.add_vertex(array_to_vert(a, 0) + array_to_vert(a, 1) / 100)
 				st.add_index(count)
 				count += 1
 		
