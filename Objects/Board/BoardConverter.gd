@@ -207,6 +207,9 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	var st:SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
+	#dictionary of positions to avoid adding duplicate vertices
+	var verts:Dictionary = {}
+	
 	#mdata of each uv corner
 	var coverts:Array = []
 	coverts.resize(4)
@@ -224,6 +227,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		st.add_normal(n)
 		st.add_uv(u)
 		st.add_vertex(v + n / 100)
+		verts[array_to_vert(a)] = i
 		
 	#PoolRealArray Dictionary of PoolIntArrays represeting indices of mdt with duplicate data
 	var duplicates:Dictionary = board.duplicates
@@ -262,11 +266,16 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 			for j in range(0, 3):
 				var v:int = mdt.get_face_vertex(i, j)
 				var a:PoolRealArray = vert_to_array(mdt, v)
-				st.add_normal(array_to_vert(a, 1))
-				st.add_uv(array_to_vert(a, 2))
-				st.add_vertex(array_to_vert(a, 0) + array_to_vert(a, 1) / 100)
-				st.add_index(count)
-				count += 1
+				#if vert does not already exist, create a new one
+				if !verts.has(a):
+					var n:Vector3 = array_to_vert(a, 1)
+					var uv:Vector2 = array_to_vert(a, 2)
+					st.add_normal(n)
+					st.add_uv(uv)
+					st.add_vertex(array_to_vert(a, 0) + n / 100)
+					verts[a] = count
+					count += 1
+				st.add_index(verts[a])
 		
 	#commit st to m and return it
 	st.commit(m)
@@ -465,10 +474,11 @@ static func raycast(var p:Vector2, var c:Camera,
 	
 	#get physics state of the current scene
 	var s = w.direct_space_state
+	#origin and normal of the camera
+	var o:Vector3 = c.project_ray_origin(p)
+	var n:Vector3 = c.project_ray_normal(p)
 	#get ray intersection with that scene
-	var r = s.intersect_ray(
-		c.project_ray_origin(p), c.project_ray_normal(p) * v,
-		[], mask)
+	var r = s.intersect_ray(o, n * v, [], mask)
 	#if the intersection lands, return r
 	if !r.empty():
 		return r

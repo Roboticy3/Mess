@@ -29,7 +29,8 @@ var minimum = Vector2.INF
 var size = Vector2.ONE
 
 #store a set of variables declared in metadata phase
-var table:Dictionary = {"scale":1, "piece_scale":0.2}
+var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1, 
+	"piece_scale":0.2, "piece_opacity":1, "piece_collision":1}
 
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
@@ -301,11 +302,11 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 	while !last || line == 2:
 		
 		#check if x or y has less progress, move square accordingly
-		#if the y cannot progress, x is the only available option to move
+		#if the y cannot progress, x is the only available option to move and vice-versa
 		#if they are the same, check which needs a larger total of squares
-		if x < y || tp.y == 0 || (y == x && abs(tp.x) > abs(tp.y)): 
+		if x < y && tp.x != 0 || (y == x && abs(tp.x) > abs(tp.y)): 
 			square += u
-		elif y < x || tp.x == 0 ||  (y == x && abs(tp.x) > abs(tp.y)): 
+		elif y < x && tp.y != 0 ||  (y == x && abs(tp.x) > abs(tp.y)): 
 			square += v
 		#if x and y are the same, tp is perfectly diagonal and neither x or y are 0, move diagonally
 		else:

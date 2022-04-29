@@ -40,6 +40,35 @@ var duplicates:Dictionary = {}
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	#copy path to a usable board path
+	format_b_path()
+	#otherwise, take path as-is (no operation)
+	print(path)
+	
+	#retrieve board reference from spatial parent if possible
+	board = Board.new(path)
+	
+	#the size is the maximum corner of the board minus the minimum
+	#"1" is added because the uv map considers 0, 0 as the bottom left corner and not the bottom left square
+	size = board.maximum-board.minimum + Vector2.ONE
+	
+	#send mesh to visual objects
+	var m:Mesh = init_mesh()
+	#send board to player objects
+	send_board()
+			
+	print(board)
+	
+	#generate piece objects
+	var ps = board.pieces
+	for v in ps:
+		pieces[v] = create_piece(ps[v], v)
+	
+	#send mesh and collision shape to physics objects
+	send_shape(m)
+
+#format the path parameter from a folder name to a board instruction
+#naming convention: Instructions/board(/) -> Instructions/board/b_board.txt
+func format_b_path():
 	var _path:String = "" + path
 	#if path ends in "/", copy folder name and remove end
 	var i:int = _path.find_last("/")
@@ -52,23 +81,48 @@ func _ready():
 	if _path.find("b_") != 0:
 		p = p.substr(1)
 		path = _path + "/b_" + p + ".txt"
-	#otherwise, take path as-is (no operation)
-	print(path)
-	
-	#retrieve board reference from spatial parent if possible
-	board = Board.new(path)
-	
-	#the size is the maximum corner of the board minus the minimum
-	#"1" is added because the uv map considers 0, 0 as the bottom left corner and not the bottom left square
-	size = board.maximum-board.minimum + Vector2.ONE
+	return _path
+
+#create a mesh and send it out to the Board Shape Node in BoardMesh's tree
+func init_mesh():
 	
 	#set mesh from obj path and copy into shorthand m
 	mesh = BoardConverter.path_to_mesh(board.mesh)
 	var m = mesh
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(m, 0)
+	#map duplicate vertices so BoardConverter can search the mesh more quickly later
 	duplicates = BoardConverter.find_duplicates(mdt)
+	
+	#set opacity of material based on board property
+	var a:float = board.table["opacity"]
+	mat_board.albedo_color.a = a
+	if a == 1:
+		mat_board.flags_transparent = false
+	
+	#set board size based on board property
+	var s:Vector3 = get("scale")
+	s *= board.table["scale"]
+	set("scale", s)
 
+	return m
+
+func send_board():
+	#send self's data to player objects
+	var siblings = get_parent().get_children()
+	for s in siblings:
+		if s is KinematicBody && "board_mesh" in s:
+			s.set("board_mesh", self)
+			s.set("material", mat_board)
+			s.set("board", board)
+			break
+	
+func send_shape(var m:Mesh):
+	
+	#flag board's collision boolean
+	var noclip:bool = false
+	if board.table["collision"] != 1: noclip = true
+	
 	#create the board's collision shape
 	var shape = BoardConverter.mesh_to_shape(m)
 	
@@ -86,21 +140,8 @@ func _ready():
 		#find child that is a collision shape to set the shape to
 		if c is CollisionShape:
 			c.set("shape", shape)
-			
-	
-	#send self's data to player objects
-	var siblings = get_parent().get_children()
-	for s in siblings:
-		if s is KinematicBody && "board_mesh" in s:
-			s.set("board_mesh", self)
-			s.set("board", board)
-			
-	print(board)
-	
-	#generate piece objects
-	var ps = board.pieces
-	for v in ps:
-		pieces[v] = create_piece(ps[v], v)
+			#if there is no collision, change to collision layer so that players can pass through but rays can still hit
+			set("collision_layer", 2)
 
 #remap uv settings from board shape
 func uv_from_board(var object:Node):
@@ -134,7 +175,10 @@ func create_piece(var p:Piece, var v:Vector2):
 	if !([p._to_string()] in piece_types):
 		pdata["mat"] = PieceMesh.pmat(p, board)
 		pdata["mesh"] = BoardConverter.path_to_mesh(p.mesh)
-		pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
+		#only add collision if piece collision is enabled by the board
+		if board.table["piece_collision"] == 1:
+			pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
+		else: pdata["shape"] = CollisionShape.new()
 		pdata["transform"] = BoardConverter.square_to_transform(mdt, board, p)
 		piece_types[p._to_string()] = pdata
 	#otherwise, copy piece data out of current dict
@@ -201,6 +245,7 @@ func mark_from(var v:Vector2):
 func handle(var v:Vector2, var team:int = 0):
 	
 	var p:Dictionary = board.pieces
+	print(v)
 	
 	#check if square is a selectable piece
 	if v in p && team == p[v].team:

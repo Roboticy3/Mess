@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://Objects/Player/Player.gd" type="Script" id=1]
 [ext_resource path="res://Materials/Default.tres" type="Material" id=2]
 [ext_resource path="res://Objects/Board/BoardMesh.gd" type="Script" id=3]
 [ext_resource path="res://Materials/highlight.tres" type="Material" id=4]
+[ext_resource path="res://Instructions/klein/meshes/klein.obj" type="ArrayMesh" id=5]
 
 [sub_resource type="SpatialMaterial" id=1]
 albedo_color = Color( 0.839216, 0.054902, 0.054902, 1 )
@@ -29,13 +30,14 @@ shape = SubResource( 2 )
 [node name="Player Camera" type="Camera" parent="KinematicBody"]
 
 [node name="StaticBody" type="StaticBody" parent="."]
-collision_mask = 2
 script = ExtResource( 3 )
-path = "Instructions/default"
+path = "Instructions/klein"
+mat_board = ExtResource( 2 )
 mat_highlight = ExtResource( 4 )
 
 [node name="Board Shape" type="CSGMesh" parent="StaticBody"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.38419e-07, 0 )
+mesh = ExtResource( 5 )
 material = ExtResource( 2 )
 
 [node name="Board Collision" type="CollisionShape" parent="StaticBody"]

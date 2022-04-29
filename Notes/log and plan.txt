@@ -178,3 +178,18 @@
 	 - debug all the shit i broke (mainly mark_step())
 4/22/2022
 	 - fixed everything (yay!)
+4/28/2022
+	 - took a break
+	 - started working on making board builtins functional and adding more
+	 - started working on b_klein board for stress-testing
+	NEXT
+	 - finish setting up board builtins
+	 - start working on either take phase or portals (portals are very scary)
+4/29/2022
+	 - added rook to b_klein to see how laggy it is (its very laggy)
+	 - finished setting up board builtins
+	 - encountered a glitch with BoardConverter.raycast that makes it return intersections it probably shouldnt
+	NEXT
+	 - fix raycast
+	 - optimize stb (dread)
+	 - study for exams

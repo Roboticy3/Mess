@@ -26,7 +26,8 @@ var relocate:Instruction
 #any property kept in table is accessible by the Instruction class in its vectorize() function
 var table = {"key": 0, "moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
-			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "read_allies":0}
+			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "read_allies":0,
+			 "opacity": 1}
 
 #piece types considered by the creation phase, indicated by their string path
 var piece_types = []

@@ -1,0 +1,20 @@
+[remap]
+
+importer="wavefront_obj"
+type="Mesh"
+path="res://.import/klein.obj-12692177ee779eb06c4864daf9d1c936.mesh"
+
+[deps]
+
+files=[ "res://.import/klein.obj-12692177ee779eb06c4864daf9d1c936.mesh" ]
+
+source_file="res://Instructions/klein/meshes/klein.obj"
+dest_files=[ "res://.import/klein.obj-12692177ee779eb06c4864daf9d1c936.mesh", "res://.import/klein.obj-12692177ee779eb06c4864daf9d1c936.mesh" ]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3( 1, 1, 1 )
+offset_mesh=Vector3( 0, 0, 0 )
+octahedral_compression=true
+optimize_mesh_flags=4286

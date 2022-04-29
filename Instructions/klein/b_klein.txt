@@ -1,0 +1,14 @@
+klein
+
+scale 1.1
+collision 0
+
+meshes/klein.obj
+
+b
+0 0 7 15
+
+g
+default/p_rook.txt
+
+0 0 0 0 0

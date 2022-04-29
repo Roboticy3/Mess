@@ -68,5 +68,10 @@ static func pmat(var p:Piece = piece, var b:Board = board):
 	if p.team < t.size():
 		var m = SpatialMaterial.new()
 		m.albedo_color = t[p.team].color
+		#set opacity based on piece's opacity value multiplied by board's piece_opacity value
+		var o:float = p.table["opacity"] * b.table["piece_opacity"]
+		if o < 1:
+			m.flags_transparent = true
+		m.albedo_color.a = o
 		return m
 	return SpatialMaterial.new()
