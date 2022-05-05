@@ -193,3 +193,9 @@
 	 - fix raycast
 	 - optimize stb (dread)
 	 - study for exams
+5/5/2022
+	 - mostly finished first half of stb (don't lose it this time)
+	 - created mdata_to_array() method to convert uv_to_mdata() and square_to_mdata() values to vertex arrays
+	NEXT
+	 - fix bug with stb that does not add verts to outer when it should
+	 - start NodeGraph class to eventually lead to much more efficient uv_to_mdata() calls

@@ -25,7 +25,7 @@ static func uv_to_mdata(var mdt:MeshDataTool, var pos:Vector2 = Vector2.ZERO,
 		if found != null:
 			closest = found
 			#check if a surrounding triangle was found, and return early if so
-			if closest[3]: return closest
+			if closest[4]: return closest
 	
 	return closest
 
@@ -67,8 +67,8 @@ static func uv_to_mdata_step(var mdt:MeshDataTool, var i:int, var uv:PoolVector3
 			#reconstruct the 3d position of uv[j] from b and u
 			var out:Vector3 = b[0] * u[0] + b[1] * u[1] + b[2] * u[2]
 			#return data about the triangle
-			#encode the face index, position of uv[j] in 3D normal and the surrounding boolean into the result
-			return [i, out, mdt.get_face_normal(i), surrounding]
+			#encode the face index, position of uv[j] in 3D normal and the input uv into the result
+			return [i, out, mdt.get_face_normal(i), Vector2(uv[j].x, uv[j].z), surrounding]
 
 	#if no more uvs can be checked, return null
 	return null
@@ -207,9 +207,6 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	var st:SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	#dictionary of positions to avoid adding duplicate vertices
-	var verts:Dictionary = {}
-	
 	#mdata of each uv corner
 	var coverts:Array = []
 	coverts.resize(4)
@@ -217,43 +214,102 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		#get mdata of each corner
 		coverts[i] = uv_to_mdata(mdt, c[i])
 		#convert coverts to vert arrays
-		var v:Vector3 = coverts[i][1]
-		var u:Vector2 = c[i]
-		var n:Vector3 = coverts[i][2]
-		var a:PoolRealArray = [v.x, v.y, v.z, n.x, n.y, n.z, u.x, u.y]
-		coverts[i] = a
+		coverts[i] = mdata_to_array(coverts[i])
 		
 		#add verts into surface tool
-		st.add_normal(n)
-		st.add_uv(u)
-		st.add_vertex(v + n / 100)
-		verts[array_to_vert(a)] = i
+		st.add_normal(array_to_vert(coverts[i], 1))
+		st.add_uv(array_to_vert(coverts[i], 2))
+		st.add_vertex(array_to_vert(coverts[i], 0))
 		
 	#PoolRealArray Dictionary of PoolIntArrays represeting indices of mdt with duplicate data
 	var duplicates:Dictionary = board.duplicates
-	#int Dictionary of ints representing indices of mdt being matched with indices of st
-	var indexmap:Dictionary = {}
-	#keep track of the number of verts in st
-	var count:int = 4
-	#Array of vertex arrays which are inside b
-	var inners:Array = []
-	var touching:PoolIntArray = []
+	#integer Dictionary of faces intersecting with b and their verts
+	var faces:Dictionary = {}
+	#PoolRealArray Dictionary of PoolVector2Array intersections, vertices with edges that they could move to
+	var outer:Dictionary = {}
 	
-	#get faces with vertices inside b, and add them to st
-	for i in mdt.get_face_count():
-		#loop through face vertices to see if any are inside b
-		for j in range(0, 3):
-			#get vertex data
-			var v:int = mdt.get_face_vertex(i, j)
-			var uv:Vector2 = mdt.get_vertex_uv(v)
-			#if b is surrounding uv position of v, add inners and change touching to true
-			if b.is_surrounding(uv): 
-				inners.append(vert_to_array(mdt, v))
-				touching.append(i)
-				continue
+	#for each vertex in the dupmap, check if it is inside b or has edges intersecting b
+	#store any connected faces to duplicates of "a" that fill these conditions
+	for a in duplicates:
+		#if uv of a is inside b, add all connected triangles
+		var uv:Vector2 = array_to_vert(a, 2)
+		
+		#flags for whether a is inside b, and whether its connected to a face intersecting b
+		var inside:bool = b.is_surrounding(uv)
+		var connected:bool = inside
+		
+		#store uv intersections of edges from a with b
+		var intersections:PoolVector2Array = []
+			
+		#loop through duplicates of a to find intersections and connections to b
+		for i in duplicates[a]:
+			#get the faces of each duplicate
+			var fs:PoolIntArray = mdt.get_vertex_faces(i)
+			#check each connected face
+			for f in fs:
+				#construct and array of vertices from the face verts
+				var v:PoolIntArray = [-1, -1, -1]
+				for j in range(0, 3):
+					v[j] = mdt.get_face_vertex(f, j)
+				
+				#if uv is inside b, add faces connected to a to faces
+				if inside: faces[f] = v
+				#otherwise, check for edge intersecitons with b
+				else: 
+					for j in range(0, 3):
+						var uv1:Vector2 = mdt.get_vertex_uv(v[j])
+						if uv1 == uv: continue
+						#if there are intersections, add face and flag connected
+						var inter:PoolVector2Array = b.edge_set_intersection([uv1, uv])
+						if inter.empty(): continue
+						#add intersections not already found
+						for k in inter.size():
+							var added:bool = false
+							for l in intersections.size():
+								if intersections[l] == inter[k]: 
+									added = true
+									break
+							if !added: intersections.append(inter[k])
+						faces[f] = v
+						connected = true
+					
+				#if this face connected to a has an intersection, flag connected
+				if faces.has(f):
+					connected = true
+		
+		#add a to the appropriate set depending on inside and connected
+		if !inside && connected: outer[a] = intersections
+		
+	debug_positions(board, outer.keys(), 0.1)
+	
+	#PoolRealArray Dictionary of PoolRealArrays, verts with their target positions
+	var verts:Dictionary = {}
+	#bool Array of whether each corner has been filled
+	#find closest intersection to each outer point
+	for i in outer:
+		#distance of closest intersection and uv of outer
+		var distance:float = INF
+		var uv:Vector2 = array_to_vert(i, 2)
+		#array of intersections and index of closest intersection
+		var inter:PoolVector2Array = outer[i]
+		var close:int = -1
+		#ensure intersections has contents by appending the corner uvs
+		inter.append_array(c)
+		#loop through inter, replace close with j when inter[j] is closer than distance to uv
+		for j in inter.size():
+			var d:float = uv.distance_to(inter[j])
+			if d < distance:
+				distance = d
+				close = j
+		#create vert array for inter[close] to add as i's movement in verts
+		if close > inter.size() - 4:
+			verts[i] = coverts[close - inter.size() + 4]
+		else:
+			var mdata = uv_to_mdata(mdt, inter[close])
+			verts[i] = mdata_to_array(mdata)
 				
 	#if square is flat, index faces into two triangles like so
-	if inners.empty():
+	if faces.empty():
 		st.add_index(2)
 		st.add_index(1)
 		st.add_index(0)
@@ -261,21 +317,20 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		st.add_index(2)
 		st.add_index(0)
 	else:
-		#loop through touching faces
-		for i in touching:
+		var count:int = 4
+		for i in faces:
 			for j in range(0, 3):
 				var v:int = mdt.get_face_vertex(i, j)
 				var a:PoolRealArray = vert_to_array(mdt, v)
-				#if vert does not already exist, create a new one
-				if !verts.has(a):
-					var n:Vector3 = array_to_vert(a, 1)
-					var uv:Vector2 = array_to_vert(a, 2)
-					st.add_normal(n)
-					st.add_uv(uv)
-					st.add_vertex(array_to_vert(a, 0) + n / 100)
-					verts[a] = count
-					count += 1
-				st.add_index(verts[a])
+				#replace vert array with new data if it has been moved
+				if verts.has(a): a = verts[a]
+				
+				st.add_normal(array_to_vert(a, 1))
+				st.add_uv(array_to_vert(a, 2))
+				st.add_vertex(array_to_vert(a, 0))
+				st.add_index(count)
+				count += 1
+	
 		
 	#commit st to m and return it
 	st.commit(m)
@@ -448,6 +503,15 @@ static func vert_to_array(var data, var i:int = 0):
 		return v
 	else:
 		return PoolRealArray()
+		
+#convert a return from the mdata method to a vertex array
+static func mdata_to_array(var mdata:Array):
+	#convert coverts to vert arrays
+	var v:Vector3 = mdata[1]
+	var u:Vector2 = mdata[3]
+	var n:Vector3 = mdata[2]
+	var a:PoolRealArray = [v.x, v.y, v.z, n.x, n.y, n.z, u.x, u.y]
+	return a
 
 #decode an array from vert_to_array() back into a position (0), normal (1), or uv (2) based on mode
 #start is the starting index in a from which to decode
@@ -487,16 +551,19 @@ static func raycast(var p:Vector2, var c:Camera,
 #add CSGsphere children to node at relative positions
 #setting mode to 1 will stop the method from deleting old csgballs
 static func debug_positions(var node:Node = null, var positions:Array = [], 
-	var mode:int = 0, var radius:float = 0.1):
-	
-	#material to apply to the CSGBalls
-	var material:Material = SpatialMaterial.new()
+	var radius:float = 0.1, var mode:int = 0):
 	
 	#remove old debug objects
 	if mode != 1:
 		for c in node.get_children():
 			if c.name.find("debug") != -1:
 				node.remove_child(c)
+				
+	#if position map is empty, exit function
+	if positions.empty(): return
+	
+	#material to apply to the CSGBalls
+	var material:Material = SpatialMaterial.new()
 	
 	#checks if positions is an Array of PoolRealArray, assumes all elements are of same type
 	var t:bool = positions[0] is PoolRealArray

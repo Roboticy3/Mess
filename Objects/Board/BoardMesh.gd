@@ -141,7 +141,7 @@ func send_shape(var m:Mesh):
 		if c is CollisionShape:
 			c.set("shape", shape)
 			#if there is no collision, change to collision layer so that players can pass through but rays can still hit
-			set("collision_layer", 2)
+			if noclip: set("collision_layer", 2)
 
 #remap uv settings from board shape
 func uv_from_board(var object:Node):
