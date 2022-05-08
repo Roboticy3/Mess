@@ -199,3 +199,10 @@
 	NEXT
 	 - fix bug with stb that does not add verts to outer when it should
 	 - start NodeGraph class to eventually lead to much more efficient uv_to_mdata() calls
+5/8/2022
+	 - fixed bug with stb so now it adds verts correctly, only need to finish corners
+	 - made MeshGraph and DuplicateMap classes to wrap mdt MeshDataTool and duplicates Dictionary while handling mesh graphs and array to vertex data conversions respectively instead of BoardConverter
+	 - realized the extent to which it is going to be a pain in my ass to implement MeshGraph searching into uv_to_mdata(). It will probably require a complete rewrite of Triangle.gd
+	NEXT
+	 - completely rewrite Triangle.gd to make sense with the current system of vertex arrays and reintegrate it into uv_to_mpos() and uv_to_mdata()
+	 - fix raycast() so it always takes the closest point to the from point, not seemingly random intersections

@@ -7,8 +7,10 @@ class_name BoardConverter
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
 #return the face index, position in space and normal of mesh from a uv coordinate pos
-static func uv_to_mdata(var mdt:MeshDataTool, var pos:Vector2 = Vector2.ZERO, 
+static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO, 
 	var mask:Array = []):
+	
+	var mdt:MeshDataTool = graph.mdt
 	
 	#convert pos into Vector3 with y=0 to be compatible with Triangle's Vector3 components
 	var p:Vector3 = Vector3(pos.x, 0, pos.y)
@@ -98,13 +100,14 @@ static func square_to_uv(var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vecto
 	return (pos + Vector2.ONE)/(size) - square/2
 
 #combine space converters into single function
-static func square_to_mdata(var mdt:MeshDataTool = null, var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO):
+static func square_to_mdata(var graph:MeshGraph, var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO):
 	var uv = square_to_uv(size, pos)
-	return uv_to_mdata(mdt, uv)
+	return uv_to_mdata(graph, uv)
 
 #take an input board mdt, board, and piece to return a Transform for the associated PieceMesh accosiated with piece on the mdt constructed from a BoardMesh
-static func square_to_transform(var mdt:MeshDataTool, 
+static func square_to_transform(var graph:MeshGraph, 
 	var board:Board, var piece:Piece):
+	
 	
 	#reference useful piece properties in other variables
 	var pos:Vector2 = piece.get_pos()
@@ -115,7 +118,7 @@ static func square_to_transform(var mdt:MeshDataTool,
 	
 	#get mesh data on square center for position and normal of the piece
 	#if the piece is not centered on its origin, offsets can be created
-	var mdata = square_to_mdata(mdt, board.size, pos)
+	var mdata = square_to_mdata(graph, board.size, pos)
 	#skip function if mdata returns null
 	if mdata == null:
 		return transform
@@ -124,7 +127,7 @@ static func square_to_transform(var mdt:MeshDataTool,
 	#go through each of the transformation steps
 	#check piece's settings on each before running each function
 	if table["rotate_mode"] != 2:
-		transform.basis = square_to_basis(mdt, board, piece, mdata)
+		transform.basis = square_to_basis(graph, board, piece, mdata)
 		
 	#SCALE
 	#scale does not need the mdata step, but has to be executed after rotation
@@ -142,9 +145,10 @@ static func square_to_transform(var mdt:MeshDataTool,
 	return transform
 
 #convert the normal of a square on the board to a set of basis vectors
-static func square_to_basis(var mdt:MeshDataTool, var board:Board, 
+static func square_to_basis(var graph:MeshGraph, var board:Board, 
 	var piece:Piece, var mdata:Array):
-		
+	
+	var mdt:MeshDataTool = graph.mdt
 	if mdata == null: return Basis()
 	
 	#up vector will take the normal of the square
@@ -161,7 +165,7 @@ static func square_to_basis(var mdt:MeshDataTool, var board:Board,
 	#if no directions are valid, just default to Vector3.forward
 	var mf = [-1, Vector3.FORWARD, Vector3.UP]
 	if d < 4 && v != Vector2.ZERO:
-		mf = square_to_mdata(mdt, board.size, piece.get_pos() + v)
+		mf = square_to_mdata(graph, board.size, piece.get_pos() + v)
 	
 	#process mf[1] into a vector that is orthogonal to up
 	#these vectors are not necesarily orthogonal, but a true forward can be computed from up and right later
@@ -198,6 +202,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	#size and mesh of the board
 	var size:Vector2 = board.size
 	var mdt:MeshDataTool = board.mdt
+	var graph:MeshGraph = board.graph
 	#mesh duplicates of the board
 	var dups:DuplicateMap = board.duplicates
 	#bound and uv corners of the square
@@ -214,7 +219,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	coverts.resize(4)
 	for i in range(0, 4):
 		#get mdata of each corner
-		coverts[i] = uv_to_mdata(mdt, c[i])
+		coverts[i] = uv_to_mdata(graph, c[i])
 		#convert coverts to vert arrays
 		coverts[i] = dups.mdata_to_array(coverts[i])
 		
@@ -253,7 +258,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		if close > inter.size() - 4:
 			verts[i] = coverts[close - inter.size() + 4]
 		else:
-			var mdata = uv_to_mdata(mdt, inter[close])
+			var mdata = uv_to_mdata(graph, inter[close])
 			verts[i] = DuplicateMap.mdata_to_array(mdata)
 				
 	#if square is flat, index faces into two triangles like so

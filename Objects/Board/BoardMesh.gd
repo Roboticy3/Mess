@@ -181,7 +181,7 @@ func create_piece(var p:Piece, var v:Vector2):
 		if board.table["piece_collision"] == 1:
 			pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
 		else: pdata["shape"] = CollisionShape.new()
-		pdata["transform"] = BoardConverter.square_to_transform(mdt, board, p)
+		pdata["transform"] = BoardConverter.square_to_transform(graph, board, p)
 		piece_types[p._to_string()] = pdata
 	#otherwise, copy piece data out of current dict
 	else:
@@ -212,7 +212,7 @@ func move_piece(var from:Vector2, var to:Vector2):
 	
 	#move the PieceMesh object into the right spot
 	var p:PieceMesh = pieces[to]
-	p.transform = BoardConverter.square_to_transform(mdt, board, p.piece)
+	p.transform = BoardConverter.square_to_transform(graph, board, p.piece)
 
 #highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
 #if mode is set to 1, hide all squares outside of the array

@@ -1,7 +1,7 @@
 class_name Triangle
 
-var uvs = []
-var points = []
+var uvs = PoolVector2Array()
+var points = PoolVector3Array()
 
 func _init(var _p:Array=[], var _uv:Array=[]):
 	#whether or not the default triangle is being created
@@ -21,7 +21,7 @@ func _init(var _p:Array=[], var _uv:Array=[]):
 		uvs = [Vector2.ZERO, Vector2.UP, Vector2.RIGHT]
 
 #get area of array of points of length 3
-func area(var p:Array = points):
+func area(var p:PoolVector3Array = points):
 	#angle from side "a" to side "b"
 	var angle = (p[0]-p[1]).angle_to(p[2]-p[1])
 	#the sine of this angle times the length of the hypotenuese is the height of the triangle
