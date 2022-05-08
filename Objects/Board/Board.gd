@@ -289,7 +289,7 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 	
 	#square to check each loop
 	var square:Vector2 = pos
-	print(from,tp)
+	#print(from,tp)
 	
 	#directions to move square in
 	var u:Vector2 = Vector2(1, 0) * sign(tp.x)
@@ -320,11 +320,12 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 		if tp.y != 0: y = ts.y / tp.y
 		#update check for whether this is the last move or not
 		last = x >= 1 && y >= 1
-		print(ts,Vector2(x, y))
+		#print(ts,Vector2(x, y))
 		
 		#if line type is 1, and the final square is not yet being checked, skip to next square
 		var final:bool = line == 1 && !last
-		if final: continue
+		if final: 
+			continue
 		
 		#break the loop if search leaves the board
 		if !is_surrounding(square): break

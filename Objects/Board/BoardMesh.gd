@@ -34,8 +34,9 @@ var pieces:Dictionary = {}
 
 #a margin from the edges of (0, 0) and (1, 1) in uv space that uv values will be clamped to
 var uv_margin:float = 0.0001
-#store duplicate vertices for more efficient mesh searching
-var duplicates:Dictionary = {}
+#store duplicate vertices and graph of mdt for more efficient mesh searching
+var duplicates:DuplicateMap
+var graph:MeshGraph
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -91,8 +92,9 @@ func init_mesh():
 	var m = mesh
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(m, 0)
-	#map duplicate vertices so BoardConverter can search the mesh more quickly later
-	duplicates = BoardConverter.find_duplicates(mdt)
+	#map duplicate vertices and create graph of mesh for easier manipulation of the mesh
+	duplicates = DuplicateMap.new(mdt)
+	graph = MeshGraph.new(mdt, duplicates)
 	
 	#set opacity of material based on board property
 	var a:float = board.table["opacity"]

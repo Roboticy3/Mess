@@ -198,6 +198,8 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	#size and mesh of the board
 	var size:Vector2 = board.size
 	var mdt:MeshDataTool = board.mdt
+	#mesh duplicates of the board
+	var dups:DuplicateMap = board.duplicates
 	#bound and uv corners of the square
 	var b:Bound = square_to_bound(size ,square)
 	var c:PoolVector2Array = b.get_corners()
@@ -214,25 +216,89 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		#get mdata of each corner
 		coverts[i] = uv_to_mdata(mdt, c[i])
 		#convert coverts to vert arrays
-		coverts[i] = mdata_to_array(coverts[i])
+		coverts[i] = dups.mdata_to_array(coverts[i])
 		
 		#add verts into surface tool
-		st.add_normal(array_to_vert(coverts[i], 1))
-		st.add_uv(array_to_vert(coverts[i], 2))
-		st.add_vertex(array_to_vert(coverts[i], 0))
+		st.add_normal(DuplicateMap.array_to_vert(coverts[i], 1))
+		st.add_uv(DuplicateMap.array_to_vert(coverts[i], 2))
+		st.add_vertex(DuplicateMap.array_to_vert(coverts[i], 0))
 		
-	#PoolRealArray Dictionary of PoolIntArrays represeting indices of mdt with duplicate data
-	var duplicates:Dictionary = board.duplicates
 	#integer Dictionary of faces intersecting with b and their verts
 	var faces:Dictionary = {}
 	#PoolRealArray Dictionary of PoolVector2Array intersections, vertices with edges that they could move to
 	var outer:Dictionary = {}
+	#assign verts and faces to these sets
+	get_connected_to_square(mdt, dups, b, faces, outer)
 	
+	#PoolRealArray Dictionary of PoolRealArrays, verts with their target positions
+	var verts:Dictionary = {}
+	#bool Array of whether each corner has been filled
+	#find closest intersection to each outer point
+	for i in outer:
+		#distance of closest intersection and uv of outer
+		var distance:float = INF
+		var uv:Vector2 = DuplicateMap.array_to_vert(i, 2)
+		#array of intersections and index of closest intersection
+		var inter:PoolVector2Array = outer[i]
+		var close:int = -1
+		#ensure intersections has contents by appending the corner uvs
+		inter.append_array(c)
+		#loop through inter, replace close with j when inter[j] is closer than distance to uv
+		for j in inter.size():
+			var d:float = uv.distance_to(inter[j])
+			if d < distance:
+				distance = d
+				close = j
+		#create vert array for inter[close] to add as i's movement in verts
+		if close > inter.size() - 4:
+			verts[i] = coverts[close - inter.size() + 4]
+		else:
+			var mdata = uv_to_mdata(mdt, inter[close])
+			verts[i] = DuplicateMap.mdata_to_array(mdata)
+				
+	#if square is flat, index faces into two triangles like so
+	if faces.empty():
+		st.add_index(2)
+		st.add_index(1)
+		st.add_index(0)
+		st.add_index(3)
+		st.add_index(2)
+		st.add_index(0)
+	else:
+		var count:int = 4
+		for i in faces:
+			for j in range(0, 3):
+				var v:int = mdt.get_face_vertex(i, j)
+				var a:PoolRealArray = DuplicateMap.vert_to_array(mdt, v)
+				#replace vert array with new data if it has been moved
+				if verts.has(a): a = verts[a]
+				
+				st.add_normal(DuplicateMap.array_to_vert(a, 1))
+				st.add_uv(DuplicateMap.array_to_vert(a, 2))
+				st.add_vertex(DuplicateMap.array_to_vert(a, 0))
+				st.add_index(count)
+				count += 1
+	
+		
+	#commit st to m and return it
+	st.commit(m)
+	var md = MeshDataTool.new()
+	md.create_from_surface(m, 0)
+	return m
+
+#isolate sets of vertices and faces in a mesh represented by a MeshDataTool and a duplicates Dictionary
+#these sets are faces intersecting Bound b and vertices outside, but connected to those faces
+#faces are represented as int indices of mdt and verts as PoolRealArray vertex arrays
+static func get_connected_to_square(var mdt:MeshDataTool, var dups:DuplicateMap, var b:Bound,
+	var faces:Dictionary = {}, var outer:Dictionary = {}):
+
+	var duplicates:Dictionary = dups.duplicates
+
 	#for each vertex in the dupmap, check if it is inside b or has edges intersecting b
 	#store any connected faces to duplicates of "a" that fill these conditions
 	for a in duplicates:
 		#if uv of a is inside b, add all connected triangles
-		var uv:Vector2 = array_to_vert(a, 2)
+		var uv:Vector2 = DuplicateMap.array_to_vert(a, 2)
 		
 		#flags for whether a is inside b, and whether its connected to a face intersecting b
 		var inside:bool = b.is_surrounding(uv)
@@ -253,14 +319,15 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 					v[j] = mdt.get_face_vertex(f, j)
 				
 				#if uv is inside b, add faces connected to a to faces
-				if inside: faces[f] = v
+				if inside: 
+					faces[f] = v
 				#otherwise, check for edge intersecitons with b
 				else: 
 					for j in range(0, 3):
 						var uv1:Vector2 = mdt.get_vertex_uv(v[j])
-						if uv1 == uv: continue
+						var uv2:Vector2 = mdt.get_vertex_uv(v[(j + 1) % 3])
 						#if there are intersections, add face and flag connected
-						var inter:PoolVector2Array = b.edge_set_intersection([uv1, uv])
+						var inter:PoolVector2Array = b.edge_set_intersection([uv1, uv2])
 						if inter.empty(): continue
 						#add intersections not already found
 						for k in inter.size():
@@ -271,72 +338,17 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 									break
 							if !added: intersections.append(inter[k])
 						faces[f] = v
-						connected = true
 					
 				#if this face connected to a has an intersection, flag connected
 				if faces.has(f):
 					connected = true
 		
+		#final check to update connected if there are intersections
+		if !intersections.empty(): connected = true
+		
 		#add a to the appropriate set depending on inside and connected
 		if !inside && connected: outer[a] = intersections
-		
-	debug_positions(board, outer.keys(), 0.1)
-	
-	#PoolRealArray Dictionary of PoolRealArrays, verts with their target positions
-	var verts:Dictionary = {}
-	#bool Array of whether each corner has been filled
-	#find closest intersection to each outer point
-	for i in outer:
-		#distance of closest intersection and uv of outer
-		var distance:float = INF
-		var uv:Vector2 = array_to_vert(i, 2)
-		#array of intersections and index of closest intersection
-		var inter:PoolVector2Array = outer[i]
-		var close:int = -1
-		#ensure intersections has contents by appending the corner uvs
-		inter.append_array(c)
-		#loop through inter, replace close with j when inter[j] is closer than distance to uv
-		for j in inter.size():
-			var d:float = uv.distance_to(inter[j])
-			if d < distance:
-				distance = d
-				close = j
-		#create vert array for inter[close] to add as i's movement in verts
-		if close > inter.size() - 4:
-			verts[i] = coverts[close - inter.size() + 4]
-		else:
-			var mdata = uv_to_mdata(mdt, inter[close])
-			verts[i] = mdata_to_array(mdata)
-				
-	#if square is flat, index faces into two triangles like so
-	if faces.empty():
-		st.add_index(2)
-		st.add_index(1)
-		st.add_index(0)
-		st.add_index(3)
-		st.add_index(2)
-		st.add_index(0)
-	else:
-		var count:int = 4
-		for i in faces:
-			for j in range(0, 3):
-				var v:int = mdt.get_face_vertex(i, j)
-				var a:PoolRealArray = vert_to_array(mdt, v)
-				#replace vert array with new data if it has been moved
-				if verts.has(a): a = verts[a]
-				
-				st.add_normal(array_to_vert(a, 1))
-				st.add_uv(array_to_vert(a, 2))
-				st.add_vertex(array_to_vert(a, 0))
-				st.add_index(count)
-				count += 1
-	
-		
-	#commit st to m and return it
-	st.commit(m)
-	var md = MeshDataTool.new()
-	md.create_from_surface(m, 0)
-	return m
+	return [faces, outer]
 
 #convert a square in uv space to a Bound object
 static func square_to_bound(var size:Vector2, var square:Vector2):
@@ -446,91 +458,11 @@ static func vert_to_triangle_fan(var mdt:MeshDataTool, var i:int = 0,
 	#in case vert_to_triangle_fan doesnt have dictionary args, return them back out
 	return [verts, faces]
 
-#return a Dictionary of PoolRealArray and PoolIntArrays keying sets of vertices to positions
-static func find_duplicates(var mdt:MeshDataTool):
-	
-	var verts:Dictionary= {}
-	
-	#loop through each face
-	for i in mdt.get_face_count():
-		#see if each vertex of each face already exists
-		for j in range(0, 3):
-			var k:int = mdt.get_face_vertex(i, j)
-			#key vertex by its properties, preserving split edges
-			var v:PoolRealArray = vert_to_array(mdt, k)
-		
-			#if vertex already exists, add a match
-			if verts.has(v):
-				verts[v].append(k)
-			#if not, add vertex position with index as first match
-			else:
-				#add vertex position to dictionary
-				verts[v] = [k]
-	
-	return verts
-
-#copy a set of duplicate vertices (i in duplicates) into an indexmap,
-#then increment the number of unique vertices in the indexmap, returns new count
-static func map_duplicates(var duplicates:Dictionary, var indexmap:Dictionary,
-	var i:PoolRealArray, var count:int = 0):
-	
-	var a:PoolIntArray = duplicates[i]
-	for j in a.size():
-		indexmap[a[j]] = count
-	return count + 1
-
 #fit uv to the square between Vector2.ZERO and Vector2.ONE
 static func clamp_uv(var uv:Vector2):
 	uv.x = fmod(uv.x, 1)
 	uv.y = fmod(uv.y, 1)
 	return uv
-
-#convert a vertex on an mdt to a PoolRealArray of properties
-#can also create an array from a larger array of multiple vertices
-static func vert_to_array(var data, var i:int = 0):
-	
-	if data is MeshDataTool:
-		var p:Vector3 = data.get_vertex(i)
-		var n:Vector3 = data.get_vertex_normal(i)
-		var u:Vector2 = data.get_vertex_uv(i)
-		var v:PoolRealArray = [p.x, p.y, p.z, n.x, n.y, n.z, u.x, u.y]
-		return v
-	if data is PoolRealArray:
-		var v:PoolRealArray = PoolRealArray()
-		v.resize(8)
-		for j in range(0, 8):
-			v[j] = data[j + i]
-		return v
-	else:
-		return PoolRealArray()
-		
-#convert a return from the mdata method to a vertex array
-static func mdata_to_array(var mdata:Array):
-	#convert coverts to vert arrays
-	var v:Vector3 = mdata[1]
-	var u:Vector2 = mdata[3]
-	var n:Vector3 = mdata[2]
-	var a:PoolRealArray = [v.x, v.y, v.z, n.x, n.y, n.z, u.x, u.y]
-	return a
-
-#decode an array from vert_to_array() back into a position (0), normal (1), or uv (2) based on mode
-#start is the starting index in a from which to decode
-static func array_to_vert(var a:PoolRealArray, var mode:int = 0, var start:int = 0):
-	#if array is too small, return null
-	if a.size() < start + 8: return null
-	#return parts of the array relevant to mode
-	if mode == 2:
-		return Vector2(a[start + 6], a[start + 7])
-	elif mode == 1:
-		return Vector3(a[start + 3], a[start + 4], a[start + 5])
-	else:
-		return Vector3(a[start], a[start + 1], a[start + 2])
-		
-#add a vertex array from vert_to_array() into a SurfaceTool
-static func add_array_to_surface(var st:SurfaceTool, var a:PoolRealArray):
-	st.add_normal(array_to_vert(a, 1))
-	st.add_uv(array_to_vert(a, 2))
-	st.add_vertex(array_to_vert(a, 0))
 
 #cast out a ray from the camera, given a physics state s
 static func raycast(var p:Vector2, var c:Camera, 
@@ -571,7 +503,7 @@ static func debug_positions(var node:Node = null, var positions:Array = [],
 	#add new ones
 	for p in positions: 
 		if t:
-			p = array_to_vert(p)
+			p = DuplicateMap.array_to_vert(p)
 		
 		var csg = CSGSphere.new()
 		csg.radius = radius
