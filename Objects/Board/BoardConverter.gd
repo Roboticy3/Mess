@@ -7,82 +7,16 @@ class_name BoardConverter
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
 #return the face index, position in space and normal of mesh from a uv coordinate pos
-static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO, 
-	var mask:Array = []):
-	
-	var mdt:MeshDataTool = graph.mdt
-	
-	#convert pos into Vector3 with y=0 to be compatible with Triangle's Vector3 components
-	var p:Vector3 = Vector3(pos.x, 0, pos.y)
-	
-	#closest distance between p and a triangle
-	var distance:Array = [INF]
-	#closest triangle
-	var closest = null
-	
-	#loop through each face, looking for a triangle closer than distance to p
-	for i in mdt.get_face_count():
-		var found = uv_to_mdata_step(mdt, i, [p], distance)
-		#if one is found, assign it to closest
-		if found != null:
-			closest = found
-			#check if a surrounding triangle was found, and return early if so
-			if closest[4]: return closest
-	
-	return closest
-
-#check a face to see if it surrounds uv
-#WIP if not, move onto another face
-static func uv_to_mdata_step(var mdt:MeshDataTool, var i:int, var uv:PoolVector3Array,
-	var distances:Array = []):
-	
-	#get positions and uvs of the triangle
-	var t = get_face_vertices(mdt, i)
-	#copy positions of t into another triangle to calculate position later
-	var u:PoolVector3Array = t[0]
-	
-	#convert uvs into Vector3 with y=0
-	for k in t[1].size():
-		t[1][k] = Vector3(t[1][k].x, 0, t[1][k].y)
-	#send expanded uvs into t
-	t = Triangle.new(t[1])
-	
-	var c:Vector3 = t.center()
-	
-	#check uv set for anything contained in the face
-	for j in uv.size():
-		#get the barycentric coordinates of p in t
-		var b = t.barycentric(uv[j])
-		#weight distance of uv to center by the magnitude of the barycentric coords
-		var d:float = uv[j].distance_to(c)
+static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
+	var mask:PoolIntArray = []):
 		
-		#whether uv[j] is closer to t or not, assume not
-		var closer:bool = false
-		#if distances were fed into the method, check for a closer distance
-		if distances.size() > j:
-			if d < distances[j]:
-				distances[j] = d
-				closer = true
-		#check if t is surrounding uv[j], but a closer distance can circumvent this measure
-		var surrounding:bool = t.is_surrounding(uv[j])
-		if surrounding || closer:
-			#reconstruct the 3d position of uv[j] from b and u
-			var out:Vector3 = b[0] * u[0] + b[1] * u[1] + b[2] * u[2]
-			#return data about the triangle
-			#encode the face index, position of uv[j] in 3D normal and the input uv into the result
-			return [i, out, mdt.get_face_normal(i), Vector2(uv[j].x, uv[j].z), surrounding]
-
-	#if no more uvs can be checked, return null
-	return null
+	pass
 				
 #retrieve an Arrays object from a face index of a MeshDataTool
 static func get_face_vertices(var mdt:MeshDataTool, var i:int):
-	return [[mdt.get_vertex(mdt.get_face_vertex(i, 0)),
-	mdt.get_vertex(mdt.get_face_vertex(i, 1)),
-	mdt.get_vertex(mdt.get_face_vertex(i, 2))],
-	[mdt.get_vertex_uv(mdt.get_face_vertex(i, 0)),
-	mdt.get_vertex_uv(mdt.get_face_vertex(i, 1)),
-	mdt.get_vertex_uv(mdt.get_face_vertex(i, 2))]]
+	return [DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 0)),
+			DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 1)),
+			DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 2))]
 
 #convert from uv coordinate to square using the size in squares of the board
 static func uv_to_square(var size:Vector2, var pos):
@@ -368,57 +302,65 @@ static func mpos_to_screenuv(var pos:Vector2):
 	pos.y = 1 - pos.y
 	return pos
 
-#convert raycast hit to uv on mesh by projecting mesh onto camera and seeing if any triangles surround the input position
-static func mpos_to_uv(var mdt:MeshDataTool, var board:Transform, 
-	var transform:Transform, var pos:Vector3 = Vector3.ZERO):
+#use board and player nodes to convert screen position to a uv position on the board
+static func mpos_to_uv(var board:Node, var player:Node, var pos:Vector2 = Vector2.ZERO):
 	
-	var p:Vector3 = transform.xform_inv(pos)
-	#send p into xy plane
-	p.z = 0
+	#https://stackoverflow.com/questions/72206128/when-raycasting-forms-multiple-intersections-which-point-does-it-return-can-wh/72208596#72208596
+	#get Viewport/Camera stack and player Camera from player Node
+	var maincam:Camera
+	var viewport:Viewport
+	var camera:Camera
+	var minstance:MeshInstance
+	for i in player.get_children():
+		if i is Viewport:
+			viewport = i
+			for j in viewport.get_children():
+				if j is Camera:
+					camera = j
+				elif j is MeshInstance:
+					minstance = j
+		elif i is Camera:
+			maincam = i
 	
-	#Triangle array of triangles projected into Camera space
-	var triangles:Array = []
-	#array of distances used to sort triangles
-	var distances:PoolRealArray = []
-	
-	#loop through each triangle on the mdt and add triangles that surround p
-	for i in mdt.get_face_count():
-		#skip faces facing away from the camera
-		if mdt.get_face_normal(i).dot(transform.basis.z) < 0:
-			continue
-			
-		#get camera space position of triangle
-		var tri = get_face_vertices(mdt, i)
-		#project positions into world space, and then camera space
-		var t = tri[0]
-		for j in range(0, 3):
-			t[j] = board.xform(t[j])
-			t[j] = transform.xform_inv(t[j])
-			t[j].z = 0
-		tri = Triangle.new(tri[0], tri[1])
+	#update viewport's size and camera's properties into the correct positions
+	viewport.size = viewport.get_viewport().size
+	copy_camera_properties_from(maincam, camera)
 
-		#check if triangle is surrounding modded pos p
-		if tri.is_surrounding(p):
-			triangles.append(tri)
-			t = get_face_vertices(mdt, i)
-			t = Triangle.new(t[0], t[1])
-			distances.append(t.center().distance_to(pos))
-
-	#get closest triangle to p
-	var d = INF
-	var m = -1
-	for i in distances.size():
-		var t = get_face_vertices(mdt, i)
-		t = Triangle.new(t[0], t[1])
-		if distances[i] < d:
-			m = i
-	#if nothing is less than infinity, something is horribly wrong
-	if m == -1:
-		return null
+	#copy board's ArrayMesh mesh to minstance
+	minstance.mesh = board.mesh
+	#grab the texture from the viewport and convert it to an image
+	var tex:Texture = viewport.get_texture()
+	var image:Image = tex.get_data()
+	#glitch with OpenGL flips y coord
+	image.flip_y()
+	#locking the image allows for BoardConverter to read it
+	image.lock()
+	
+	var a = null
+	var b:Vector2 = a
+	
+	#get the color of the uv material at the point where the player clicked, getting the uv coord in return
+	var color:Color = image.get_pixelv(pos)
+	if color.a != 0: return Vector2(color.r, color.g)
+	
+	image.unlock()
 	
 
-	#return barycentric uv coords of p with the mth element of triangles
-	return triangles[m].uv(p)
+#non-destructively copy camera properties from one camera to another
+static func copy_camera_properties_from(var from:Camera, var to:Camera) -> void:
+	to.global_transform = from.global_transform
+	to.fov = from.fov
+	to.keep_aspect = from.keep_aspect
+	to.cull_mask = from.cull_mask
+	to.h_offset = from.h_offset
+	to.environment = from.environment
+	to.v_offset = from.v_offset
+	to.doppler_tracking = from.doppler_tracking
+	to.projection = from.projection
+	to.size = from.size
+	to.frustum_offset = from.frustum_offset
+	to.near = from.near
+	to.far = from.far
 
 #import mesh from .obj path
 static func path_to_mesh(var path:String = "", var debug:bool = false):
