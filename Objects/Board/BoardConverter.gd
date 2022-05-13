@@ -8,8 +8,30 @@ class_name BoardConverter
 
 #return the face index, position in space and normal of mesh from a uv coordinate pos
 static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
-	var mask:PoolIntArray = []):
+	var guess:int = 0, var mask:PoolIntArray = []):
+	
+	#the position being searched as a vertex array
+	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
+	
+	#search graph with Breadth-first-search starting from face guess
+	
+	#queue of faces to be iterated through
+	var queue:PoolIntArray = [guess]
+	#triangle to set faces to, default to face guess
+	var t:Triangle = Triangle.new(graph.mdt, guess)
+	#Dictionary of searched faces with their result for being contained in t
+	var searched:Dictionary = {guess:t.is_surrounding(vert, 2)}
+	
+	#remove faces from queue until it is empty,
+	#adding faces that have not been searched each iteration
+	while !queue.empty():
+		var n:int = queue.size() - 1
+		var i:int = queue[n]
+		queue.remove(n)
 		
+		if searched[i]: 
+			break
+	
 	pass
 				
 #retrieve an Arrays object from a face index of a MeshDataTool
@@ -331,13 +353,9 @@ static func mpos_to_uv(var board:Node, var player:Node, var pos:Vector2 = Vector
 	#grab the texture from the viewport and convert it to an image
 	var tex:Texture = viewport.get_texture()
 	var image:Image = tex.get_data()
-	#glitch with OpenGL flips y coord
-	image.flip_y()
 	#locking the image allows for BoardConverter to read it
 	image.lock()
 	
-	var a = null
-	var b:Vector2 = a
 	
 	#get the color of the uv material at the point where the player clicked, getting the uv coord in return
 	var color:Color = image.get_pixelv(pos)

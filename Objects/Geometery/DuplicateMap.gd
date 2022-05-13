@@ -81,6 +81,40 @@ static func array_to_vert(var a:PoolRealArray, var mode:int = 0, var start:int =
 		return Vector3(a[start + 3], a[start + 4], a[start + 5])
 	else:
 		return Vector3(a[start], a[start + 1], a[start + 2])
+
+#update a vertex array with new data
+static func updated_vert_array(var a:PoolRealArray = [], var data = null, var mode:int = 0):
+	
+	#reset vertex if it hasn't been completed yet
+	if a.size() < 8:
+		a = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	
+	if mode == 2 && data is Vector2:
+		a[6] = data.x
+		a[7] = data.y
+	elif mode == 1 && data is Vector3:
+		a[3] = data.x
+		a[4] = data.y
+		a[5] = data.z
+	elif data is Vector3:
+		a[0] = data.x
+		a[1] = data.y
+		a[2] = data.z
+		
+	return a
+
+#change vector into a PoolRealArray
+static func format_vector(var vector, var mode:int = 0):
+	var is_uv:bool = vector is Vector2 && mode == 2
+	var is_vec:bool = is_uv || (vector is Vector3 && mode != 2)
+	#if the vector is not a PoolRealArray, but is a Vector2 or 3,
+	#make a new PoolRealArray with vector's data in place according to mode
+	if !(vector is PoolRealArray):
+		if is_vec:
+			vector = updated_vert_array(PoolRealArray(), vector, mode)
+		#if there was no vector to begin with, just make a PoolRealArray of zeroes
+		else: vector = PoolRealArray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+	return vector
 		
 #add a vertex array from vert_to_array() into a SurfaceTool
 static func add_array_to_surface(var st:SurfaceTool, var a:PoolRealArray):
