@@ -38,8 +38,7 @@ func generate_graphs():
 			verts.append(a)
 
 			var f:PoolIntArray = []
-			if vtf.has(a): f = vtf[a]
-			else: f = generate_vertex_faces(a, dups)
+			f = generate_vertex_faces(a, dups)
 			
 			#add previously unadded faces connected to v to faces
 			for k in f:
@@ -57,8 +56,7 @@ func generate_graphs():
 			else:
 				if !vtv[a].has(b): vtv[a].append(b)
 				if !vtv[a].has(c): vtv[a].append(c)
-			
-				
+
 		ftf[i] = faces
 		ftv[i] = verts
 				
@@ -67,9 +65,9 @@ func generate_vertex_faces(var vert:PoolRealArray,
 
 	var faces:PoolIntArray
 	for i in dups[vert]:
-			for f in mdt.get_vertex_faces(i):
-				if pool_int_array_has(faces, f): continue
-				faces.append(f)
+		for f in mdt.get_vertex_faces(i):
+			if pool_int_array_has(faces, f): continue
+			faces.append(f)
 	return faces
 
 #test if PoolInt/RealArray arr has element num

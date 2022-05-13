@@ -21,6 +21,10 @@ static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
 	var t:Triangle = Triangle.new(graph.mdt, guess)
 	#Dictionary of searched faces with their result for being contained in t
 	var searched:Dictionary = {guess:t.is_surrounding(vert, 2)}
+	var size:int = graph.mdt.get_face_count()
+	
+	#result to return
+	var result:Array = [guess, Vector3.ZERO, Vector3.UP, pos]
 	
 	#remove faces from queue until it is empty,
 	#adding faces that have not been searched each iteration
@@ -29,11 +33,36 @@ static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
 		var i:int = queue[n]
 		queue.remove(n)
 		
-		if searched[i]: 
-			break
-	
-	pass
-				
+		for f in graph.ftf[i]:
+			if !searched.has(f):
+				#update triangle and search it
+				t.from_mdt(graph.mdt, f)
+				#if the correct triangle has been found, break the loop
+				searched[f] = t.is_surrounding(vert, 2)
+				if searched[f]: 
+					result[0] = f
+					break
+				queue.append(f)
+		
+		#if all the connected faces have been searched, 
+		#but the iteration count is less than the face count,
+		#jump to the next unsearched face
+		if queue.empty() && searched.size() < size:
+			while searched.has(i):
+				i += 1
+
+			t.from_mdt(graph.mdt, i)
+			searched[i] = t.is_surrounding(vert, 2)
+			if searched[i]:
+				result[0] = i
+				break
+			queue.append(i)
+
+	var bary:Vector3 = t.barycentric_of(vert, 2)
+	result[1] = t.pos_from_barycentric(bary)
+	result[2] = graph.mdt.get_face_normal(result[0])
+	return result
+
 #retrieve an Arrays object from a face index of a MeshDataTool
 static func get_face_vertices(var mdt:MeshDataTool, var i:int):
 	return [DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 0)),

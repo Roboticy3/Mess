@@ -85,14 +85,18 @@ func get_sub_areas(var vector:PoolRealArray, var mode:int = 0) -> Vector3:
 func is_surrounding(var vector:PoolRealArray, var mode:int = 0,
 	var margin:float = 0.001) -> bool:
 	
+	var area:float = area(mode)
+	if area == 0: return false
 	var subs:Vector3 = get_sub_areas(vector, mode)
 	var total:float = subs.x + subs.y + subs.z
-	var area:float = area(mode)
 	if abs(total - area) < margin: 
 		return true
 	
 	return false
-	
+
+#return a position of the appropriate mode from input barycentric coords
+func pos_from_barycentric(var bary:Vector3, var mode:int = 0):
+	return a[mode] * bary.x + b[mode] * bary.y + c[mode] * bary.z
 	
 func _to_string():
 	return String(verts)
