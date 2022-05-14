@@ -7,61 +7,36 @@ class_name BoardConverter
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
 #return the face index, position in space and normal of mesh from a uv coordinate pos
+#search faces using a Breadth-First-Search on a MeshGraph
 static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
 	var guess:int = 0, var mask:PoolIntArray = []):
 	
-	#the position being searched as a vertex array
+	var result:Array = uv_to_mdata_linear(graph.mdt, pos)
+	return result
+	
+#search faces linearly via their index in a MeshDataTool
+static func uv_to_mdata_linear(var mdt:MeshDataTool, var pos:Vector2 = Vector2.ZERO):
+	
 	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
 	
-	#search graph with Breadth-first-search starting from face guess
+	#store closest triangle to give a return value when no valid triangle was found
+	var distance:float = INF
+	var closest:Array = []
 	
-	#queue of faces to be iterated through
-	var queue:PoolIntArray = [guess]
-	#triangle to set faces to, default to face guess
-	var t:Triangle = Triangle.new(graph.mdt, guess)
-	#Dictionary of searched faces with their result for being contained in t
-	var searched:Dictionary = {guess:t.is_surrounding(vert, 2)}
-	var size:int = graph.mdt.get_face_count()
+	for i in mdt.get_face_count():
+		var t:Triangle = Triangle.new(mdt, i)
+		var b:Vector3 = t.barycentric_of(vert, 2)
+		var a:Array = [i, t.pos_from_barycentric(b),
+				mdt.get_face_normal(i), pos, t]	
+		if t.is_surrounding(vert, 2):
+			return a
+			
+		var d:float = b.length()
+		if d < distance:
+			distance = d
+			closest = a
 	
-	#result to return
-	var result:Array = [guess, Vector3.ZERO, Vector3.UP, pos]
-	
-	#remove faces from queue until it is empty,
-	#adding faces that have not been searched each iteration
-	while !queue.empty():
-		var n:int = queue.size() - 1
-		var i:int = queue[n]
-		queue.remove(n)
-		
-		for f in graph.ftf[i]:
-			if !searched.has(f):
-				#update triangle and search it
-				t.from_mdt(graph.mdt, f)
-				#if the correct triangle has been found, break the loop
-				searched[f] = t.is_surrounding(vert, 2)
-				if searched[f]: 
-					result[0] = f
-					break
-				queue.append(f)
-		
-		#if all the connected faces have been searched, 
-		#but the iteration count is less than the face count,
-		#jump to the next unsearched face
-		if queue.empty() && searched.size() < size:
-			while searched.has(i):
-				i += 1
-
-			t.from_mdt(graph.mdt, i)
-			searched[i] = t.is_surrounding(vert, 2)
-			if searched[i]:
-				result[0] = i
-				break
-			queue.append(i)
-
-	var bary:Vector3 = t.barycentric_of(vert, 2)
-	result[1] = t.pos_from_barycentric(bary)
-	result[2] = graph.mdt.get_face_normal(result[0])
-	return result
+	return closest
 
 #retrieve an Arrays object from a face index of a MeshDataTool
 static func get_face_vertices(var mdt:MeshDataTool, var i:int):
@@ -354,60 +329,38 @@ static func mpos_to_screenuv(var pos:Vector2):
 	return pos
 
 #use board and player nodes to convert screen position to a uv position on the board
-static func mpos_to_uv(var board:Node, var player:Node, var pos:Vector2 = Vector2.ZERO):
+static func mpos_to_uv(var board:Node, var camera:Camera, 
+	var transform:Transform, var pos:Vector3 = Vector3.ZERO) -> Vector2:
 	
-	#https://stackoverflow.com/questions/72206128/when-raycasting-forms-multiple-intersections-which-point-does-it-return-can-wh/72208596#72208596
-	#get Viewport/Camera stack and player Camera from player Node
-	var maincam:Camera
-	var viewport:Viewport
-	var camera:Camera
-	var minstance:MeshInstance
-	for i in player.get_children():
-		if i is Viewport:
-			viewport = i
-			for j in viewport.get_children():
-				if j is Camera:
-					camera = j
-				elif j is MeshInstance:
-					minstance = j
-		elif i is Camera:
-			maincam = i
+	var mdt:MeshDataTool = board.mdt
+	#transforms to flatten triangles to the screen
+	var flat:Transform = Transform(Vector3.RIGHT,Vector3.UP, 
+							Vector3.ZERO,Vector3.ZERO)
+	var bt:Transform = board.transform
+	var pt:Transform = transform
+	#array of triangles surrounding pos
+	var surrounding:Array = []
 	
-	#update viewport's size and camera's properties into the correct positions
-	viewport.size = viewport.get_viewport().size
-	copy_camera_properties_from(maincam, camera)
+	#transform input position into camera space and flattened camera space
+	var p:Vector3 = pt.xform(pos)
+	var pf:Vector3 = flat.xform(p)
 
-	#copy board's ArrayMesh mesh to minstance
-	minstance.mesh = board.mesh
-	#grab the texture from the viewport and convert it to an image
-	var tex:Texture = viewport.get_texture()
-	var image:Image = tex.get_data()
-	#locking the image allows for BoardConverter to read it
-	image.lock()
+	for i in mdt.get_face_count():
+		var t:Triangle = Triangle.new(mdt, i)
+		#transform t into camera space
+		t.xform_with(bt, true)
+		t.xform_with(pt)
+		#make a "flattened" copy of t
+		var tflat:Triangle = Triangle.new(t.verts)
+		tflat.xform_with(flat)
+		
+		if tflat.is_surrounding(pf, 0, true):
+			surrounding.append(t)
 	
+	return Vector2.ZERO
 	
-	#get the color of the uv material at the point where the player clicked, getting the uv coord in return
-	var color:Color = image.get_pixelv(pos)
-	if color.a != 0: return Vector2(color.r, color.g)
-	
-	image.unlock()
-	
-
-#non-destructively copy camera properties from one camera to another
-static func copy_camera_properties_from(var from:Camera, var to:Camera) -> void:
-	to.global_transform = from.global_transform
-	to.fov = from.fov
-	to.keep_aspect = from.keep_aspect
-	to.cull_mask = from.cull_mask
-	to.h_offset = from.h_offset
-	to.environment = from.environment
-	to.v_offset = from.v_offset
-	to.doppler_tracking = from.doppler_tracking
-	to.projection = from.projection
-	to.size = from.size
-	to.frustum_offset = from.frustum_offset
-	to.near = from.near
-	to.far = from.far
+static func mpos_to_camera_local(var camera:Camera, var pos:Vector2):
+	pass
 
 #import mesh from .obj path
 static func path_to_mesh(var path:String = "", var debug:bool = false):

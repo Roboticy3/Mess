@@ -96,6 +96,8 @@ func init_mesh():
 	duplicates = DuplicateMap.new(mdt)
 	graph = MeshGraph.new(mdt, duplicates)
 	
+	
+	
 	#set opacity of material based on board property
 	var a:float = board.table["opacity"]
 	mat_board.albedo_color.a = a

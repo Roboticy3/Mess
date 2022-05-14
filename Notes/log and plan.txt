@@ -206,3 +206,16 @@
 	NEXT
 	 - completely rewrite Triangle.gd to make sense with the current system of vertex arrays and reintegrate it into uv_to_mpos() and uv_to_mdata()
 	 - fix raycast() so it always takes the closest point to the from point, not seemingly random intersections
+5/13/2022
+	 - found a shit ton of bugs with MeshGraph.gd and Triangle.gd
+	 - wrote a plan to approach my reconstruction of the triangle searching system
+	NEXT
+	 - follow plan (carefully)
+5/14/2022
+	 - revived uv_to_mdata() from a grave as uv_to_mdata_linear()
+	 - started adjusting mpos_to_uv() to the new and """improved""" system
+	 - finished step 1 of plan to fix my code
+	NEXT
+	 - figure out why there are so many performance issues with uv_to_mdata_linear() (I'm writing this from my laptop so it might just be slow)
+	 - add final pass to mpos_to_uv() so it actually takes the closest triangle and not just a random one
+	 - move onto step 2 ._.

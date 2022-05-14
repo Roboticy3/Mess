@@ -20,10 +20,7 @@ func from_array(var _verts:Array):
 		return
 	
 	verts = _verts
-	#assign verts to a b and c
-	for i in range(0, 3): a[i] = get_vertex(0, i)
-	for i in range(0, 3): b[i] = get_vertex(1, i)
-	for i in range(0, 3): c[i] = get_vertex(2, i)
+	update_abc()
 
 func from_mdt(var mdt:MeshDataTool, var face:int):
 	var verts:Array = [null, null, null]
@@ -32,9 +29,16 @@ func from_mdt(var mdt:MeshDataTool, var face:int):
 		verts[i] = DuplicateMap.vert_to_array(mdt, v)
 	from_array(verts)
 
+func update_abc() -> void:
+	for i in range(0, 3): 
+		a[i] = get_vertex(0, i)
+		b[i] = get_vertex(1, i)
+		c[i] = get_vertex(2, i)
+
 #get vertex data from verts, optional override PoolRealArray to not take from verts
 func get_vertex(var i:int, var mode:int = 0, var override:PoolRealArray = []):
-	if override.size() < 8: override = verts[i]
+	if override.size() < 8: 
+		override = verts[i]
 	return DuplicateMap.array_to_vert(override, mode)
 
 #get area of different dimensions of the triangle based on mode
@@ -53,7 +57,11 @@ func area(var mode:int = 0) -> float:
 	return float(ac * ab * sinbac / 2)
 
 #get barycentric coordinates of input vector in the space of the given mode
-func barycentric_of(var vector, var mode:int = 0) -> Vector3:
+func barycentric_of(var vector, var mode:int = 0,
+	var unformatted:bool = false) -> Vector3:
+	
+	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
+	
 	return get_sub_areas(vector, mode) / area(mode)
 
 #get the area of a sub-triangle with one vertex vert replaced with vector
@@ -82,11 +90,15 @@ func get_sub_areas(var vector:PoolRealArray, var mode:int = 0) -> Vector3:
 	return Vector3(sub_a, sub_b, sub_c) 
 
 #check if this is surrounding a vector
-func is_surrounding(var vector:PoolRealArray, var mode:int = 0,
-	var margin:float = 0.001) -> bool:
-	
+#unformatted flag allows for Vector3, Vector2, or PoolRealArray to be passed in
+func is_surrounding(var vector, var mode:int = 0,
+	var unformatted:bool = false, var margin:float = 0.00001) -> bool:
+		
+	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
+
 	var area:float = area(mode)
 	if area == 0: return false
+	
 	var subs:Vector3 = get_sub_areas(vector, mode)
 	var total:float = subs.x + subs.y + subs.z
 	if abs(total - area) < margin: 
@@ -98,5 +110,27 @@ func is_surrounding(var vector:PoolRealArray, var mode:int = 0,
 func pos_from_barycentric(var bary:Vector3, var mode:int = 0):
 	return a[mode] * bary.x + b[mode] * bary.y + c[mode] * bary.z
 	
-func _to_string():
-	return String(verts)
+func center(var mode:int = 0):
+	return (a[mode] + b[mode] + c[mode]) / 3
+
+#tranforms the triangle through a given matrix transform 
+func xform_with(var transform:Transform, var inv:bool = false) -> void:
+	#send positions and normals into a PoolVector3Array to be transformed
+	var before:PoolVector3Array = [a[0], b[0], c[0], a[1], b[1], c[1]]
+	
+	var after:PoolVector3Array
+	if inv: after = transform.xform_inv(before)
+	else: after = transform.xform(before)
+	
+	#update verts and abc
+	for i in range(0, 3):
+		verts[i] = DuplicateMap.updated_vert_array(verts[i], after[i])
+		verts[i] = DuplicateMap.updated_vert_array(verts[i], after[i + 3], 1)
+		
+	update_abc()
+	
+func _to_string(var mode:int = 0) -> String:
+	var av = a[mode]
+	var bv = a[mode]
+	var cv = c[mode]
+	return String(av) + String(bv) + String(cv)
