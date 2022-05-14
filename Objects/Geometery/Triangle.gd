@@ -58,7 +58,7 @@ func area(var mode:int = 0) -> float:
 
 #get barycentric coordinates of input vector in the space of the given mode
 func barycentric_of(var vector, var mode:int = 0,
-	var unformatted:bool = false) -> Vector3:
+	var unformatted:bool = true) -> Vector3:
 	
 	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
 	
@@ -92,7 +92,7 @@ func get_sub_areas(var vector:PoolRealArray, var mode:int = 0) -> Vector3:
 #check if this is surrounding a vector
 #unformatted flag allows for Vector3, Vector2, or PoolRealArray to be passed in
 func is_surrounding(var vector, var mode:int = 0,
-	var unformatted:bool = false, var margin:float = 0.00001) -> bool:
+	var unformatted:bool = true, var margin:float = 0.00001) -> bool:
 		
 	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
 

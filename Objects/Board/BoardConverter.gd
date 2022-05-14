@@ -25,7 +25,7 @@ static func uv_to_mdata_linear(var mdt:MeshDataTool, var pos:Vector2 = Vector2.Z
 	
 	for i in mdt.get_face_count():
 		var t:Triangle = Triangle.new(mdt, i)
-		var b:Vector3 = t.barycentric_of(vert, 2)
+		var b:Vector3 = t.barycentric_of(vert, 2, false)
 		var a:Array = [i, t.pos_from_barycentric(b),
 				mdt.get_face_normal(i), pos, t]	
 		if t.is_surrounding(vert, 2):
@@ -333,20 +333,30 @@ static func mpos_to_uv(var board:Node, var camera:Camera,
 	var transform:Transform, var pos:Vector3 = Vector3.ZERO) -> Vector2:
 	
 	var mdt:MeshDataTool = board.mdt
+	
 	#transforms to flatten triangles to the screen
 	var flat:Transform = Transform(Vector3.RIGHT,Vector3.UP, 
 							Vector3.ZERO,Vector3.ZERO)
+							
 	var bt:Transform = board.transform
 	var pt:Transform = transform
+	
 	#array of triangles surrounding pos
 	var surrounding:Array = []
+	var surr_flat:Array = []
 	
 	#transform input position into camera space and flattened camera space
 	var p:Vector3 = pt.xform(pos)
 	var pf:Vector3 = flat.xform(p)
 
+	var debug:Array = []
+	#fill the array of triangles surrounding the input position
 	for i in mdt.get_face_count():
+		#skip faces facing the wrong direction
+		if mdt.get_face_normal(i).dot(transform.basis.z) <= 0: continue
 		var t:Triangle = Triangle.new(mdt, i)
+		#save untransformed version of triangle
+		var tt:Triangle = Triangle.new(t.verts.duplicate())
 		#transform t into camera space
 		t.xform_with(bt, true)
 		t.xform_with(pt)
@@ -354,10 +364,30 @@ static func mpos_to_uv(var board:Node, var camera:Camera,
 		var tflat:Triangle = Triangle.new(t.verts)
 		tflat.xform_with(flat)
 		
-		if tflat.is_surrounding(pf, 0, true):
-			surrounding.append(t)
+		if tflat.is_surrounding(pf):
+			surrounding.append(tt)
+			surr_flat.append(tflat)
+			debug.append_array(tt.verts)
 	
-	return Vector2.ZERO
+	#find the flattened surrounding triangle with the least barycentric magnitude for the input position
+	var bary:Vector3 = Vector3.INF
+	var baryf:Vector3 = Vector3.INF
+	var tri:Triangle
+	for i in surrounding.size():
+		var t:Triangle = surrounding[i]
+		var tf:Triangle = surr_flat[i]
+		var bf:Vector3 = tf.barycentric_of(pf)
+		var b:Vector3 = t.barycentric_of(p)
+		if b.length() < bary.length():
+			bary = b
+			baryf = bf
+			tri = t
+
+	debug_positions(board, debug, 0.05)
+	debug_positions(board, tri.verts, 0.1, 1, Color.red)
+	debug_positions(board, [pos], 0.1, 1, Color.blue)
+	
+	return tri.pos_from_barycentric(baryf, 2)
 	
 static func mpos_to_camera_local(var camera:Camera, var pos:Vector2):
 	pass
@@ -430,7 +460,7 @@ static func raycast(var p:Vector2, var c:Camera,
 #add CSGsphere children to node at relative positions
 #setting mode to 1 will stop the method from deleting old csgballs
 static func debug_positions(var node:Node = null, var positions:Array = [], 
-	var radius:float = 0.1, var mode:int = 0):
+	var radius:float = 0.1, var mode:int = 0, var albedo:Color = Color.white):
 	
 	#remove old debug objects
 	if mode != 1:
@@ -441,11 +471,11 @@ static func debug_positions(var node:Node = null, var positions:Array = [],
 	#if position map is empty, exit function
 	if positions.empty(): return
 	
-	#material to apply to the CSGBalls
-	var material:Material = SpatialMaterial.new()
-	
 	#checks if positions is an Array of PoolRealArray, assumes all elements are of same type
 	var t:bool = positions[0] is PoolRealArray
+	
+	var mat:SpatialMaterial = SpatialMaterial.new()
+	mat.albedo_color = albedo
 	
 	#add new ones
 	for p in positions: 
@@ -454,7 +484,7 @@ static func debug_positions(var node:Node = null, var positions:Array = [],
 		
 		var csg = CSGSphere.new()
 		csg.radius = radius
-		csg.material = material
+		csg.material = mat
 		csg.transform.origin = p
 		csg.name = "debug " + String(p)
 		node.add_child(csg)
