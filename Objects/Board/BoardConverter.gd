@@ -377,7 +377,7 @@ static func mpos_to_uv(var board:Node, var camera:Camera,
 		var t:Triangle = surrounding[i]
 		var tf:Triangle = surr_flat[i]
 		var bf:Vector3 = tf.barycentric_of(pf)
-		var b:Vector3 = t.barycentric_of(p)
+		var b:Vector3 = t.barycentric_of(p) * t.center().distance_to(pos)
 		if b.length() < bary.length():
 			bary = b
 			baryf = bf
