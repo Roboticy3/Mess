@@ -192,8 +192,7 @@ func request_square(var event:InputEventMouseButton):
 			square = r["collider"].piece.get_pos()
 		#otherwise, return uv square of board
 		else:
-			var uv = BoardConverter.mpos_to_uv(board_mesh, camera, 
-				transform, r["position"])
+			var uv = BoardConverter.mpos_to_uv(board_mesh, transform, r["position"])
 			
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 

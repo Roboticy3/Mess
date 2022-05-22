@@ -329,8 +329,8 @@ static func mpos_to_screenuv(var pos:Vector2):
 	return pos
 
 #use board and player nodes to convert screen position to a uv position on the board
-static func mpos_to_uv(var board:Node, var camera:Camera, 
-	var transform:Transform, var pos:Vector3 = Vector3.ZERO) -> Vector2:
+static func mpos_to_uv(var board:Node, var transform:Transform, 
+	var pos:Vector3 = Vector3.ZERO) -> Vector2:
 	
 	var mdt:MeshDataTool = board.mdt
 	
@@ -339,58 +339,56 @@ static func mpos_to_uv(var board:Node, var camera:Camera,
 							Vector3.ZERO,Vector3.ZERO)
 							
 	var bt:Transform = board.transform
-	var pt:Transform = transform
 	
 	#array of triangles surrounding pos
 	var surrounding:Array = []
 	var surr_flat:Array = []
+	var positions:PoolVector3Array = []
 	
-	#transform input position into camera space and flattened camera space
-	var p:Vector3 = pt.xform(pos)
-	var pf:Vector3 = flat.xform(p)
-
-	var debug:Array = []
 	#fill the array of triangles surrounding the input position
 	for i in mdt.get_face_count():
 		#skip faces facing the wrong direction
 		if mdt.get_face_normal(i).dot(transform.basis.z) <= 0: continue
-		var t:Triangle = Triangle.new(mdt, i)
-		#save untransformed version of triangle
-		var tt:Triangle = Triangle.new(t.verts.duplicate())
-		#transform t into camera space
-		t.xform_with(bt, true)
-		t.xform_with(pt)
-		#make a "flattened" copy of t
-		var tflat:Triangle = Triangle.new(t.verts)
-		tflat.xform_with(flat)
 		
-		if tflat.is_surrounding(pf):
-			surrounding.append(tt)
-			surr_flat.append(tflat)
-			debug.append_array(tt.verts)
+		#save untransformed version of triangle
+		var t:Triangle = Triangle.new(mdt, i)
+		
+		var tface:Triangle = Triangle.new(mdt, i)
+		tface.xform_with(bt, true)
+		var face:Transform = face_to_transform(mdt, i)
+		tface.xform_with(face)
+		tface.xform_with(flat)
+		
+		var pface:Vector3 = flat.xform(face.xform(pos))
+		
+		if tface.is_surrounding(pface):
+			surrounding.append(t)
+			surr_flat.append(tface)
+			positions.append(pface)
+			
+	if surrounding.empty(): return Vector2.ZERO
 	
 	#find the flattened surrounding triangle with the least barycentric magnitude for the input position
-	var bary:Vector3 = Vector3.INF
-	var baryf:Vector3 = Vector3.INF
+	var mag:float = INF
+	var baryf:Vector3
 	var tri:Triangle
 	for i in surrounding.size():
-		var t:Triangle = surrounding[i]
-		var tf:Triangle = surr_flat[i]
-		var bf:Vector3 = tf.barycentric_of(pf)
-		var b:Vector3 = t.barycentric_of(p) * t.center().distance_to(pos)
-		if b.length() < bary.length():
-			bary = b
-			baryf = bf
-			tri = t
-
-	debug_positions(board, debug, 0.05)
-	debug_positions(board, tri.verts, 0.1, 1, Color.red)
-	debug_positions(board, [pos], 0.1, 1, Color.blue)
+		var m:float = surrounding[i].center().distance_to(pos)
+		if m < mag:
+			mag = m
+			baryf = surr_flat[i].barycentric_of(positions[i])
+			tri = surr_flat[i]
 	
 	return tri.pos_from_barycentric(baryf, 2)
 	
-static func mpos_to_camera_local(var camera:Camera, var pos:Vector2):
-	pass
+static func face_to_transform(var mdt:MeshDataTool, var i:int) -> Transform:
+	
+	var x:Vector3 = Vector3.RIGHT
+	var z:Vector3 = mdt.get_face_normal(i)
+	var y:Vector3 = z.cross(x)
+	x = z.cross(y)
+	
+	return Transform(x, y, z, Vector3.ZERO)
 
 #import mesh from .obj path
 static func path_to_mesh(var path:String = "", var debug:bool = false):
@@ -478,7 +476,14 @@ static func debug_positions(var node:Node = null, var positions:Array = [],
 	mat.albedo_color = albedo
 	
 	#add new ones
-	for p in positions: 
+	for i in positions.size(): 
+		var p = positions[i]
+		#if positions is an array, recursively call method across its elements,
+		#shift color of successive recursions
+		if p is Array:
+			debug_positions(node, p, radius, 1, albedo)
+			continue
+			
 		if t:
 			p = DuplicateMap.array_to_vert(p)
 		

@@ -219,3 +219,17 @@
 	 - figure out why there are so many performance issues with uv_to_mdata_linear() (I'm writing this from my laptop so it might just be slow)
 	 - add final pass to mpos_to_uv() so it actually takes the closest triangle and not just a random one
 	 - move onto step 2 ._.
+5/14/2022.2
+	 - cleaned up mpos_to_uv() a bit
+	NEXT
+	 - reimplement mpos_to_uv() culling
+	 - find something to do about the no-surrounding-faces condition
+5/15/2022
+	 - did some experiments with mpos_to_uv()
+	NEXT
+	 - rework mpos_to_uv() to use a transform based on the MeshDataTool faces instead of the camera's transform.
+5/22/2022
+	 - came back from my break to basically finish reworking mpos_to_uv() (good job me!)
+	NEXT
+	 - add graph searching to mpos_to_uv, then commit Viewport_experimental back to main branch if it works
+	 - choose between fleshing out pieces or adding portals

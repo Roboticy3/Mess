@@ -62,6 +62,8 @@ func barycentric_of(var vector, var mode:int = 0,
 	
 	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
 	
+	var area:float = area(mode)
+	if area == 0: return Vector3.INF
 	return get_sub_areas(vector, mode) / area(mode)
 
 #get the area of a sub-triangle with one vertex vert replaced with vector
