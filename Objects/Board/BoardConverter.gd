@@ -11,11 +11,11 @@ class_name BoardConverter
 static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
 	var guess:int = 0, var mask:PoolIntArray = []):
 	
-	var result:Array = uv_to_mdata_linear(graph.mdt, pos)
+	var result:Array = uv_to_mdata_linear(graph.duplicates, pos)
 	return result
 	
 #search faces linearly via their index in a MeshDataTool
-static func uv_to_mdata_linear(var mdt:MeshDataTool, var pos:Vector2 = Vector2.ZERO):
+static func uv_to_mdata_linear(var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO):
 	
 	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
 	
@@ -23,8 +23,10 @@ static func uv_to_mdata_linear(var mdt:MeshDataTool, var pos:Vector2 = Vector2.Z
 	var distance:float = INF
 	var closest:Array = []
 	
+	var mdt:MeshDataTool = dups.mdt
+	
 	for i in mdt.get_face_count():
-		var t:Triangle = Triangle.new(mdt, i)
+		var t:Triangle = Triangle.new(dups, i)
 		var b:Vector3 = t.barycentric_of(vert, 2, false)
 		var a:Array = [i, t.pos_from_barycentric(b),
 				mdt.get_face_normal(i), pos, t]	
@@ -39,10 +41,11 @@ static func uv_to_mdata_linear(var mdt:MeshDataTool, var pos:Vector2 = Vector2.Z
 	return closest
 
 #retrieve an Arrays object from a face index of a MeshDataTool
-static func get_face_vertices(var mdt:MeshDataTool, var i:int):
-	return [DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 0)),
-			DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 1)),
-			DuplicateMap.vert_to_array(mdt, mdt.get_face_vertex(i, 2))]
+static func get_face_vertices(var dups:DuplicateMap, var i:int) -> Array:
+	var mdt:MeshDataTool = dups.mdt
+	return [dups.vert_to_array(mdt.get_face_vertex(i, 0)),
+			dups.vert_to_array(mdt.get_face_vertex(i, 1)),
+			dups.vert_to_array(mdt.get_face_vertex(i, 2))]
 
 #convert from uv coordinate to square using the size in squares of the board
 static func uv_to_square(var size:Vector2, var pos):
@@ -184,9 +187,9 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		coverts[i] = dups.mdata_to_array(coverts[i])
 		
 		#add verts into surface tool
-		st.add_normal(DuplicateMap.array_to_vert(coverts[i], 1))
-		st.add_uv(DuplicateMap.array_to_vert(coverts[i], 2))
-		st.add_vertex(DuplicateMap.array_to_vert(coverts[i], 0))
+		st.add_normal(dups.array_to_vert(coverts[i], 1))
+		st.add_uv(dups.array_to_vert(coverts[i], 2))
+		st.add_vertex(dups.array_to_vert(coverts[i], 0))
 		
 	#integer Dictionary of faces intersecting with b and their verts
 	var faces:Dictionary = {}
@@ -202,7 +205,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	for i in outer:
 		#distance of closest intersection and uv of outer
 		var distance:float = INF
-		var uv:Vector2 = DuplicateMap.array_to_vert(i, 2)
+		var uv:Vector2 = dups.array_to_vert(i, 2)
 		#array of intersections and index of closest intersection
 		var inter:PoolVector2Array = outer[i]
 		var close:int = -1
@@ -219,7 +222,7 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 			verts[i] = coverts[close - inter.size() + 4]
 		else:
 			var mdata = uv_to_mdata(graph, inter[close])
-			verts[i] = DuplicateMap.mdata_to_array(mdata)
+			verts[i] = dups.mdata_to_array(mdata)
 				
 	#if square is flat, index faces into two triangles like so
 	if faces.empty():
@@ -234,13 +237,13 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		for i in faces:
 			for j in range(0, 3):
 				var v:int = mdt.get_face_vertex(i, j)
-				var a:PoolRealArray = DuplicateMap.vert_to_array(mdt, v)
+				var a:PoolRealArray = dups.vert_to_array(v)
 				#replace vert array with new data if it has been moved
 				if verts.has(a): a = verts[a]
 				
-				st.add_normal(DuplicateMap.array_to_vert(a, 1))
-				st.add_uv(DuplicateMap.array_to_vert(a, 2))
-				st.add_vertex(DuplicateMap.array_to_vert(a, 0))
+				st.add_normal(dups.array_to_vert(a, 1))
+				st.add_uv(dups.array_to_vert(a, 2))
+				st.add_vertex(dups.array_to_vert(a, 0))
 				st.add_index(count)
 				count += 1
 	
@@ -263,7 +266,7 @@ static func get_connected_to_square(var mdt:MeshDataTool, var dups:DuplicateMap,
 	#store any connected faces to duplicates of "a" that fill these conditions
 	for a in duplicates:
 		#if uv of a is inside b, add all connected triangles
-		var uv:Vector2 = DuplicateMap.array_to_vert(a, 2)
+		var uv:Vector2 = dups.array_to_vert(a, 2)
 		
 		#flags for whether a is inside b, and whether its connected to a face intersecting b
 		var inside:bool = b.is_surrounding(uv)
@@ -333,6 +336,7 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 	var pos:Vector3 = Vector3.ZERO) -> Vector2:
 	
 	var mdt:MeshDataTool = board.mdt
+	var dups:DuplicateMap = board.duplicates
 	
 	#transforms to flatten triangles to the screen
 	var flat:Transform = Transform(Vector3.RIGHT,Vector3.UP, 
@@ -344,6 +348,7 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 	var surrounding:Array = []
 	var surr_flat:Array = []
 	var positions:PoolVector3Array = []
+	var debug:Array = []
 	
 	#fill the array of triangles surrounding the input position
 	for i in mdt.get_face_count():
@@ -351,9 +356,9 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 		if mdt.get_face_normal(i).dot(transform.basis.z) <= 0: continue
 		
 		#save untransformed version of triangle
-		var t:Triangle = Triangle.new(mdt, i)
+		var t:Triangle = Triangle.new(dups, i)
 		
-		var tface:Triangle = Triangle.new(mdt, i)
+		var tface:Triangle = Triangle.new(dups, i)
 		tface.xform_with(bt, true)
 		var face:Transform = face_to_transform(mdt, i)
 		tface.xform_with(face)
@@ -365,6 +370,7 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 			surrounding.append(t)
 			surr_flat.append(tface)
 			positions.append(pface)
+			debug.append_array(t.verts)
 			
 	if surrounding.empty(): return Vector2.ZERO
 	
@@ -411,8 +417,10 @@ static func mesh_to_shape(var m:Mesh):
 
 #get all verts and faces connected to an index in mdt
 #return [0] is vert dictionary, return [1] is face dicitonary
-static func vert_to_triangle_fan(var mdt:MeshDataTool, var i:int = 0, 
+static func vert_to_triangle_fan(var dups:DuplicateMap, var i:int = 0, 
 	var verts:Dictionary = {}, var faces:Dictionary = {}, var edges:bool = false):
+	
+	var mdt:MeshDataTool = dups.mdt
 	
 	#get connected faces
 	var fs:Array
@@ -424,7 +432,7 @@ static func vert_to_triangle_fan(var mdt:MeshDataTool, var i:int = 0,
 	#loop through faces and add their verts
 	for f in fs:
 		#add face to faces dict so calling function can see the faces being searched
-		faces[f] = get_face_vertices(mdt, f)[0]
+		faces[f] = get_face_vertices(dups, f)[0]
 		for j in range(0, 3):
 			var v = mdt.get_face_vertex(f, j)
 			#same deal as faces

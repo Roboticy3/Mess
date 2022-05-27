@@ -10,24 +10,26 @@ var b:Array = [null, null, null]
 var c:Array = [null, null, null]
 
 #either input an Array of PoolRealArray for verts or a MeshDataTool and an ind face index
-func _init(var data, var index:int = 0):
+func _init(var data, var index:int = 0) -> void:
 	if data is Array: from_array(data)
-	elif data is MeshDataTool: from_mdt(data, index)
+	elif data is DuplicateMap: from_dups(data, index)
 	
 	
-func from_array(var _verts:Array):
+func from_array(var _verts:Array) -> void:
 	if _verts.size() < 3:
 		return
 	
 	verts = _verts
 	update_abc()
 
-func from_mdt(var mdt:MeshDataTool, var face:int):
-	var verts:Array = [null, null, null]
+func from_dups(var dups:DuplicateMap, var face:int) -> void:
+	var _verts:Array = [null, null, null]
 	for i in range(0, 3):
-		var v:int = mdt.get_face_vertex(face, i)
-		verts[i] = DuplicateMap.vert_to_array(mdt, v)
-	from_array(verts)
+		var v:int = dups.mdt.get_face_vertex(face, i)
+		_verts[i] = dups.vert_to_array(v)
+		_verts[i] = dups.vert_to_array(v)
+	
+	from_array(_verts)
 
 func update_abc() -> void:
 	for i in range(0, 3): 
@@ -135,4 +137,7 @@ func _to_string(var mode:int = 0) -> String:
 	var av = a[mode]
 	var bv = a[mode]
 	var cv = c[mode]
+	if av == null: av = "null"
+	if bv == null: bv = "null"
+	if cv == null: cv = "null"
 	return String(av) + String(bv) + String(cv)

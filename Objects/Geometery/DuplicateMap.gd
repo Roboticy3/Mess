@@ -2,6 +2,8 @@ class_name DuplicateMap
 
 var mdt:MeshDataTool
 var duplicates:Dictionary
+#booleans for whether positions, normals, and uvs are stored respectively
+var modes:Array = [true, true, true]
 
 func _init(var _mdt:MeshDataTool):
 	print(_mdt)
@@ -19,7 +21,7 @@ func find_duplicates():
 		for j in range(0, 3):
 			var k:int = mdt.get_face_vertex(i, j)
 			#key vertex by its properties, preserving split edges
-			var v:PoolRealArray = vert_to_array(mdt, k)
+			var v:PoolRealArray = vert_to_array(k)
 		
 			#if vertex already exists, add a match
 			if verts.has(v):
@@ -40,34 +42,33 @@ func map_duplicates(var indexmap:Dictionary,
 	for j in a.size():
 		indexmap[a[j]] = count
 	return count + 1
+	
+func get_expected_key_size() -> int:
+	var s:int = 0
+	if modes[0]: s += 3
+	if modes[1]: s += 3
+	if modes[2]: s += 2
+	return s
+	
+func getk(var a:PoolRealArray) -> PoolIntArray:
+	if a.size() < get_expected_key_size(): return PoolIntArray()
+	return duplicates[a]
 			
 #convert a vertex on an mdt to a PoolRealArray of properties
-#can also create an array from a larger array of multiple vertices
-static func vert_to_array(var data, var i:int = 0):
+func vert_to_array(var i:int = 0) -> PoolRealArray:
 	
-	if data is MeshDataTool:
-		var p:Vector3 = data.get_vertex(i)
-		var n:Vector3 = data.get_vertex_normal(i)
-		var u:Vector2 = data.get_vertex_uv(i)
-		var v:PoolRealArray = [p.x, p.y, p.z, n.x, n.y, n.z, u.x, u.y]
-		return v
-	if data is PoolRealArray:
-		var v:PoolRealArray = PoolRealArray()
-		v.resize(8)
-		for j in range(0, 8):
-			v[j] = data[j + i]
-		return v
-	else:
-		return PoolRealArray()
+	var p:Vector3 = mdt.get_vertex(i)
+	var n:Vector3 = mdt.get_vertex_normal(i)
+	var u:Vector2 = mdt.get_vertex_uv(i)
+	return format_vectors(p, n, u)
 		
 #convert a return from the mdata method to a vertex array
-static func mdata_to_array(var mdata:Array):
+func mdata_to_array(var mdata:Array):
 	#convert coverts to vert arrays
-	var v:Vector3 = mdata[1]
+	var p:Vector3 = mdata[1]
 	var u:Vector2 = mdata[3]
 	var n:Vector3 = mdata[2]
-	var a:PoolRealArray = [v.x, v.y, v.z, n.x, n.y, n.z, u.x, u.y]
-	return a
+	return format_vectors(p, n, u)
 
 #decode an array from vert_to_array() back into a position (0), normal (1), or uv (2) based on mode
 #start is the starting index in a from which to decode
@@ -104,7 +105,7 @@ static func updated_vert_array(var a:PoolRealArray = [], var data = null, var mo
 	return a
 
 #change vector into a PoolRealArray
-static func format_vector(var vector, var mode:int = 0):
+static func format_vector(var vector, var mode:int = 0) -> PoolRealArray:
 	var is_uv:bool = vector is Vector2 && mode == 2
 	var is_vec:bool = is_uv || (vector is Vector3 && mode != 2)
 	#if the vector is not a PoolRealArray, but is a Vector2 or 3,
@@ -115,6 +116,13 @@ static func format_vector(var vector, var mode:int = 0):
 		#if there was no vector to begin with, just make a PoolRealArray of zeroes
 		else: vector = PoolRealArray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 	return vector
+
+func format_vectors(var p:Vector3, var n:Vector3, var u:Vector2) -> PoolRealArray:
+	var v:PoolRealArray = []
+	if modes[0]: v.append_array([p.x, p.y, p.z])
+	if modes[1]: v.append_array([n.x, n.y, n.z])
+	if modes[2]: v.append_array([u.x, u.y])
+	return v
 		
 #add a vertex array from vert_to_array() into a SurfaceTool
 static func add_array_to_surface(var st:SurfaceTool, var a:PoolRealArray):

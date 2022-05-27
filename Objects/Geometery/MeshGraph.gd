@@ -34,7 +34,7 @@ func generate_graphs():
 		#iterate through vertexes of this face
 		for j in range(0, 3):
 			var v:int = mdt.get_face_vertex(i,j)
-			var a:PoolRealArray = DuplicateMap.vert_to_array(mdt, v)
+			var a:PoolRealArray = duplicates.vert_to_array(v)
 			verts.append(a)
 
 			var f:PoolIntArray = []
@@ -49,9 +49,9 @@ func generate_graphs():
 			
 			#add vertices other than v on face i to v of vtv graph
 			var u:int = mdt.get_face_vertex(i,(j+1)%3)
-			var b:PoolRealArray = DuplicateMap.vert_to_array(mdt, u)
+			var b:PoolRealArray = duplicates.vert_to_array(u)
 			var w:int = mdt.get_face_vertex(i,(j+2)%3)
-			var c:PoolRealArray = DuplicateMap.vert_to_array(mdt, w)
+			var c:PoolRealArray = duplicates.vert_to_array(w)
 			if !vtv.has(a): vtv[a] = [b, c]
 			else:
 				if !vtv[a].has(b): vtv[a].append(b)
