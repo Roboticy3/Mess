@@ -5,8 +5,13 @@ var duplicates:Dictionary
 #booleans for whether positions, normals, and uvs are stored respectively
 var modes:Array = [true, true, true]
 
-func _init(var _mdt:MeshDataTool):
-	print(_mdt)
+func _init(var _mdt:MeshDataTool, 
+	var positions:bool = true, var normals:bool = true, var uvs:bool = true):
+
+	modes[0] = positions
+	modes[1] = normals
+	modes[2] = uvs
+	
 	mdt = _mdt
 	duplicates = find_duplicates()
 
@@ -72,9 +77,19 @@ func mdata_to_array(var mdata:Array):
 
 #decode an array from vert_to_array() back into a position (0), normal (1), or uv (2) based on mode
 #start is the starting index in a from which to decode
-static func array_to_vert(var a:PoolRealArray, var mode:int = 0, var start:int = 0):
+func array_to_vert(var a:PoolRealArray, var mode:int = 0, var start:int = 0):
 	#if array is too small, return null
-	if a.size() < start + 8: return null
+	if a.size() < start + get_expected_key_size(): return null
+	#return parts of the array relevant to mode
+	if mode == 2:
+		return Vector2(a[start + 6], a[start + 7])
+	elif mode == 1:
+		return Vector3(a[start + 3], a[start + 4], a[start + 5])
+	else:
+		return Vector3(a[start], a[start + 1], a[start + 2])
+
+#array_to_vert without the size check so it can exist statically
+static func array_to_vert_static(var a:PoolRealArray, var mode:int = 0, var start:int = 0):
 	#return parts of the array relevant to mode
 	if mode == 2:
 		return Vector2(a[start + 6], a[start + 7])
@@ -125,8 +140,11 @@ func format_vectors(var p:Vector3, var n:Vector3, var u:Vector2) -> PoolRealArra
 	return v
 		
 #add a vertex array from vert_to_array() into a SurfaceTool
-static func add_array_to_surface(var st:SurfaceTool, var a:PoolRealArray):
-	st.add_normal(array_to_vert(a, 1))
-	st.add_uv(array_to_vert(a, 2))
-	st.add_vertex(array_to_vert(a, 0))
+func add_array_to_surface(var st:SurfaceTool, var a:PoolRealArray) -> void:
+	if modes[1]: st.add_normal(array_to_vert(a, 1))
+	if modes[2]: st.add_uv(array_to_vert(a, 2))
+	if modes[0]: st.add_vertex(array_to_vert(a, 0))
+
+func _to_string() -> String:
+	return String(duplicates)
 

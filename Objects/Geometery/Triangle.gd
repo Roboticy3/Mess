@@ -15,12 +15,12 @@ func _init(var data, var index:int = 0) -> void:
 	elif data is DuplicateMap: from_dups(data, index)
 	
 	
-func from_array(var _verts:Array) -> void:
+func from_array(var _verts:Array, var modes:Array = [true, true, true]) -> void:
 	if _verts.size() < 3:
 		return
 	
 	verts = _verts
-	update_abc()
+	update_abc(modes)
 
 func from_dups(var dups:DuplicateMap, var face:int) -> void:
 	var _verts:Array = [null, null, null]
@@ -29,10 +29,12 @@ func from_dups(var dups:DuplicateMap, var face:int) -> void:
 		_verts[i] = dups.vert_to_array(v)
 		_verts[i] = dups.vert_to_array(v)
 	
-	from_array(_verts)
+	from_array(_verts, dups.modes)
 
-func update_abc() -> void:
+#update abc from verts based on what data is present in verts
+func update_abc(var modes:Array = [true, true, true]) -> void:
 	for i in range(0, 3): 
+		if !modes[i]: continue
 		a[i] = get_vertex(0, i)
 		b[i] = get_vertex(1, i)
 		c[i] = get_vertex(2, i)
@@ -41,7 +43,7 @@ func update_abc() -> void:
 func get_vertex(var i:int, var mode:int = 0, var override:PoolRealArray = []):
 	if override.size() < 8: 
 		override = verts[i]
-	return DuplicateMap.array_to_vert(override, mode)
+	return DuplicateMap.array_to_vert_static(override, mode)
 
 #get area of different dimensions of the triangle based on mode
 func area(var mode:int = 0) -> float:

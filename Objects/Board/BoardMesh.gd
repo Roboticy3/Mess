@@ -36,6 +36,8 @@ var pieces:Dictionary = {}
 var uv_margin:float = 0.0001
 #store duplicate vertices and graph of mdt for more efficient mesh searching
 var duplicates:DuplicateMap
+#store duplicates only by position, not considering uvs and normals, to avoid MeshGraph building large amounts of islands
+var dups_pos_only:DuplicateMap
 var graph:MeshGraph
 
 # Called when the node enters the scene tree for the first time.
@@ -94,7 +96,9 @@ func init_mesh():
 	mdt.create_from_surface(m, 0)
 	#map duplicate vertices and create graph of mesh for easier manipulation of the mesh
 	duplicates = DuplicateMap.new(mdt)
-	graph = MeshGraph.new(mdt, duplicates)
+	#create a duplicate map that only considers positions to send into a MeshGraph
+	dups_pos_only = DuplicateMap.new(mdt, true, false, false)
+	graph = MeshGraph.new(mdt, dups_pos_only)
 	
 	#set opacity of material based on board property
 	var a:float = board.table["opacity"]
@@ -181,7 +185,7 @@ func create_piece(var p:Piece, var v:Vector2):
 		if board.table["piece_collision"] == 1:
 			pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
 		else: pdata["shape"] = CollisionShape.new()
-		pdata["transform"] = BoardConverter.square_to_transform(graph, board, p)
+		pdata["transform"] = BoardConverter.square_to_transform(graph, duplicates, board, p)
 		piece_types[p._to_string()] = pdata
 	#otherwise, copy piece data out of current dict
 	else:
@@ -212,7 +216,7 @@ func move_piece(var from:Vector2, var to:Vector2):
 	
 	#move the PieceMesh object into the right spot
 	var p:PieceMesh = pieces[to]
-	p.transform = BoardConverter.square_to_transform(graph, board, p.piece)
+	p.transform = BoardConverter.square_to_transform(graph, duplicates, board, p.piece)
 
 #highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
 #if mode is set to 1, hide all squares outside of the array

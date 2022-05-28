@@ -6,16 +6,15 @@ class_name BoardConverter
 #BoardConverter started as a converter for things related to well, the board
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
-#return the face index, position in space and normal of mesh from a uv coordinate pos
-#search faces using a Breadth-First-Search on a MeshGraph
-static func uv_to_mdata(var graph:MeshGraph, var pos:Vector2 = Vector2.ZERO,
-	var guess:int = 0, var mask:PoolIntArray = []):
-	
-	var result:Array = uv_to_mdata_linear(graph.duplicates, pos)
-	return result
-	
+#wrap uv_to_mdata_linear and uv_to_mdata_graph to easily switch between them
+static func uv_to_mdata(var graph:MeshGraph, var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO,
+	var guess:int = 0, var use_graph:bool = false) -> Array:
+
+	if use_graph: return uv_to_mdata_graph(graph, dups, pos, guess)
+	else: return uv_to_mdata_linear(dups, pos)
+
 #search faces linearly via their index in a MeshDataTool
-static func uv_to_mdata_linear(var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO):
+static func uv_to_mdata_linear(var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO) -> Array:
 	
 	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
 	
@@ -26,19 +25,72 @@ static func uv_to_mdata_linear(var dups:DuplicateMap, var pos:Vector2 = Vector2.
 	var mdt:MeshDataTool = dups.mdt
 	
 	for i in mdt.get_face_count():
-		var t:Triangle = Triangle.new(dups, i)
-		var b:Vector3 = t.barycentric_of(vert, 2, false)
-		var a:Array = [i, t.pos_from_barycentric(b),
-				mdt.get_face_normal(i), pos, t]	
-		if t.is_surrounding(vert, 2):
-			return a
+		var a:Array = uv_to_mdata_step(dups, i, pos, vert)
+		if !(a[0] is float): return a
 			
-		var d:float = b.length()
+		var d:float = a[0]
 		if d < distance:
 			distance = d
 			closest = a
 	
+	closest.remove(0)
 	return closest
+	
+#search faces with a breadth-first search of faces starting from a guess
+static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO,
+	var guess:int = 0) -> Array:
+
+	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
+	
+	#queue of faces to check
+	var queue:PoolIntArray = [guess]
+	
+	#set of searched faces
+	var searched:Dictionary = {
+		guess:uv_to_mdata_step(dups, guess, pos, vert)
+		}
+		
+	#store closest triangle to give a return value when no valid triangle was found
+	var distance:float = INF
+	var closest:Array = []
+	
+	while !queue.empty():
+		var i:int = queue.size() - 1
+		var f:int = queue[i]
+		var a:Array = searched[f]
+		#if the right face is found, return it
+		if !(a[0] is float): return a
+		
+		var d:float = a[0]
+		if d < distance:
+			distance = d
+			closest = a
+		
+		queue.remove(i)
+		
+		for j in graph.ftf[f]:
+			if searched.has(j): continue
+			searched[j] = uv_to_mdata_step(dups, j, pos, vert)
+			queue.append(j)
+	
+	closest.remove(0)
+	return closest
+
+#check if mdt face i surroundins pos,
+#if so, return an mdata array for pos in i
+#otherwise, return b.length() for a least distance check in uv_to_mdata methods
+static func uv_to_mdata_step(var dups:DuplicateMap, var i:int,
+	var pos:Vector2, var vert:PoolRealArray) -> Array:
+		
+	var t:Triangle = Triangle.new(dups, i)
+	var b:Vector3 = t.barycentric_of(vert, 2, false)
+	var a:Array = [i, t.pos_from_barycentric(b),
+			dups.mdt.get_face_normal(i), pos, t]	
+	if t.is_surrounding(vert, 2):
+		return a
+	var z:Array = [b.length()]
+	z.append_array(a)
+	return z
 
 #retrieve an Arrays object from a face index of a MeshDataTool
 static func get_face_vertices(var dups:DuplicateMap, var i:int) -> Array:
@@ -63,13 +115,14 @@ static func square_to_uv(var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vecto
 	return (pos + Vector2.ONE)/(size) - square/2
 
 #combine space converters into single function
-static func square_to_mdata(var graph:MeshGraph, var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO):
+static func square_to_mdata(var graph:MeshGraph, var dups:DuplicateMap,
+	var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO) -> Array:
 	var uv = square_to_uv(size, pos)
-	return uv_to_mdata(graph, uv)
+	return uv_to_mdata_graph(graph, dups, uv)
 
 #take an input board mdt, board, and piece to return a Transform for the associated PieceMesh accosiated with piece on the mdt constructed from a BoardMesh
-static func square_to_transform(var graph:MeshGraph, 
-	var board:Board, var piece:Piece):
+static func square_to_transform(var graph:MeshGraph, var dups:DuplicateMap,
+	var board:Board, var piece:Piece) -> Transform:
 	
 	
 	#reference useful piece properties in other variables
@@ -81,7 +134,7 @@ static func square_to_transform(var graph:MeshGraph,
 	
 	#get mesh data on square center for position and normal of the piece
 	#if the piece is not centered on its origin, offsets can be created
-	var mdata = square_to_mdata(graph, board.size, pos)
+	var mdata = square_to_mdata(graph, dups, board.size, pos)
 	#skip function if mdata returns null
 	if mdata == null:
 		return transform
@@ -90,7 +143,7 @@ static func square_to_transform(var graph:MeshGraph,
 	#go through each of the transformation steps
 	#check piece's settings on each before running each function
 	if table["rotate_mode"] != 2:
-		transform.basis = square_to_basis(graph, board, piece, mdata)
+		transform.basis = square_to_basis(graph, dups, board, piece, mdata)
 		
 	#SCALE
 	#scale does not need the mdata step, but has to be executed after rotation
@@ -108,8 +161,8 @@ static func square_to_transform(var graph:MeshGraph,
 	return transform
 
 #convert the normal of a square on the board to a set of basis vectors
-static func square_to_basis(var graph:MeshGraph, var board:Board, 
-	var piece:Piece, var mdata:Array):
+static func square_to_basis(var graph:MeshGraph, var dups:DuplicateMap,
+	var board:Board, var piece:Piece, var mdata:Array):
 	
 	var mdt:MeshDataTool = graph.mdt
 	if mdata == null: return Basis()
@@ -128,7 +181,7 @@ static func square_to_basis(var graph:MeshGraph, var board:Board,
 	#if no directions are valid, just default to Vector3.forward
 	var mf = [-1, Vector3.FORWARD, Vector3.UP]
 	if d < 4 && v != Vector2.ZERO:
-		mf = square_to_mdata(graph, board.size, piece.get_pos() + v)
+		mf = square_to_mdata(graph, dups, board.size, piece.get_pos() + v)
 	
 	#process mf[1] into a vector that is orthogonal to up
 	#these vectors are not necesarily orthogonal, but a true forward can be computed from up and right later
@@ -177,12 +230,16 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	var st:SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
+	#guess to help uv_to_mdata_graph start closer to its target
+	var guess:int = 0
+	
 	#mdata of each uv corner
 	var coverts:Array = []
 	coverts.resize(4)
 	for i in range(0, 4):
 		#get mdata of each corner
-		coverts[i] = uv_to_mdata(graph, c[i])
+		coverts[i] = uv_to_mdata(graph, dups, c[i], guess)
+		guess = coverts[i][0]
 		#convert coverts to vert arrays
 		coverts[i] = dups.mdata_to_array(coverts[i])
 		
@@ -221,7 +278,8 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		if close > inter.size() - 4:
 			verts[i] = coverts[close - inter.size() + 4]
 		else:
-			var mdata = uv_to_mdata(graph, inter[close])
+			var mdata = uv_to_mdata(graph, dups, inter[close], guess)
+			guess = mdata[0]
 			verts[i] = dups.mdata_to_array(mdata)
 				
 	#if square is flat, index faces into two triangles like so
@@ -360,7 +418,7 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 		
 		var tface:Triangle = Triangle.new(dups, i)
 		tface.xform_with(bt, true)
-		var face:Transform = face_to_transform(mdt, i)
+		var face:Transform = face_to_transform(mdt, i, Vector3.ONE * i)
 		tface.xform_with(face)
 		tface.xform_with(flat)
 		
@@ -387,14 +445,15 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 	
 	return tri.pos_from_barycentric(baryf, 2)
 	
-static func face_to_transform(var mdt:MeshDataTool, var i:int) -> Transform:
+static func face_to_transform(var mdt:MeshDataTool, var i:int,
+	var o:Vector3 = Vector3.ZERO) -> Transform:
 	
 	var x:Vector3 = Vector3.RIGHT
 	var z:Vector3 = mdt.get_face_normal(i)
 	var y:Vector3 = z.cross(x)
 	x = z.cross(y)
 	
-	return Transform(x, y, z, Vector3.ZERO)
+	return Transform(x, y, z, -o)
 
 #import mesh from .obj path
 static func path_to_mesh(var path:String = "", var debug:bool = false):
@@ -493,7 +552,7 @@ static func debug_positions(var node:Node = null, var positions:Array = [],
 			continue
 			
 		if t:
-			p = DuplicateMap.array_to_vert(p)
+			p = DuplicateMap.array_to_vert_static(p)
 		
 		var csg = CSGSphere.new()
 		csg.radius = radius

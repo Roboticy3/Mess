@@ -233,3 +233,7 @@
 	NEXT
 	 - add graph searching to mpos_to_uv, then commit Viewport_experimental back to main branch if it works
 	 - choose between fleshing out pieces or adding portals
+5/27/2022
+	 - started preparing DuplicateMap to work with only partial sets of data as keys so normals and uvs do not interfere with its aggregated MeshGraph
+	NEXT
+	 - finish modifying DuplicateMap and set up MeshGraph to only consider positional duplicates when building its face and vertex sets
