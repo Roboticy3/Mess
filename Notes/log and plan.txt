@@ -237,3 +237,22 @@
 	 - started preparing DuplicateMap to work with only partial sets of data as keys so normals and uvs do not interfere with its aggregated MeshGraph
 	NEXT
 	 - finish modifying DuplicateMap and set up MeshGraph to only consider positional duplicates when building its face and vertex sets
+5/28/2022
+	 - finished reimplementation of uv_to_mdata, DuplicateMap, MeshGraph, and mpos_to_uv. made my code slower in my attempt to make it faster
+	NEXT
+	 - start making the fucking game
+	 - study code optimization
+	 - graduate (important)
+6/1/2022
+	 - implemented uv_to_mdata_bilinear() after noticing oddly high iteration counts in uv_to_mdata_graph()
+	 - improved return cases for uv_to_mdata_graph() to drastically decrease iteration count (average 928 to average 2 on b_torus)
+	 - added debugging for iteration count and guess tracking for uv_to_mdata_graph() and uv_to_mdata_bilinear
+	NEXT
+	 - find other parts of the square_to_child() call stack that are laggy
+	 - graduate (get dressed, you have to go in like 30 minutes)
+	 - start making the fucking game
+6/3/2022
+	 - tried to speed up get_connected_to_square()
+	 - partially succeeded, making the algorithm around 6x faster but at the slight cost of it not working anymore
+	NEXT
+	 - figure out what's wrong with and fix get_connected_to_square() without bringing back the original complexity

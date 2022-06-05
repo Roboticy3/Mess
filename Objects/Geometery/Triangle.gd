@@ -14,19 +14,15 @@ func _init(var data, var index:int = 0) -> void:
 	if data is Array: from_array(data)
 	elif data is DuplicateMap: from_dups(data, index)
 	
-	
 func from_array(var _verts:Array, var modes:Array = [true, true, true]) -> void:
-	if _verts.size() < 3:
-		return
-	
 	verts = _verts
 	update_abc(modes)
 
 func from_dups(var dups:DuplicateMap, var face:int) -> void:
+	
 	var _verts:Array = [null, null, null]
 	for i in range(0, 3):
 		var v:int = dups.mdt.get_face_vertex(face, i)
-		_verts[i] = dups.vert_to_array(v)
 		_verts[i] = dups.vert_to_array(v)
 	
 	from_array(_verts, dups.modes)
@@ -35,15 +31,16 @@ func from_dups(var dups:DuplicateMap, var face:int) -> void:
 func update_abc(var modes:Array = [true, true, true]) -> void:
 	for i in range(0, 3): 
 		if !modes[i]: continue
-		a[i] = get_vertex(0, i)
-		b[i] = get_vertex(1, i)
-		c[i] = get_vertex(2, i)
+		a[i] = get_vertex(0, i, [], modes)
+		b[i] = get_vertex(1, i, [], modes)
+		c[i] = get_vertex(2, i, [], modes)
 
 #get vertex data from verts, optional override PoolRealArray to not take from verts
-func get_vertex(var i:int, var mode:int = 0, var override:PoolRealArray = []):
+func get_vertex(var i:int, var mode:int = 0, var override:PoolRealArray = [],
+	var modes:Array = [true, true, true]):
 	if override.size() < 8: 
 		override = verts[i]
-	return DuplicateMap.array_to_vert_static(override, mode)
+	return DuplicateMap.array_to_vert_static(override, mode, modes)
 
 #get area of different dimensions of the triangle based on mode
 func area(var mode:int = 0) -> float:
@@ -100,10 +97,10 @@ func get_sub_areas(var vector:PoolRealArray, var mode:int = 0) -> Vector3:
 func is_surrounding(var vector, var mode:int = 0,
 	var unformatted:bool = true, var margin:float = 0.00001) -> bool:
 		
-	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
-
 	var area:float = area(mode)
 	if area == 0: return false
+		
+	if unformatted: vector = DuplicateMap.format_vector(vector, mode)
 	
 	var subs:Vector3 = get_sub_areas(vector, mode)
 	var total:float = subs.x + subs.y + subs.z

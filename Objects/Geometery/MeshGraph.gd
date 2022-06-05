@@ -37,8 +37,7 @@ func generate_graphs():
 			var a:PoolRealArray = duplicates.vert_to_array(v)
 			verts.append(a)
 
-			var f:PoolIntArray = []
-			f = generate_vertex_faces(a, dups)
+			var f:PoolIntArray = generate_vertex_faces(a, dups)
 			
 			#add previously unadded faces connected to v to faces
 			for k in f:

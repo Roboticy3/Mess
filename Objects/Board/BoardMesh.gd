@@ -19,9 +19,9 @@ export (Resource) var default = null
 export (Vector2) var size:Vector2 = Vector2.ONE
 
 #material of the board
-export (Resource) var mat_board = null
+export (Resource) var mat_board = ResourceLoader.load("res://Materials/Default.tres")
 #material of the square highlight
-export (Resource) var mat_highlight = null
+export (Resource) var mat_highlight = ResourceLoader.load("res://Materials/highlight1.tres")
 
 #dictionary of a mesh and collision shape of a certain piece, keyed by its name
 #this collection stops each individual piece from having to load its mesh and collision individually
@@ -95,7 +95,7 @@ func init_mesh():
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(m, 0)
 	#map duplicate vertices and create graph of mesh for easier manipulation of the mesh
-	duplicates = DuplicateMap.new(mdt)
+	duplicates = DuplicateMap.new(mdt, true, false, true)
 	#create a duplicate map that only considers positions to send into a MeshGraph
 	dups_pos_only = DuplicateMap.new(mdt, true, false, false)
 	graph = MeshGraph.new(mdt, dups_pos_only)

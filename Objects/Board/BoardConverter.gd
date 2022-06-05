@@ -6,16 +6,8 @@ class_name BoardConverter
 #BoardConverter started as a converter for things related to well, the board
 #but now its a more general use collection of static functions because I'm too lazy to learn how to use a singleton
 
-#wrap uv_to_mdata_linear and uv_to_mdata_graph to easily switch between them
-static func uv_to_mdata(var graph:MeshGraph, var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO,
-	var guess:int = 0, var use_graph:bool = false) -> Array:
-
-	if use_graph: return uv_to_mdata_graph(graph, dups, pos, guess)
-	else: return uv_to_mdata_linear(dups, pos)
-
 #search faces linearly via their index in a MeshDataTool
 static func uv_to_mdata_linear(var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO) -> Array:
-	
 	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
 	
 	#store closest triangle to give a return value when no valid triangle was found
@@ -26,19 +18,18 @@ static func uv_to_mdata_linear(var dups:DuplicateMap, var pos:Vector2 = Vector2.
 	
 	for i in mdt.get_face_count():
 		var a:Array = uv_to_mdata_step(dups, i, pos, vert)
-		if !(a[0] is float): return a
+		if a[5]: return a
 			
-		var d:float = a[0]
+		var d:float = a[4].barycentric_of(pos).length()
 		if d < distance:
 			distance = d
 			closest = a
-	
-	closest.remove(0)
+
 	return closest
 	
 #search faces with a breadth-first search of faces starting from a guess
-static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap, var pos:Vector2 = Vector2.ZERO,
-	var guess:int = 0) -> Array:
+static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap, 
+	var pos:Vector2 = Vector2.ZERO, var guess:int = 0) -> Array:
 
 	var vert:PoolRealArray = DuplicateMap.format_vector(pos, 2)
 	
@@ -49,19 +40,22 @@ static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap, var po
 	var searched:Dictionary = {
 		guess:uv_to_mdata_step(dups, guess, pos, vert)
 		}
+	#return based on whether guess was correct
+	if searched[guess][5]: 
+		return searched[guess]
 		
 	#store closest triangle to give a return value when no valid triangle was found
 	var distance:float = INF
 	var closest:Array = []
 	
+	var iters:int = 0
+	
 	while !queue.empty():
 		var i:int = queue.size() - 1
 		var f:int = queue[i]
 		var a:Array = searched[f]
-		#if the right face is found, return it
-		if !(a[0] is float): return a
 		
-		var d:float = a[0]
+		var d:float = a[4].barycentric_of(pos).length()
 		if d < distance:
 			distance = d
 			closest = a
@@ -71,9 +65,14 @@ static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap, var po
 		for j in graph.ftf[f]:
 			if searched.has(j): continue
 			searched[j] = uv_to_mdata_step(dups, j, pos, vert)
+			a = searched[j]
+			#if the right face is found, return it
+			if a[5]: 
+				return a
 			queue.append(j)
-	
-	closest.remove(0)
+			
+		iters += 1
+
 	return closest
 
 #check if mdt face i surroundins pos,
@@ -81,16 +80,22 @@ static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap, var po
 #otherwise, return b.length() for a least distance check in uv_to_mdata methods
 static func uv_to_mdata_step(var dups:DuplicateMap, var i:int,
 	var pos:Vector2, var vert:PoolRealArray) -> Array:
-		
-	var t:Triangle = Triangle.new(dups, i)
+	
+	#optimize triangle creation by making input vert array statically 
+	var _verts:Array = [null, null, null]
+	for j in range(0, 3):
+		var v:int = dups.mdt.get_face_vertex(i, j)
+		_verts[j] = dups.vert_to_array(v, true)
+	var t:Triangle = Triangle.new(_verts)
+	
 	var b:Vector3 = t.barycentric_of(vert, 2, false)
 	var a:Array = [i, t.pos_from_barycentric(b),
-			dups.mdt.get_face_normal(i), pos, t]	
+			dups.mdt.get_face_normal(i), pos, t, false]
+	
 	if t.is_surrounding(vert, 2):
-		return a
-	var z:Array = [b.length()]
-	z.append_array(a)
-	return z
+		a[5] = true
+	
+	return a
 
 #retrieve an Arrays object from a face index of a MeshDataTool
 static func get_face_vertices(var dups:DuplicateMap, var i:int) -> Array:
@@ -118,7 +123,7 @@ static func square_to_uv(var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vecto
 static func square_to_mdata(var graph:MeshGraph, var dups:DuplicateMap,
 	var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO) -> Array:
 	var uv = square_to_uv(size, pos)
-	return uv_to_mdata_graph(graph, dups, uv)
+	return uv_to_mdata_linear(dups, uv)
 
 #take an input board mdt, board, and piece to return a Transform for the associated PieceMesh accosiated with piece on the mdt constructed from a BoardMesh
 static func square_to_transform(var graph:MeshGraph, var dups:DuplicateMap,
@@ -165,7 +170,6 @@ static func square_to_basis(var graph:MeshGraph, var dups:DuplicateMap,
 	var board:Board, var piece:Piece, var mdata:Array):
 	
 	var mdt:MeshDataTool = graph.mdt
-	if mdata == null: return Basis()
 	
 	#up vector will take the normal of the square
 	var up:Vector3 = mdata[2].normalized()
@@ -209,11 +213,22 @@ static func square_to_child(var parent:Node,
 	if name.empty(): name = "Square " + String(parent.board.size)
 	csg.name = name
 	parent.add_child(csg)
+
 	
 	return csg
 
 #WIP return a convex cube mesh bounding a square
 static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
+	
+	var debug:Dictionary = {
+		"initialization":0,
+		"corners":0,
+		"connections":0,
+		"squishing":0,
+		"construction":0
+	}
+	
+	debug["initialization"] = OS.get_ticks_msec()
 	
 	#size and mesh of the board
 	var size:Vector2 = board.size
@@ -232,33 +247,45 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 	
 	#guess to help uv_to_mdata_graph start closer to its target
 	var guess:int = 0
-	
-	#mdata of each uv corner
+
+	debug["initialization"] = OS.get_ticks_msec() - debug["initialization"]
+	debug["corners"] = OS.get_ticks_msec()
+
+	#vertex arrays of each corner
 	var coverts:Array = []
+	#faces around each corner
+	var cfaces:PoolIntArray = [-1, -1, -1, -1]
 	coverts.resize(4)
 	for i in range(0, 4):
 		#get mdata of each corner
-		coverts[i] = uv_to_mdata(graph, dups, c[i], guess)
+		coverts[i] = uv_to_mdata_graph(graph, dups, c[i], guess)
 		guess = coverts[i][0]
+		cfaces[i] = guess
 		#convert coverts to vert arrays
-		coverts[i] = dups.mdata_to_array(coverts[i])
+		coverts[i] = DuplicateMap.mdata_to_array_static(coverts[i])
 		
 		#add verts into surface tool
 		st.add_normal(dups.array_to_vert(coverts[i], 1))
 		st.add_uv(dups.array_to_vert(coverts[i], 2))
 		st.add_vertex(dups.array_to_vert(coverts[i], 0))
 		
+	debug["corners"] = OS.get_ticks_msec() - debug["corners"]
+	debug["connections"] = OS.get_ticks_msec()
+		
 	#integer Dictionary of faces intersecting with b and their verts
 	var faces:Dictionary = {}
 	#PoolRealArray Dictionary of PoolVector2Array intersections, vertices with edges that they could move to
 	var outer:Dictionary = {}
 	#assign verts and faces to these sets
-	get_connected_to_square(mdt, dups, b, faces, outer)
+	get_connected_to_square(graph, dups, cfaces, b, faces, outer, board)
 	
+	
+	debug["connections"] = OS.get_ticks_msec() - debug["connections"]
+	debug["squishing"] = OS.get_ticks_msec()
+
 	#PoolRealArray Dictionary of PoolRealArrays, verts with their target positions
 	var verts:Dictionary = {}
-	#bool Array of whether each corner has been filled
-	#find closest intersection to each outer point
+	#find closest intersection to each outer point and key its new position with its old position in verts
 	for i in outer:
 		#distance of closest intersection and uv of outer
 		var distance:float = INF
@@ -271,19 +298,29 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		#loop through inter, replace close with j when inter[j] is closer than distance to uv
 		for j in inter.size():
 			var d:float = uv.distance_to(inter[j])
+			if j - inter.size() + 4 < 0: d /= 4.0
 			if d < distance:
 				distance = d
 				close = j
+				
 		#create vert array for inter[close] to add as i's movement in verts
 		if close > inter.size() - 4:
 			verts[i] = coverts[close - inter.size() + 4]
-		else:
-			var mdata = uv_to_mdata(graph, dups, inter[close], guess)
-			guess = mdata[0]
-			verts[i] = dups.mdata_to_array(mdata)
-				
+			continue
+		
+		#generate a new position if the closest was not a corner
+		var mdata = uv_to_mdata_graph(graph, dups, inter[close], guess)
+		guess = mdata[0]
+		verts[i] = DuplicateMap.mdata_to_array_static(mdata)
+	
+#	debug_positions(board, verts.keys(), 0.05, 0, Color.green)
+#	debug_positions(board, verts.values(), 0.05, 1, Color.blue)
+			
+	debug["squishing"] = OS.get_ticks_msec() - debug["squishing"]
+	debug["construction"] = OS.get_ticks_msec()
+	
 	#if square is flat, index faces into two triangles like so
-	if faces.empty():
+	if faces.size() <= 1:
 		st.add_index(2)
 		st.add_index(1)
 		st.add_index(0)
@@ -292,12 +329,14 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 		st.add_index(0)
 	else:
 		var count:int = 4
+		var not_found:Array = []
 		for i in faces:
 			for j in range(0, 3):
 				var v:int = mdt.get_face_vertex(i, j)
 				var a:PoolRealArray = dups.vert_to_array(v)
 				#replace vert array with new data if it has been moved
 				if verts.has(a): a = verts[a]
+				else: not_found.append(a)
 				
 				st.add_normal(dups.array_to_vert(a, 1))
 				st.add_uv(dups.array_to_vert(a, 2))
@@ -305,76 +344,138 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 				st.add_index(count)
 				count += 1
 	
-		
 	#commit st to m and return it
 	st.commit(m)
 	var md = MeshDataTool.new()
 	md.create_from_surface(m, 0)
+	
+	debug["construction"] = OS.get_ticks_msec() - debug["construction"]
+	
+	print(debug)
+	
 	return m
 
-#isolate sets of vertices and faces in a mesh represented by a MeshDataTool and a duplicates Dictionary
-#these sets are faces intersecting Bound b and vertices outside, but connected to those faces
-#faces are represented as int indices of mdt and verts as PoolRealArray vertex arrays
-static func get_connected_to_square(var mdt:MeshDataTool, var dups:DuplicateMap, var b:Bound,
-	var faces:Dictionary = {}, var outer:Dictionary = {}):
-
-	var duplicates:Dictionary = dups.duplicates
-
-	#for each vertex in the dupmap, check if it is inside b or has edges intersecting b
-	#store any connected faces to duplicates of "a" that fill these conditions
-	for a in duplicates:
-		#if uv of a is inside b, add all connected triangles
-		var uv:Vector2 = dups.array_to_vert(a, 2)
+#take in a MeshGraph and mdata for the corners of a square b,
+#then write to faces Dictionary indices of faces connected to the square b 
+#write vertex data of vertices on connected faces but not in b
+static func get_connected_to_square(var graph:MeshGraph, var dups:DuplicateMap,
+	var cfaces:PoolIntArray, var b:Bound, var faces:Dictionary, var outer:Dictionary,
+	var board:Node) -> void:
+	
+	var mdt:MeshDataTool = graph.mdt
+	
+	#int PoolIntArray Dictionary of faces connected to b and their outer vertices
+	var searched:Dictionary = {}
+	
+	#assign faces around the corners of the square using cfaces
+	for i in range(0, 4):
+		var f:int = cfaces[i]
+		var v:PoolIntArray = [-1, -1, -1]
 		
-		#flags for whether a is inside b, and whether its connected to a face intersecting b
-		var inside:bool = b.is_surrounding(uv)
-		var connected:bool = inside
+		#find verts on each that are outer vertices and assign verts to v, construct edges
+		for j in range(0, 3):
+			v[j] = mdt.get_face_vertex(f, j)
+			var uv:Vector2 = mdt.get_vertex_uv(v[j])
+		var inters:Array = [null, null, null]
+		var out:PoolIntArray = is_face_touching_uv_b(mdt, f, v, b, inters)
 		
-		#store uv intersections of edges from a with b
-		var intersections:PoolVector2Array = []
+		#if uv_to_mdata_graph approximated, corners can be disconnected
+		#add them to outer with no intersections anyways, so they can get compressed into corners
+		faces[f] = v
+		if out == disconnected:
+			searched[f] = [PoolIntArray([0, 1, 2]), 
+				[PoolVector2Array(), PoolVector2Array(), PoolVector2Array()]]
+		else: searched[f] = [out, inters]
+	
+	#a queue of faces to search for connectivity
+	var queue:PoolIntArray = []
+	#fill queue with faces connected to the corner faces
+	for f in faces:
+		for i in graph.ftf[f]:
+			if !searched.has(i): queue.append(i)
+	
+	#pop through queue until it is empty
+	#if the current face is connected to b, add its neighbors to queue and its intersections to outer
+	while !queue.empty():
+		var i:int = queue.size() - 1
+		var f:int = queue[i]
+		queue.remove(i)
+		
+		#check if current face is connected to b, collecting its outer verts and intersections along the way
+		var v:PoolIntArray = [-1, -1, -1]
+		for j in range(0, 3):
+			v[j] = mdt.get_face_vertex(f, j)
+		var inters:Array = [null, null, null]
+		var out:PoolIntArray = is_face_touching_uv_b(mdt, f, v, b, inters)
+		searched[f] = [out, inters]
+
+		#if the face is not connected, do not continue to add its data to faces and outer,
+		#and do not queue is neighbors
+		if out == disconnected: continue
+		faces[f] = v
+		#update_outer(outer, mdt, f, out, inters)
+		for j in graph.ftf[f]:
+			if !searched.has(j): queue.append(j)
+	
+	#use searched Dictionary to link intersections with vertex arrays in outer
+	for i in searched:
+		var pair:Array = searched[i]
+		var out:PoolIntArray = pair[0]
+		var inters:Array = pair[1]
+		
+		if out == disconnected: continue
+		
+		#assign intersections to outer
+		for j in out.size():
+			var o:int = out[j]
+			var v:int = faces[i][o]
 			
-		#loop through duplicates of a to find intersections and connections to b
-		for i in duplicates[a]:
-			#get the faces of each duplicate
-			var fs:PoolIntArray = mdt.get_vertex_faces(i)
-			#check each connected face
-			for f in fs:
-				#construct and array of vertices from the face verts
-				var v:PoolIntArray = [-1, -1, -1]
-				for j in range(0, 3):
-					v[j] = mdt.get_face_vertex(f, j)
-				
-				#if uv is inside b, add faces connected to a to faces
-				if inside: 
-					faces[f] = v
-				#otherwise, check for edge intersecitons with b
-				else: 
-					for j in range(0, 3):
-						var uv1:Vector2 = mdt.get_vertex_uv(v[j])
-						var uv2:Vector2 = mdt.get_vertex_uv(v[(j + 1) % 3])
-						#if there are intersections, add face and flag connected
-						var inter:PoolVector2Array = b.edge_set_intersection([uv1, uv2])
-						if inter.empty(): continue
-						#add intersections not already found
-						for k in inter.size():
-							var added:bool = false
-							for l in intersections.size():
-								if intersections[l] == inter[k]: 
-									added = true
-									break
-							if !added: intersections.append(inter[k])
-						faces[f] = v
-					
-				#if this face connected to a has an intersection, flag connected
-				if faces.has(f):
-					connected = true
+			var a:PoolRealArray = dups.vert_to_array(v)
+			var c:PoolVector2Array = inters[o]
+			if outer.has(a): outer[a].append_array(c)
+			else: outer[a] = c
+
+#constant for is_face_touching_uv_b to use instead of null or false
+const disconnected:PoolIntArray = PoolIntArray([-1])
+
+#check if a face in the input mdt is touching a Bound in uv space
+#returns a PoolIntArray of outer vertices if the face is touching
+#return disconnected if not
+#fill and input intersections array, 
+#WARNING: intersections array will only store edge sets if an inner vertex is found 
+static func is_face_touching_uv_b(var mdt:MeshDataTool, var face:int, var v:PoolIntArray,
+	var b:Bound, var intersections:Array = []) -> PoolIntArray:
+	
+	#Array of outer vertices to return if face is touching
+	var out:PoolIntArray = []
+	
+	var touching:bool = false
+	
+	#find if any vertices of face are inside b, construct out
+	for i in range(0, 3):
+		var uv:Vector2 = mdt.get_vertex_uv(v[i])
+		if b.is_surrounding(uv): touching = true
+		else: out.append(i)
+	
+	#if the face has outer vertices, look for intersections
+	if out.empty() && touching: return out
+	var inters:Array = [null, null, null]
+	for i in range(0, 3):
+		var uv0:Vector2 = mdt.get_vertex_uv(v[i])
+		var uv1:Vector2 = mdt.get_vertex_uv(v[(i + 1) % 3])
+		var e:PoolVector2Array = [uv0, uv1]
 		
-		#final check to update connected if there are intersections
-		if !intersections.empty(): connected = true
-		
-		#add a to the appropriate set depending on inside and connected
-		if !inside && connected: outer[a] = intersections
-	return [faces, outer]
+		inters[i] = b.edge_set_intersection(e)
+		if !inters[i].empty(): touching = true
+	#send edge intersections to intersection array such that inter[i] has two sets of intersections for its adjacent edges
+	for i in range(0, 3):
+		#intersections from i to i + 1
+		intersections[i] = inters[i]
+		#intersections from i - 1 to i
+		intersections[i].append_array(inters[(i - 1) % 3])
+	
+	if touching: return out
+	return disconnected
 
 #convert a square in uv space to a Bound object
 static func square_to_bound(var size:Vector2, var square:Vector2):
@@ -394,7 +495,6 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 	var pos:Vector3 = Vector3.ZERO) -> Vector2:
 	
 	var mdt:MeshDataTool = board.mdt
-	var dups:DuplicateMap = board.duplicates
 	
 	#transforms to flatten triangles to the screen
 	var flat:Transform = Transform(Vector3.RIGHT,Vector3.UP, 
@@ -413,10 +513,15 @@ static func mpos_to_uv(var board:Node, var transform:Transform,
 		#skip faces facing the wrong direction
 		if mdt.get_face_normal(i).dot(transform.basis.z) <= 0: continue
 		
-		#save untransformed version of triangle
-		var t:Triangle = Triangle.new(dups, i)
+		var verts:Array = [null, null, null]
+		for j in range(0, 3):
+			var v:int = mdt.get_face_vertex(i, j)
+			verts[j] = DuplicateMap.mdt_to_array(mdt, v)
 		
-		var tface:Triangle = Triangle.new(dups, i)
+		#save untransformed version of triangle
+		var t:Triangle = Triangle.new(verts)
+		
+		var tface:Triangle = Triangle.new(verts)
 		tface.xform_with(bt, true)
 		var face:Transform = face_to_transform(mdt, i, Vector3.ONE * i)
 		tface.xform_with(face)
