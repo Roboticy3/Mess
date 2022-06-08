@@ -19,7 +19,7 @@ export (Resource) var default = null
 export (Vector2) var size:Vector2 = Vector2.ONE
 
 #material of the board
-export (Resource) var mat_board = ResourceLoader.load("res://Materials/Default.tres")
+export (Material) var mat_board = ResourceLoader.load("res://Materials/DwithHighlights.tres")
 #material of the square highlight
 export (Resource) var mat_highlight = ResourceLoader.load("res://Materials/highlight1.tres")
 
@@ -102,7 +102,8 @@ func init_mesh():
 	
 	#set opacity of material based on board property
 	var a:float = board.table["opacity"]
-	mat_board.albedo_color.a = a
+	if mat_board is SpatialMaterial: mat_board.albedo_color.a = a
+	elif mat_board is ShaderMaterial: mat_board.set_shader_param("alpha", a)
 	if a == 1:
 		mat_board.flags_transparent = false
 	
@@ -169,10 +170,13 @@ func uv_from_board(var object:Node):
 	if material is SpatialMaterial:
 		material.set_uv1_offset(offset)
 		material.set_uv1_scale(scale)
-	#otherwise, hope ShaderMaterial has "size" parameter
+	#otherwise, assume the ShaderMaterial is handling highlighting and set its properties accordingly
 	elif material is ShaderMaterial:
-		mat_board.set_shader_param("size", board.maximum - board.minimum)
-		pass
+		mat_board.set_shader_param("uv1_scale", scale)
+		mat_board.set_shader_param("uv1_offset", offset)
+		mat_highlight = mat_board.get_next_pass()
+		mat_highlight.set_shader_param("uv1_scale", scale)
+		mat_highlight.set_shader_param("uv1_offset", offset)
 
 #initialize a PieceMesh p at a position v on the board
 func create_piece(var p:Piece, var v:Vector2):
@@ -218,28 +222,47 @@ func move_piece(var from:Vector2, var to:Vector2):
 	var p:PieceMesh = pieces[to]
 	p.transform = BoardConverter.square_to_transform(graph, duplicates, board, p.piece)
 
-#highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
+#DEPRICATED: highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
+#NEW: highlight squares on the board by sending their positions to a texture which is rendered by mat_board
+#only works if mat_board is a ShaderMaterial
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
 func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1):
 	
-	#hide everything to start if mode is 1
-	if mode == 1:
-		for c in get_children():
-			if c.name.find("Square") != -1:
-				c.visible = false
+#	#hide everything to start if mode is 1
+#	if mode == 1:
+#		for c in get_children():
+#			if c.name.find("Square") != -1:
+#				c.visible = false
+#
+#	for v in vs:
+#		#if a square mesh for this square has already been created, just unhide it
+#		if square_meshes.has(v):
+#			var csg = square_meshes[v]
+#			if mode == 2: csg.visible = false
+#			#mode 2 hides selection
+#			else: csg.visible = true
+#		else:
+#			var csg = BoardConverter.square_to_child(self, v, mat_highlight)
+#			square_meshes[v] = csg
+#			if mode == 2: csg.visible = false
 
-	for v in vs:
-		#if a square mesh for this square has already been created, just unhide it
-		if square_meshes.has(v):
-			var csg = square_meshes[v]
-			if mode == 2: csg.visible = false
-			#mode 2 hides selection
-			else: csg.visible = true
-		else:
-			var csg = BoardConverter.square_to_child(self, v, mat_highlight)
-			square_meshes[v] = csg
-			if mode == 2: csg.visible = false
+	if mode == 1:
+		mat_highlight.set_shader_param("highlight_count", 0)
+	
+	#shaders can't take in arrays, so use a texture with a height of 1 instead
+	var image:Image = Image.new()
+	#format 9 stores two values with floating point precision
+	image.create(vs.size(), 1, false, 15)
+	image.lock()
+	for i in vs.size():
+		var c:Color = Color(vs[i].x, vs[i].y, 0.0)
+		image.set_pixel(i, 0, c)
+	var tex:ImageTexture = ImageTexture.new()
+	tex.lossy_quality = 1.0
+	tex.create_from_image(image)
+	mat_highlight.set_shader_param("highlights", tex)
+	mat_highlight.set_shader_param("highlight_count", vs.size())
 
 #use board.mark to highlight a set of square meshes
 func mark_from(var v:Vector2):

@@ -256,3 +256,9 @@
 	 - partially succeeded, making the algorithm around 6x faster but at the slight cost of it not working anymore
 	NEXT
 	 - figure out what's wrong with and fix get_connected_to_square() without bringing back the original complexity
+6/5/2022
+	 - completed the absolutely herculean task of fixing my own code
+	 - optimizations are barely noticeable :(
+	NEXT
+	 - replace square_to_box() with shader-based method :(
+	 - start programming taking phase

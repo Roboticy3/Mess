@@ -1,0 +1,117 @@
+[gd_resource type="ShaderMaterial" load_steps=5 format=2]
+
+[sub_resource type="Shader" id=6]
+code = "
+//Shader created by Pablo Ibarz on 6/8/2022
+//spatial shader with default settings
+shader_type spatial;
+render_mode blend_mix,depth_draw_alpha_prepass,cull_disabled,diffuse_burley,specular_schlick_ggx;
+
+//the front color of highlighted squares
+uniform vec4 front : hint_color;
+//the back color of highlighted squares
+uniform vec4 back : hint_color;
+
+//uv transformations to align checker texture with squares of the board
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+
+//n by 1 texture of squares 0 - n that should be highlighted
+uniform sampler2D highlights;
+//number of squares to be highlighted, n
+uniform int highlight_count;
+
+void vertex() {
+
+}
+
+void fragment() {
+	//assume this pass has failed and hide this coord
+	ALPHA = 0.0f;
+	//transformed uv
+	vec2 base_uv = UV*uv1_scale.xy+uv1_offset.xy;
+	//loop through highlight texture to find if this fragment coordinate is insight a square that needs highlighting
+	vec2 s = floor(base_uv * 2.0f);
+	for (int i = 0; i < highlight_count; i++)
+	{
+		vec2 samp = vec2(float(i) / float(highlight_count) + 1.0f / (2.0f * float(highlight_count)), 0.0f);
+		vec2 sq = texture(highlights, samp).rg;
+		//unhide found squares
+		if (s == floor(sq))
+		{
+			ALPHA = 1.0f;
+		}
+	}
+	
+	ALBEDO = front.rgb * float(FRONT_FACING) + back.rgb * float(!FRONT_FACING);
+}"
+
+[sub_resource type="ShaderMaterial" id=7]
+render_priority = 1
+shader = SubResource( 6 )
+shader_param/front = Color( 0.0862745, 0.792157, 0.0666667, 1 )
+shader_param/back = Color( 0.0588235, 0.72549, 0.776471, 1 )
+shader_param/uv1_scale = Vector3( 4, 4, 1 )
+shader_param/uv1_offset = null
+shader_param/highlight_count = null
+
+[sub_resource type="Shader" id=3]
+code = "
+//Shader created by Pablo Ibarz on 6/8/2022
+
+//spatial shader with default settings
+shader_type spatial;
+render_mode blend_mix,depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx;
+
+//material properties
+uniform vec4 albedo : hint_color;
+uniform float alpha;
+//imported checkerboard texture
+uniform sampler2D texture_albedo : hint_albedo;
+uniform float specular;
+uniform float metallic;
+uniform float roughness : hint_range(0,1);
+//no idea what this one does
+uniform float point_size : hint_range(0,128);
+
+//uv transformations to align checker texture with squares of the board
+uniform vec3 uv1_scale;
+uniform vec3 uv1_offset;
+
+
+void vertex() {
+
+}
+
+void fragment() {
+	//transformed uv and texture sampled with transformed uv
+	vec2 base_uv = UV*uv1_scale.xy+uv1_offset.xy;
+	vec4 albedo_tex = texture(texture_albedo,base_uv);
+	
+	//multiply texture color by tint
+	ALBEDO = albedo.rgb * albedo_tex.rgb;
+	//apply material properties
+	METALLIC = metallic;
+	ROUGHNESS = roughness;
+	SPECULAR = specular;
+	ALPHA = alpha * albedo_tex.a;
+}
+"
+
+[sub_resource type="StreamTexture" id=5]
+resource_name = "Viewport"
+flags = 23
+load_path = "res://.import/Checkerboard_tile.svg-8ab4691a11110c89b6842542d6d67fd8.s3tc.stex"
+
+[resource]
+next_pass = SubResource( 7 )
+shader = SubResource( 3 )
+shader_param/albedo = Color( 0.933333, 0.933333, 0.933333, 1 )
+shader_param/alpha = 0.5
+shader_param/specular = 0.5
+shader_param/metallic = 0.0
+shader_param/roughness = 1.0
+shader_param/point_size = 1.0
+shader_param/uv1_scale = Vector3( 4, 4, 1 )
+shader_param/uv1_offset = Vector3( 0, 0, 0 )
+shader_param/texture_albedo = SubResource( 5 )
