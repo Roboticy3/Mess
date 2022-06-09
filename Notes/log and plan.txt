@@ -262,3 +262,13 @@
 	NEXT
 	 - replace square_to_box() with shader-based method :(
 	 - start programming taking phase
+6/9/2022
+	 - i am now 18 and have paperwork :(
+	 - replaced square_to_box() with a shader-based method, it made me sad earlier to throw away all my math but it works so well that im ok with it. also, shader-based method has a really sick 2-pass shader with double-sided normals I love how it looks and it integrates right into the board's base shader
+	 - restructured node tree to allow for Viewport based mpos_to_uv system
+	 - created UvQuery.gd script to handle new Viewport system
+	 - changed file structure to allow pieces to be organized into packs independently of boards
+	 - replaced akward sibling and child loops in BoardMesh.gd and Player.gd with export NodePath variables
+	NEXT
+	 - start programming taking phase
+	 - start properly documenting scripts and project usage

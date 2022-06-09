@@ -113,14 +113,7 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 		teams.append(Team.new())
 		teams.append(Team.new(Color.black, Vector2.UP))
 	
-	var c = I.contents
-	
-	#if pieces start with default, load them from Instructions/default/
-	if c.find("default") == 0:
-		c = c.substr(c.find("/"))
-		c = "Instructions/default/pieces" + c
-	else:
-		c = path + c
+	var c = "Instructions/pieces/" + I.contents
 	
 	#only try to use files that exist
 	#the Piece object should have this handled but its more direct to check here

@@ -83,6 +83,11 @@ _global_script_classes=[ {
 "class": "Triangle",
 "language": "GDScript",
 "path": "res://Objects/Geometery/Triangle.gd"
+}, {
+"base": "Viewport",
+"class": "UvQuerier",
+"language": "GDScript",
+"path": "res://Objects/Player/UvQuerier.gd"
 } ]
 _global_script_class_icons={
 "Board": "",
@@ -99,7 +104,8 @@ _global_script_class_icons={
 "PortalBound": "",
 "Reader": "",
 "Team": "",
-"Triangle": ""
+"Triangle": "",
+"UvQuerier": ""
 }
 
 [application]

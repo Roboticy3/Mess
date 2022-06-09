@@ -15,8 +15,13 @@ export (int) var team = 0
 #distance a player can click to
 export (int) var vision = 2000000
 
-#Player script object should be attached to a KinematicBody with Camera child
+#Camera child of the Player
+export (NodePath) var camera_path:NodePath
 var camera:Camera
+
+#Viewport the Player can use to sample uv coordinates from the board
+export (NodePath) var viewport_path:NodePath
+var uv_query:UvQuerier
 
 #debug cube is an object than can be moved around to visualize test features
 var debug_cube:CSGBox
@@ -48,18 +53,9 @@ var looking:bool = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	
-	#find camera in children
-	var children = get_children()
-	for c in children:
-		if c is Camera:
-			camera = c
-	
-	#player should be a child of a rigidbody, get siblings of rigid body to gain references to board and debug cube
-	var siblings = get_parent().get_children()
-	for s in siblings:
-		if s is CSGBox:
-			debug_cube = s
+	#use NodePaths to find nodes
+	camera = get_node(camera_path)
+	uv_query = get_node(viewport_path) as UvQuerier
 
 #run movement functions on physics timestep
 func _physics_process(delta):
@@ -192,8 +188,7 @@ func request_square(var event:InputEventMouseButton):
 			square = r["collider"].piece.get_pos()
 		#otherwise, return uv square of board
 		else:
-			var uv = BoardConverter.mpos_to_uv(board_mesh, transform, r["position"])
-			
+			var uv = uv_query.query(event.position)
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
 		#handle square selection

@@ -21,13 +21,15 @@ export (Vector2) var size:Vector2 = Vector2.ONE
 #material of the board
 export (Material) var mat_board = ResourceLoader.load("res://Materials/DwithHighlights.tres")
 #material of the square highlight
-export (Resource) var mat_highlight = ResourceLoader.load("res://Materials/highlight1.tres")
+export (Material) var mat_highlight = ResourceLoader.load("res://Materials/highlight1.tres")
+
+#paths to this BoardMesh's rendering and collision children, must be filled for either to work
+export (NodePath) var board_shape_path:NodePath
+export (NodePath) var board_collider_path:NodePath
 
 #dictionary of a mesh and collision shape of a certain piece, keyed by its name
 #this collection stops each individual piece from having to load its mesh and collision individually
 var piece_types:Dictionary = {}
-#this collection prevents BoardConverter from having to run square_to_box on the same square multiple times
-var square_meshes:Dictionary = {}
 
 #Vector2 Dictionary of PieceMeshes, keeps track of piece models
 var pieces:Dictionary = {}
@@ -39,6 +41,8 @@ var duplicates:DuplicateMap
 #store duplicates only by position, not considering uvs and normals, to avoid MeshGraph building large amounts of islands
 var dups_pos_only:DuplicateMap
 var graph:MeshGraph
+
+var players:Array = Array()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -118,7 +122,8 @@ func send_board():
 	#send self's data to player objects
 	var siblings = get_parent().get_children()
 	for s in siblings:
-		if s is KinematicBody && "board_mesh" in s:
+		if s is Player:
+			players.append(s)
 			s.set("board_mesh", self)
 			s.set("material", mat_board)
 			s.set("board", board)
@@ -134,21 +139,17 @@ func send_shape(var m:Mesh):
 	var shape = BoardConverter.mesh_to_shape(m)
 	
 	#send collision shape and mesh to children
-	var children = get_children()
-	for c in children:
-		
-		if c is CSGMesh:
-			#set mesh to parent object
-			c.set("mesh", mesh)
-			#run uv_from_board after setting the shader so the shader can be sent uv data
-			mat_board = c.get("material")
-			uv_from_board(c)
-			
-		#find child that is a collision shape to set the shape to
-		if c is CollisionShape:
-			c.set("shape", shape)
-			#if there is no collision, change to collision layer so that players can pass through but rays can still hit
-			if noclip: set("collision_layer", 2)
+	var c:Node = get_node(board_shape_path)
+	#set mesh to parent object
+	c.set("mesh", mesh)
+	#run uv_from_board after setting the shader so the shader can be sent uv data
+	mat_board = c.get("material")
+	uv_from_board(c)
+	
+	c = get_node(board_collider_path)
+	c.set("shape", shape)
+	#if there is no collision, change to collision layer so that players can pass through but rays can still hit
+	if noclip: set("collision_layer", 2)
 
 #remap uv settings from board shape
 func uv_from_board(var object:Node):

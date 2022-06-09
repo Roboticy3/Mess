@@ -9,7 +9,7 @@ extends Node
 # name of piece and file path from which it reads instructions
 var path = ""
 #the path to the mesh .obj the piece will appear as and the team
-var mesh = "Instructions/default/meshes/pawn.obj"
+var mesh = "Instructions/pieces/default/meshes/pawn.obj"
 var team = 0
 
 #instructions for marking squares when selected
@@ -66,7 +66,7 @@ func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 		if name == "":
 			name = s[0].strip_edges()
 		#try and set the piece's model path
-		var p:String = path.substr(0, path.find_last("pieces/"))
+		var p:String = path.substr(0, path.find_last("/") + 1)
 		if f.file_exists(p + s[0]):
 			mesh = p + s[0]
 	
