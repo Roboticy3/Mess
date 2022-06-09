@@ -9,10 +9,9 @@ I'm currently optimizing my mesh searching algorithms to better handle larger me
 ## Navigating and using this project
 To open the project, import it as a Godot project in Godot 3.x, I haven't tested it with 4.x alphas.
 For testing out boards, go to the Static Body in the Godot scene and change it's path value to the board you want to load.
-For editing boards and pieces, refer to wiki page "Editing Boards and Pieces"
+For editing boards and pieces, refer to wiki page "Creating and Editing Boards and Pieces"
 
 # Mess roadmap (in order)
- - Make game comprehensible to look at and use
  - Finish Portal.gd and how other scripts handle it
  - Add a main menu and level select
  - Make the game compatible with both couch and peer-to-peer multiplayer
