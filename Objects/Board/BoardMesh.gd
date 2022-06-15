@@ -127,7 +127,7 @@ func send_board():
 			s.set("board_mesh", self)
 			s.set("material", mat_board)
 			s.set("board", board)
-			break
+			s.set_mesh(mesh)
 	
 func send_shape(var m:Mesh):
 	

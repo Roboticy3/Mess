@@ -7,7 +7,7 @@ class_name Player
 #store a reference to the board in the scene
 export (Resource) var board
 #store reference to BoardMesh object in the physical board
-export (Resource) var board_mesh
+export (Mesh) var board_mesh
 
 #the team with which the player can interact with
 export (int) var team = 0
@@ -56,6 +56,10 @@ func _ready():
 	#use NodePaths to find nodes
 	camera = get_node(camera_path)
 	uv_query = get_node(viewport_path) as UvQuerier
+	
+func set_mesh(var mesh:Mesh) -> void:
+	uv_query.set_mesh(mesh)
+	
 
 #run movement functions on physics timestep
 func _physics_process(delta):

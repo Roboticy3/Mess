@@ -13,20 +13,24 @@ export (NodePath) var camera_path:NodePath
 var camera:Camera
 export (NodePath) var target_path:NodePath
 var target:Camera
-export (Array, NodePath) var csg_paths:Array
-var csg:Array
+export (NodePath) var csg_path:NodePath
+var csg:CSGMesh
+export (Mesh) var mesh:Mesh
 
 export (ViewportTexture) var texture:ViewportTexture
 
 func _ready() -> void:
 	camera = get_node(camera_path)
 	target = get_node(target_path)
-	csg = Array()
-	for csg_path in csg_paths: csg.append(get_node(csg_path))
+	csg = get_node(csg_path)
+	
+func set_mesh(var mesh:Mesh) -> void:
+	csg.mesh = mesh
 
 #returns the uv position on the closest CSGMesh to the camera at the input screen_position
 #if no uv position is found, it returns Vector2(NaN, NaN)
 func query(var screen_position:Vector2) -> Vector2:
+	print(csg.get("mesh"))
 	
 	var image:Image = texture.get_data()
 	image.lock()
@@ -55,7 +59,7 @@ func sRGBx_to_linear(var x:float) -> float:
 	
 	return 0.0
 	
-#match this Viewport's Camera's settings to the main camera's
+#match this Viewport's Camera's settings to the main Camera's
 func _process(var delta:float) -> void:
 	camera.global_transform = target.global_transform
 	camera.h_offset = target.h_offset

@@ -1,6 +1,8 @@
 [gd_resource type="ShaderMaterial" load_steps=5 format=2]
 
-[sub_resource type="Shader" id=6]
+[ext_resource path="res://Textures/Checkerboard_tile.svg" type="Texture" id=1]
+
+[sub_resource type="Shader" id=1]
 code = "
 //Shader created by Pablo Ibarz on 6/8/2022
 //spatial shader with default settings
@@ -46,9 +48,9 @@ void fragment() {
 	ALBEDO = front.rgb * float(FRONT_FACING) + back.rgb * float(!FRONT_FACING);
 }"
 
-[sub_resource type="ShaderMaterial" id=7]
+[sub_resource type="ShaderMaterial" id=2]
 render_priority = 1
-shader = SubResource( 6 )
+shader = SubResource( 1 )
 shader_param/front = Color( 0.0862745, 0.792157, 0.0666667, 1 )
 shader_param/back = Color( 0.0588235, 0.72549, 0.776471, 1 )
 shader_param/uv1_scale = Vector3( 4, 4, 1 )
@@ -98,13 +100,8 @@ void fragment() {
 }
 "
 
-[sub_resource type="StreamTexture" id=5]
-resource_name = "Viewport"
-flags = 23
-load_path = "res://.import/Checkerboard_tile.svg-8ab4691a11110c89b6842542d6d67fd8.s3tc.stex"
-
 [resource]
-next_pass = SubResource( 7 )
+next_pass = SubResource( 2 )
 shader = SubResource( 3 )
 shader_param/albedo = Color( 0.933333, 0.933333, 0.933333, 1 )
 shader_param/alpha = 0.5
@@ -114,4 +111,4 @@ shader_param/roughness = 1.0
 shader_param/point_size = 1.0
 shader_param/uv1_scale = Vector3( 4, 4, 1 )
 shader_param/uv1_offset = Vector3( 0, 0, 0 )
-shader_param/texture_albedo = SubResource( 5 )
+shader_param/texture_albedo = ExtResource( 1 )

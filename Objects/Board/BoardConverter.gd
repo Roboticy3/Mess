@@ -107,7 +107,6 @@ static func get_face_vertices(var dups:DuplicateMap, var i:int) -> Array:
 #convert from uv coordinate to square using the size in squares of the board
 static func uv_to_square(var size:Vector2, var pos:Vector2) -> Vector2:
 	var large = pos * size
-	print(pos)
 	large.x = floor(large.x)
 	large.y = floor(large.y)
 	return large
