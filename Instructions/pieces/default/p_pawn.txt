@@ -8,6 +8,10 @@ m
 ?moves < 1 0 2 double 1
 ?1 1 1 1 0 0
 ?-1 1 -1 1 0 0
-
 ?-1 0 double = 1 ?moves = 1 -1 1 0 0
 ?1 0 double = 1 ?moves = 1 1 1 0 0
+
+t
+
+0 -1 4
+0 -1 5

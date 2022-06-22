@@ -30,7 +30,6 @@ func set_mesh(var mesh:Mesh) -> void:
 #returns the uv position on the closest CSGMesh to the camera at the input screen_position
 #if no uv position is found, it returns Vector2(NaN, NaN)
 func query(var screen_position:Vector2) -> Vector2:
-	print(csg.get("mesh"))
 	
 	var image:Image = texture.get_data()
 	image.lock()

@@ -7,7 +7,7 @@ extends Node
 #store pairs of pieces and their location
 var pieces:Dictionary = {}
 #store the types of pieces on the board to avoid having to load pieces from scratch every time
-var piece_types = []
+var piece_types:Array = []
 
 #store a list of the teams on the board
 var teams:Array = []
@@ -43,7 +43,7 @@ func _ready():
 	var persist:PoolIntArray = [-1, 0]
 	
 	#tell Reader object which functions to call
-	var funcs = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
+	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
 	
 	#read the Instruction file
 	var r:Reader = Reader.new(self, funcs, path)
@@ -128,17 +128,17 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 		if !p.name.match(""):
 			piece_types.append(c)
 			#when a piece is assigned, skip the rest of the g phase loop
-			return null
+			return
 	
-	#if this line has not declared a path
+	#if this line has not declared a path, check if it can create a piece
 	if vec.size() >= 4 && piece_types.size() > 0:
 		var pos = make_piece(vec)
 		#check if symmetry should be enabled
-		if vec.size() == 5:
-			persist[1] = vec[4]
+		if vec.size() >= 5:
+			persist[0] = vec[4]
 			
 		#symmetrize piece
-		if persist[1] == 1:
+		if persist[0] == 1:
 			pos = -pos + 2*(center)
 			vec[0] += 1
 			vec[2] = pos.x
@@ -146,22 +146,20 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 			make_piece(vec)
 
 #set piece and return set position from array of length 4
-#return null if the set fails
-func make_piece(var i:Array):
+#returns the position interpereted from the input vector
+func make_piece(var i:Array) -> Vector2:
+	#extract the position from the input vector
 	var v = Vector2(i[2], i[3])
-	#the first indicates the team and the second the type of piece
+	#i[0] indicates the Piece's team and i[1] indicates the type
+	#check if they are in range
 	if i[0] < teams.size() && i[1] < piece_types.size():
-		var p = Piece.new(piece_types[i[1]], i[0], v)
-		
-		#if piece has not overrided team's direction, set it
-		if p.get_forward() == Vector2.ZERO:
-			p.set_forward(teams[i[0]].forward)
+		var p = Piece.new(piece_types[i[1]], teams[i[0]], i[0], v)
+		#bounce the position back from the piece to accound for px or py overriding the Piece's original position
+		v = p.get_pos()
 			
 		#add the piece to the dictionary
 		teams[i[0]].pieces[v] = p
 		pieces[v] = p
-	
-	else: return null
 	
 	return v
 	
@@ -340,7 +338,86 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 		
 		#if square is occupied by a takeable piece, break after adding the square
 		if occ && take: break
+
+#execute a turn by moving a piece, updating both the piece's table and the board's pieces
+#the only argument taken is a mark to select from marks
+#assumes both v is in pieces and v is in bounds
+#returns an array of Dictionaries
+#	index 0 is the table of moving pieces, keyed by Vector2 squares which were moved with Vector2 squares to move to
+#	index 1 is a table of created pieces, keyed by Vector2 squares to place their matching Piece objects onto
+#	index 2 is an Array of destroyed pieces
+func execute_turn(var v:Vector2):
+	
+	#move the selected piece and add to its moves counter
+	move_piece(select, v)
+	#set of movements based on the piece's instructions
+	var moves:Dictionary = {select:v}
+	
+	#regenerate the behaviors of piece within the current state of the board
+	var p:Piece = pieces[v]
+	var funcs:Dictionary = {"t":"t_phase","c":"c_phase","r":"r_phase"}
+	var reader:Reader = Reader.new(p, funcs, p.path)
+	reader.wait = true
+	reader.read()
+	
+	#the piece's behaviours
+	var m:Array = p.mark
+	var b:Dictionary = p.behaviors
+	#the index of m that was used to move
+	var move:int = marks[v]
+	
+	#see if any extra behaviors match the piece's move
+	var creations:Array = []
+	var destructions:PoolVector2Array = []
+	#behaviors in the -1 key apply to all moves
+	if b.has(-1):
+		var b1:Dictionary = b[-1]
+		if b1.has("t"): destructions.append_array(b1["t"])
+		if b1.has("c"): creations.append_array(b1["c"])
+	if b.has(move):
+		var bm:Dictionary = b[move]
+		if bm.has("t"): destructions.append_array(bm["t"])
+		if bm.has("c"): creations.append_array(bm["c"])
 		
+	for i in destructions.size():
+		var d:Vector2 = destructions[i]
+		var square:Vector2 = p.relative_to_square(d)
+		destroy_piece(square)
+		destructions[i] = square
+	
+	#update table using the movement instruction
+	m[move].update_table_line()
+	
+	#clear the marks dictionary and the piece's temporary behaviors
+	marks.clear()
+	b.clear()
+	
+	#increment turn
+	turn += 1
+	#return Board updates
+	return [moves, creations, destructions]
+
+#move the piece on from onto to
+func move_piece(var from:Vector2, var to:Vector2):
+	pieces[to] = pieces[from]
+	pieces.erase(from)
+	#update the piece's local position and increment its move count
+	pieces[to].set_pos(to)
+	pieces[to].table["moves"] += 1
+
+#erase a piece from the board, return true if the method succeeds
+func destroy_piece(var at:Vector2) -> bool:
+	if !pieces.has(at): return false
+	pieces.erase(at)
+	return true
+
+#get the team of the current turn by taking turn % teams.size()
+func get_team():
+	return turn % teams.size()
+
+func _init(var _path:String):
+	path = _path
+	_ready()
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
@@ -374,50 +451,3 @@ func _to_string():
 		s += "\n"
 		i -= 1
 	return s
-
-#execute a turn by moving a piece, updating both the piece's table and the board's pieces
-#the only argument taken is a mark to select from marks
-#assumes both v is in pieces and v is in bounds
-#returns an array of Dictionaries
-#	index 0 is the table of moving pieces, keyed by Vector2 squares which were moved with Vector2 squares to move to
-#	index 1 is a table of created pieces, keyed by Vector2 squares to place their matching Piece objects onto
-#	index 2 is an Array of destroyed pieces
-func execute_turn(var v:Vector2):
-	
-	#move the selected piece and add to its moves counter
-	move_piece(select, v)
-	
-	#search end of mark that provided move v for table updates
-	var m:Array = pieces[v].mark
-	var I:Instruction = m[marks[v]]
-	var i = I.wrds.size() - 2
-	while i > 0:
-		I.update_table(I.table, i)
-		i -= 2
-	
-	#clear the marks dictionary
-	marks.clear()
-	
-	#set of movements based on the piece's instructions
-	var moves:Dictionary = {select:v}
-	
-	#increment turn
-	turn += 1
-	#return Board updates
-	return [moves]
-
-#move the piece on from onto to
-func move_piece(var from:Vector2, var to:Vector2):
-	pieces[to] = pieces[from]
-	pieces.erase(from)
-	#update the piece's local position and increment its move count
-	pieces[to].set_pos(to)
-	pieces[to].table["moves"] += 1
-
-#get the team of the current turn by taking turn % teams.size()
-func get_team():
-	return turn % teams.size()
-
-func _init(var _path:String):
-	path = _path
-	_ready()

@@ -15,6 +15,9 @@ var node:Node
 var funcs:Dictionary
 var size:int = 8
 
+#if set to true, read() will not call any functions until it reaches a defined key
+var wait:bool = false
+
 #initialize the Reader object
 #size represents the number of properties Reader can store across multiple lines, default 8
 func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8):
@@ -55,6 +58,9 @@ func read(var stage:int = -1):
 	var stages:Array = funcs.keys()
 	var stg = "~"
 	
+	#value indicating whether the first defined stage has been found
+	var begun:bool = false
+	
 	#loop through instruction lines
 	for c in content:
 		#strip edges off line
@@ -66,11 +72,15 @@ func read(var stage:int = -1):
 		#append the current vector if it's valid
 		vec = I.vectorize()
 		
+		#find if any of the stages match the current one
+		#if so, call the method paired with the current stage
 		for s in stages:
-			if s.match(stg):
+			#dont call any method if wait has been set to true and the first defined method is yet to be found
+			if s.match(stg) && (!wait || begun):
 				node.call(funcs[stg], I, vec, persist)
 		
 		#check if line matches a stage key
 		for s in stages:
 			if c.match(s):
+				begun = true
 				stg = c

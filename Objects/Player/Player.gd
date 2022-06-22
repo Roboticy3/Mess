@@ -168,6 +168,7 @@ func update_target_motion(var event):
 #set target_motion to non-zero if event.is_pressed()
 func set_target_motion(var on_off:bool = true, var key:String = "z"):
 	var s = speed
+	#wtf?
 	if key.begins_with("-"): 
 		s *= -1
 		key.erase(0, 1)

@@ -93,9 +93,12 @@ func vectorize(var start:int = 0):
 	w[0] = w[0].substr(1)
 	
 	#if next word is a conditional, the conditional consists of a simple comparison
-	if SYMBL.find(wrds[1]) != -1:
-		if evaluate(w, start):
+	if SYMBL.find(w[1]) != -1:
+		if evaluate(w):
+			print(w[0],w)
 			return vectorize(start + 3)
+		#if the conditional fails, return nothing
+		return []
 	
 	#take parsed versions of first and second wrds to determine the type of conditional
 	var u = parse(w[0])
@@ -122,11 +125,12 @@ func vectorize(var start:int = 0):
 				#then evaluate the conditional from w[2] to w[4]
 				if evaluate(w, 2):
 					return vectorize(start + 5)
+			return []
 		
 		#if there is no conditional statement, a square is being checked for presence, a check which has already passed
 		return vectorize(start + 2)
 
-static func can_take_from(var from:int, var to:int, var t:Dictionary=table):
+static func can_take_from(var from:int, var to:int, var t:Dictionary=table) -> bool:
 	if to == from && t["ff"] == 0:
 		return false
 	return true
@@ -155,7 +159,7 @@ func evaluate(var w:Array = [], var start:int = 0):
 	for s in w:
 		a.append(parse(s))
 	
-	var sgn = w[1].strip_edges()
+	var sgn:String = w[1]
 	
 	#if conditional is in the right format and has valid variable calls, evaluate it
 	if (SYMBL.find(sgn) != -1):
@@ -163,9 +167,9 @@ func evaluate(var w:Array = [], var start:int = 0):
 		if sgn.ends_with("="):
 			if (sgn.find("<") != -1 && a[0] <= a[2]):
 				return true
-			elif (a[0] >= a[2]):
+			elif (sgn.find("<") != -1 && a[0] >= a[2]):
 				return true
-			elif (a[0] == a[2]):
+			elif a[0] == a[2]:
 				return true
 		elif (sgn == ">" && a[0] > a[2]):
 			return true
@@ -216,8 +220,8 @@ func to_string_array(var c:String = contents, var start:int = 0):
 	#use start to slice array and return it
 	return a.slice(start, a.size() - 1)
 	
-#returns true or false based on whether or not an index in wrds matches its word in contents
-func is_unformatted(var i:int = 0, var start:int = s):
+#returns true if the formatted wrds array is the same as the contents array at index i
+func is_unformatted(var i:int = 0, var start:int = s) -> bool:
 	i += start
 	
 	if i >= wrds.size(): return false
@@ -247,6 +251,13 @@ func update_table(var t:Dictionary=table, var start:int = 0):
 			var a = n[1]
 			if a == null: a = s[j]
 			t[s[i]] = a
+
+#do all the table updates in a given line
+func update_table_line(var t:Dictionary = table) -> void:
+	var i = wrds.size() - 2
+	while i > 0:
+		update_table(t, i)
+		i -= 2
 
 func _to_string():
 	return contents

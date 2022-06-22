@@ -272,3 +272,22 @@
 	NEXT
 	 - start programming taking phase
 	 - start properly documenting scripts and project usage
+6/16/2022
+	 - started programming taking phase
+	 - restarted wiki documentation
+	 - found bug in vectorize() (or maybe evaluate?) centered around line 96
+	NEXT
+	 - fix da bug
+	 - keep programming taking phase
+6/17/2022
+	 - fixed da bug
+	 - continued work on implementing taking, and tangentially provided early support for creating and relocation
+	NEXT
+	 - continue wiki documentation
+	 - finish demo of taking
+6/21/2022
+ 	 - finished taking phase
+	 - started documenting syntax for writing pieces
+	NEXT
+	 - fix bug where setting "px" and "py" in a piece overrides placement but not symmetry rotation
+	 - further test piece built-in variables

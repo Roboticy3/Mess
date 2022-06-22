@@ -68,7 +68,7 @@ func _ready():
 	#generate piece objects
 	var ps = board.pieces
 	for v in ps:
-		pieces[v] = create_piece(ps[v], v)
+		create_piece(ps[v], v)
 	
 	#send mesh and collision shape to physics objects
 	send_shape(m)
@@ -118,6 +118,7 @@ func init_mesh():
 
 	return m
 
+#find the players in the scene and give them the information they need about the board
 func send_board():
 	#send self's data to player objects
 	var siblings = get_parent().get_children()
@@ -129,6 +130,7 @@ func send_board():
 			s.set("board", board)
 			s.set_mesh(mesh)
 	
+#resolve the collisions of the board
 func send_shape(var m:Mesh):
 	
 	#flag board's collision boolean
@@ -181,6 +183,9 @@ func uv_from_board(var object:Node):
 
 #initialize a PieceMesh p at a position v on the board
 func create_piece(var p:Piece, var v:Vector2):
+	#destroy any piece currently occupying the square
+	if pieces.has(v): destroy_piece(v)
+	
 	#if the piece is not recorded in the piece_types dict, update dict with its data
 	var pdata = {}
 	if !([p._to_string()] in piece_types):
@@ -205,15 +210,13 @@ func create_piece(var p:Piece, var v:Vector2):
 	#set pm's reference to its piece and transforms and return pm to be added to table
 	pm.piece = p
 	pm.transform = pdata["transform"]
-	return pm
+	pieces[v] = pm
 
 #transform the piece in from to to, change location, rotation, and scale accordingly
 func move_piece(var from:Vector2, var to:Vector2):
 	
 	#if to contains a PieceMesh, remove that object before continuing
-	if pieces.has(to):
-		remove_child(pieces[to])
-		pieces.erase(to)
+	if pieces.has(to): destroy_piece(to)
 	
 	#update the dictionary
 	pieces[to] = pieces[from]
@@ -223,30 +226,17 @@ func move_piece(var from:Vector2, var to:Vector2):
 	var p:PieceMesh = pieces[to]
 	p.transform = BoardConverter.square_to_transform(graph, duplicates, board, p.piece)
 
+#destroy the PieceMesh at the input Vector2 square, assumes input is in pieces
+func destroy_piece(var at:Vector2):
+	remove_child(pieces[at])
+	pieces.erase(at)
+
 #DEPRICATED: highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
 #NEW: highlight squares on the board by sending their positions to a texture which is rendered by mat_board
 #only works if mat_board is a ShaderMaterial
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
 func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1):
-	
-#	#hide everything to start if mode is 1
-#	if mode == 1:
-#		for c in get_children():
-#			if c.name.find("Square") != -1:
-#				c.visible = false
-#
-#	for v in vs:
-#		#if a square mesh for this square has already been created, just unhide it
-#		if square_meshes.has(v):
-#			var csg = square_meshes[v]
-#			if mode == 2: csg.visible = false
-#			#mode 2 hides selection
-#			else: csg.visible = true
-#		else:
-#			var csg = BoardConverter.square_to_child(self, v, mat_highlight)
-#			square_meshes[v] = csg
-#			if mode == 2: csg.visible = false
 
 	if mode == 1:
 		mat_highlight.set_shader_param("highlight_count", 0)
@@ -275,7 +265,7 @@ func mark_from(var v:Vector2):
 func handle(var v:Vector2, var team:int = 0):
 	
 	var p:Dictionary = board.pieces
-	print(v)
+	#print(v)
 	
 	#check if square is a selectable piece
 	if v in p && team == p[v].team:
@@ -288,6 +278,9 @@ func handle(var v:Vector2, var team:int = 0):
 		#move mesh of piece into correct place
 		for i in moves[0]:
 			move_piece(i, moves[0][i])
+		#destroy meshes of pieces removed during the turn
+		for i in moves[2]:
+			destroy_piece(i)
 		#clear board marks
 		highlight_square()
 		

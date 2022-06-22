@@ -9,7 +9,7 @@ b
 #this phase sets boundries that define the shape of the board
 #if a piece tries to move to a spot with no encompassing boundries, the option will not appear
 
-?1 < 2 0 0 7 7 #set a boundary defining the board as a square from 0 to 7 places in both direction
+0 0 7 7 #set a boundary defining the board as a square from 0 to 7 places in both direction
 
 t
 #this phase creates the teams on the board, indicating their color in R G B format, the forward direction as two numbers
