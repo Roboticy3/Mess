@@ -34,7 +34,7 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictio
 	format()
 	
 #format a string into the wrds Array
-func format(var start = 0, var square = null, var string = contents):
+func format(var start = 0, var square = null, var string = contents) -> void:
 	
 	#take table from another square if a square is specified
 	if square in pieces:
@@ -43,8 +43,8 @@ func format(var start = 0, var square = null, var string = contents):
 	#convert string to sequence of numbers
 	wrds = to_string_array(string, start)
 	
-	#return empty for empty contents
-	if wrds.size() == 0: return []
+	#return to exit the method if wrds is empty
+	if wrds.size() == 0: return
 
 	#replace terms in table key set with their value pairs
 	for i in wrds.size():
@@ -56,10 +56,9 @@ func format(var start = 0, var square = null, var string = contents):
 		if w.begins_with("?"):
 			w = w.substr(1)
 			q = "?"
-		if w in table:
-			#String replacement is a little awkward, 
-			#but it must be done before wrds is parsed for full functionality
-			w = String(table[w])
+		#try to find each of the table variables in w
+		for v in table:
+			w = w.replace(v, String(table[v]))
 			
 		#reform the string
 		w = q + w
@@ -95,7 +94,6 @@ func vectorize(var start:int = 0):
 	#if next word is a conditional, the conditional consists of a simple comparison
 	if SYMBL.find(w[1]) != -1:
 		if evaluate(w):
-			print(w[0],w)
 			return vectorize(start + 3)
 		#if the conditional fails, return nothing
 		return []
@@ -143,6 +141,11 @@ func array_parse(var start:int = 0):
 	
 	#check each word in the line and parse it into a float
 	for i in w.size():
+		#if there is a conditional in a later index of wrds, 
+		#call vectorize starting at that point and append the result to nums, then break the loop
+		if w[i].begins_with("?"):
+			nums.append_array(vectorize(i))
+			break
 		var n = parse(w[i])
 		nums.append(n)
 		
@@ -236,8 +239,8 @@ func is_unformatted(var i:int = 0, var start:int = s) -> bool:
 		return true
 	return false
 
-#take in a table to update with self
-func update_table(var t:Dictionary=table, var start:int = 0):
+#take in a table to update with self, returns true on success
+func update_table(var t:Dictionary=table, var start:int = 0) -> bool:
 	#populate piece table by trying taking numbers from the second word
 	var s = to_string_array(contents, start)
 	#check if last two terms in array make up a key pair
@@ -251,12 +254,15 @@ func update_table(var t:Dictionary=table, var start:int = 0):
 			var a = n[1]
 			if a == null: a = s[j]
 			t[s[i]] = a
+			return true
+	return false
 
 #do all the table updates in a given line
 func update_table_line(var t:Dictionary = table) -> void:
 	var i = wrds.size() - 2
 	while i > 0:
-		update_table(t, i)
+		var try:bool = update_table(t, i)
+		if !try: break
 		i -= 2
 
 func _to_string():

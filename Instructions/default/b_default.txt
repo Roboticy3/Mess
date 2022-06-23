@@ -28,22 +28,21 @@ default/p_bishop.txt
 default/p_queen.txt
 default/p_king.txt
 
-#next, pieces are placed on the board with a 0 - n integer for their path from above, 0 - n for their team from the t phase, and position as two numbers
-0 0 0 1 1 #create white piece that reads from p_pawn.txt at 0 1 on the board (A2)
-0 0 1 1 #pieces with a 1 on the end are symmetrical, meaning they're copied to the opposite end of the board and the copy has its team index increased by 1
-0 0 2 1 #until a 0 is placed in the last position, pieces will be symmetrized around the center of the board
-0 0 3 1
-0 0 4 1
-0 0 5 1
-0 0 6 1
-0 0 7 1
-0 1 0 0 
-0 2 1 0
-0 3 2 0
-0 3 5 0
-0 2 6 0
-0 1 7 0
-0 5 4 0 0
-1 5 4 7
-0 4 3 0
-1 4 3 7
+0 0 1 0 1 
+0 1 1 
+0 2 1
+0 3 1
+0 4 1
+0 5 1
+0 6 1
+0 7 1
+1 0 0 
+2 1 0
+3 2 0
+3 5 0
+2 6 0
+1 7 0
+5 4 0 0 0
+4 3 0
+5 4 7 1
+4 3 7

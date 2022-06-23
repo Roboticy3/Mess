@@ -291,3 +291,17 @@
 	NEXT
 	 - fix bug where setting "px" and "py" in a piece overrides placement but not symmetry rotation
 	 - further test piece built-in variables
+6/22/2022
+	 - adjusted some code to make the px, py, fx, fy, ff, and opacity variables overridable
+	 - made variable declarations in the ~ phase of Piece files compatible with conditionals
+	NEXT
+	 - continue documentation of piece syntax
+	 - begin work on creation and relocation phases
+6/23/2022
+	 - added creation phase and pawn promotion
+	 - fixed mistake with Instruction.gd that lead table variables to only be able to be interpereted as lone words, they are now compatible with expressions like originally intended
+	 - fixed a bug where old mark sets on the board were overwritten by new ones, making mark indexes fail to be selected correctly when generating behaviors
+	 - added functionality for conditionals to begin in the middle of instructions, not just the middle
+	 - reworked Board.gd's g phase syntax to interperet teams as a persistent mode like symmetry
+	NEXT
+	 - continue documentaion of piece syntax

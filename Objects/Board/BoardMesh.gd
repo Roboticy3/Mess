@@ -278,6 +278,11 @@ func handle(var v:Vector2, var team:int = 0):
 		#move mesh of piece into correct place
 		for i in moves[0]:
 			move_piece(i, moves[0][i])
+		#create meshes of pieces created during the turn
+		for i in moves[1]:
+			#m a g i c
+			var square := Vector2(i[1], i[2])
+			create_piece(board.pieces[square], square)
 		#destroy meshes of pieces removed during the turn
 		for i in moves[2]:
 			destroy_piece(i)

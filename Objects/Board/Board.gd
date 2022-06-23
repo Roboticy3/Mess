@@ -115,6 +115,9 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 	
 	var c = "Instructions/pieces/" + I.contents
 	
+	#default team assigns to the zeroth team
+	if persist[0] == null: persist[0] = 0
+	
 	#only try to use files that exist
 	#the Piece object should have this handled but its more direct to check here
 	var b = File.new()
@@ -131,34 +134,42 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 			return
 	
 	#if this line has not declared a path, check if it can create a piece
-	if vec.size() >= 4 && piece_types.size() > 0:
-		var pos = make_piece(vec)
-		#check if symmetry should be enabled
+	if vec.size() >= 3 && piece_types.size() > 0:
+		make_piece_macro(vec, persist)
+		
+
+#use and update the persistent data array in g_phase to call make_piece with the appropriate conditions from a vector
+func make_piece_macro(var vec:Array, var persist:Array) -> void:
+	#check for persistent settings of team and symmetry
+	if vec.size() >= 4:
+		persist[0] = vec[3]
 		if vec.size() >= 5:
-			persist[0] = vec[4]
+			persist[1] = vec[4]
 			
-		#symmetrize piece
-		if persist[0] == 1:
-			pos = -pos + 2*(center)
-			vec[0] += 1
-			vec[2] = pos.x
-			vec[3] = pos.y
-			make_piece(vec)
+	#make a piece with the updated persist settings
+	var pos = make_piece(vec, persist[0])
+		
+	#symmetrize piece if symmetry is enabled
+	if persist[1] != 0:
+		pos = -pos + 2*(center)
+		vec[1] = pos.x
+		vec[2] = pos.y
+		make_piece(vec, persist[0] + 1)
 
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
-func make_piece(var i:Array) -> Vector2:
+func make_piece(var i:Array, var team:int) -> Vector2:
 	#extract the position from the input vector
-	var v = Vector2(i[2], i[3])
+	var v = Vector2(i[1], i[2])
 	#i[0] indicates the Piece's team and i[1] indicates the type
 	#check if they are in range
-	if i[0] < teams.size() && i[1] < piece_types.size():
-		var p = Piece.new(piece_types[i[1]], teams[i[0]], i[0], v)
+	if team < teams.size() && i[0] < piece_types.size():
+		var p = Piece.new(piece_types[i[0]], teams[team], team, v)
 		#bounce the position back from the piece to accound for px or py overriding the Piece's original position
 		v = p.get_pos()
 			
 		#add the piece to the dictionary
-		teams[i[0]].pieces[v] = p
+		teams[team].pieces[v] = p
 		pieces[v] = p
 	
 	return v
@@ -334,7 +345,7 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 				break
 		
 		#add instruction index to a new position in s
-		s[square] = index
+		if !s.has(square): s[square] = index
 		
 		#if square is occupied by a takeable piece, break after adding the square
 		if occ && take: break
@@ -378,12 +389,11 @@ func execute_turn(var v:Vector2):
 		var bm:Dictionary = b[move]
 		if bm.has("t"): destructions.append_array(bm["t"])
 		if bm.has("c"): creations.append_array(bm["c"])
-		
-	for i in destructions.size():
-		var d:Vector2 = destructions[i]
-		var square:Vector2 = p.relative_to_square(d)
-		destroy_piece(square)
-		destructions[i] = square
+	
+	#execute desctructions
+	for d in destructions: destroy_piece(d)
+	#execute creations
+	for c in creations: make_piece(c, p.team)
 	
 	#update table using the movement instruction
 	m[move].update_table_line()

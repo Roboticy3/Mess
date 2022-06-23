@@ -81,8 +81,11 @@ func m_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	#primitive comment parser and empty checking to avoid adding empty marks
 	c.substr(0, c.find("#"))
 	if !c.empty(): mark.append(I)
+
 #the take, create, and relocate phases reference indexes of the mark array throught the persist array
 #they are meant to be called when a piece moves, so they take care of vectorizing their instructions
+
+#add Vector2 behaviors for squares to be cleared
 func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	
 	var size = vec.size()
@@ -91,11 +94,23 @@ func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 		
 	if size > 1:
 		var v:Vector2 = Vector2(vec[0], vec[1])
+		#transform square to board space instead of local space
+		v = relative_to_square(v)
 		if persist[0] == null: update_behaviors(-1, "t", v)
 		else: update_behaviors(persist[0], "t", v)
 
+#add Arrays of length 4 for piece type, creation position, and mark index
 func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
-	pass
+	if vec.size() < 3: return
+	if vec.size() > 3: persist[1] = vec[3]
+	
+	var v:Vector2 = Vector2(vec[1], vec[2])
+	v = relative_to_square(v)
+	#update behaviors with the array [vec[0], v.x, v.y]
+	#this array can be used as the first argument for board.make_piece()
+	if persist[1] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
+	else: update_behaviors(persist[1], "c", [vec[0], v.x, v.y])
+	
 func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	pass
 
