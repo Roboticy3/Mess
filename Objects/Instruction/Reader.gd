@@ -74,7 +74,8 @@ func read(var stage:int = -1):
 		
 		#find if any of the stages match the current one
 		#if so, call the method paired with the current stage
-		for s in stages:
+		#skip empty function matches
+		if !funcs[stg].empty(): for s in stages:
 			#dont call any method if wait has been set to true and the first defined method is yet to be found
 			if s.match(stg) && (!wait || begun):
 				node.call(funcs[stg], I, vec, persist)

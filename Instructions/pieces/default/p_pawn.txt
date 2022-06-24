@@ -1,5 +1,4 @@
 pawn
-0
 
 double 0
 
@@ -8,12 +7,12 @@ m
 ?moves < 1 0 2 double 1
 ?1 1 1 1 0 0
 ?-1 1 -1 1 0 0
-?-1 0 double = 1 ?moves = 1 -1 1 0 0
-?1 0 double = 1 ?moves = 1 1 1 0 0
+?-1 0 double != 1 ?moves = 1 -1 1 0 0
+?1 0 double != 1 ?moves = 1 1 1 0 0
 
 t
 0 -1 4
 0 -1 5
 
 c
-?double+moves = 6 4 0 0
+?double+moves >= 6 4 0 0

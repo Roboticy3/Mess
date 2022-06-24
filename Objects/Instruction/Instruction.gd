@@ -22,7 +22,7 @@ var table:Dictionary = {}
 var pieces:Dictionary = {}
 
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
-const SYMBL : String = ">=<="
+const SYMBL : String = ">=<=!="
 
 #fill variables of the object fully
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
@@ -117,7 +117,7 @@ func vectorize(var start:int = 0):
 		#if square is populated, check if 4th element is a conditional,
 		#if so, an element of the table from a piece at the square is being checked
 		if w.size() > 5 && SYMBL.find(w[3]) != -1:
-			if can_take_from(pieces[x].team, pieces[y].team, pieces[x].table):
+			if can_take_from(pieces[x].team, pieces[y].team, pieces[x].table["ff"]):
 				#reformat wrds from the table of the piece being read
 				format(start, y)
 				#then evaluate the conditional from w[2] to w[4]
@@ -128,8 +128,8 @@ func vectorize(var start:int = 0):
 		#if there is no conditional statement, a square is being checked for presence, a check which has already passed
 		return vectorize(start + 2)
 
-static func can_take_from(var from:int, var to:int, var t:Dictionary=table) -> bool:
-	if to == from && t["ff"] == 0:
+static func can_take_from(var from:int, var to:int, var ff:int) -> bool:
+	if to == from && ff == 0:
 		return false
 	return true
 			
@@ -168,9 +168,11 @@ func evaluate(var w:Array = [], var start:int = 0):
 	if (SYMBL.find(sgn) != -1):
 		#check for the conditional symbol
 		if sgn.ends_with("="):
-			if (sgn.find("<") != -1 && a[0] <= a[2]):
+			if (sgn.begins_with("<") && a[0] <= a[2]):
 				return true
-			elif (sgn.find("<") != -1 && a[0] >= a[2]):
+			elif (sgn.begins_with("<") && a[0] >= a[2]):
+				return true
+			elif (sgn.begins_with("!") && a[0] != a[2]):
 				return true
 			elif a[0] == a[2]:
 				return true
@@ -254,6 +256,7 @@ func update_table(var t:Dictionary=table, var start:int = 0) -> bool:
 			var a = n[1]
 			if a == null: a = s[j]
 			t[s[i]] = a
+			#print(s[i],":",a)
 			return true
 	return false
 
@@ -262,7 +265,8 @@ func update_table_line(var t:Dictionary = table) -> void:
 	var i = wrds.size() - 2
 	while i > 0:
 		var try:bool = update_table(t, i)
-		if !try: break
+		if !try: 
+			break
 		i -= 2
 
 func _to_string():

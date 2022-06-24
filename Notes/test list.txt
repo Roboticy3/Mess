@@ -1,0 +1,2 @@
+creating and relocating pieces out of bounds
+type 2 moves and friendly-fire

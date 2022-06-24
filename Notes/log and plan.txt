@@ -305,3 +305,11 @@
 	 - reworked Board.gd's g phase syntax to interperet teams as a persistent mode like symmetry
 	NEXT
 	 - continue documentaion of piece syntax
+6/24/2022
+	 - documented create and take phases
+	 - implemented relocation
+	 - began testing list
+	NEXT
+	 - add negation to conditionals
+	 - give king castling
+	 - go through test list

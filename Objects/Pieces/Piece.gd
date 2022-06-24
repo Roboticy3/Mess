@@ -49,7 +49,7 @@ func _ready():
 	
 	#create list of interperetation functions to send to a Reader
 	#Piece only needs to add the mark instructions at ready
-	var funcs:Dictionary = {"m":"m_phase","t":"t_phase","c":"c_phase","r":"r_phase"}
+	var funcs:Dictionary = {"m":"m_phase","t":"","c":"","r":""}
 	#use Reader to interperet the instruction file into usable behavior 
 	var r:Reader = Reader.new(self, funcs, path)
 	r.read()
@@ -101,6 +101,7 @@ func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 
 #add Arrays of length 4 for piece type, creation position, and mark index
 func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
+	
 	if vec.size() < 3: return
 	if vec.size() > 3: persist[1] = vec[3]
 	
@@ -110,10 +111,27 @@ func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	#this array can be used as the first argument for board.make_piece()
 	if persist[1] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
 	else: update_behaviors(persist[1], "c", [vec[0], v.x, v.y])
-	
-func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
-	pass
 
+#add Dictionaries of paired from and to coordinates under the right mark index
+func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
+	if vec.size() < 4: return
+	if vec.size() > 4: persist[2] = vec[4]
+
+	var v:Vector2 = relative_to_square(Vector2(vec[1], vec[2]))
+	var u:Vector2 = relative_to_square(Vector2(vec[2], vec[3]))
+
+	#slight rewrite of update_behaviors to create Dictionaries
+	var mark:int = -1
+	if persist[2] != null: mark = persist[2]
+	if behaviors.has(mark):
+		if behaviors[mark].has("r"):
+			behaviors[mark]["r"][v] = u
+		else:
+			behaviors[mark]["r"] = {v : u}
+	else:
+		behaviors[mark] = {"r":{v:u}}
+	pass
+			
 #update the behaviors Dictionary with new behaviors, automatically filling out missing elements
 func update_behaviors(var mark:int, var stage:String, var behavior) -> void:
 	if behaviors.has(mark): 

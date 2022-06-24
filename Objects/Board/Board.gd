@@ -336,7 +336,7 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 		var occ:bool = pieces.has(square)
 		var take:bool = true
 		if occ: 
-			take = Instruction.can_take_from(from.team, pieces[square].team, from.table)
+			take = Instruction.can_take_from(from.team, pieces[square].team, from.table["ff"])
 			#move type 1 cannot take
 			take = take && type != 1
 			
@@ -366,7 +366,9 @@ func execute_turn(var v:Vector2):
 	
 	#regenerate the behaviors of piece within the current state of the board
 	var p:Piece = pieces[v]
-	var funcs:Dictionary = {"t":"t_phase","c":"c_phase","r":"r_phase"}
+	#pair the m phase with nothing, 
+	#so that other phases don't overstay their block without m_phase generating unintended effects
+	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
 	var reader:Reader = Reader.new(p, funcs, p.path)
 	reader.wait = true
 	reader.read()
@@ -385,15 +387,22 @@ func execute_turn(var v:Vector2):
 		var b1:Dictionary = b[-1]
 		if b1.has("t"): destructions.append_array(b1["t"])
 		if b1.has("c"): creations.append_array(b1["c"])
+		#add relocation pairs to moves
+		if b1.has("r"): for i in b1["r"]: 
+			if pieces.has(i): moves[i] = b1["r"][i]
 	if b.has(move):
 		var bm:Dictionary = b[move]
 		if bm.has("t"): destructions.append_array(bm["t"])
 		if bm.has("c"): creations.append_array(bm["c"])
-	
-	#execute desctructions
+		#add relocation pairs to moves
+		if bm.has("r"): for i in bm["r"]: 
+			if pieces.has(i): moves[i] = bm["r"][i]
+				
+	#execute desctructions, creations, and relocations
 	for d in destructions: destroy_piece(d)
-	#execute creations
 	for c in creations: make_piece(c, p.team)
+	#exclude the original move
+	for r in moves: if r != select: move_piece(r, moves[r])
 	
 	#update table using the movement instruction
 	m[move].update_table_line()
