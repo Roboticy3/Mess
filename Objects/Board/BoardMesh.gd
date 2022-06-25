@@ -268,7 +268,7 @@ func handle(var v:Vector2, var team:int = 0):
 	#print(v)
 	
 	#check if square is a selectable piece
-	if v in p && team == p[v].team:
+	if v in p && team == p[v].get_team():
 		#mark from selectable piece
 		mark_from(v)
 	#check if square is a square that can be moved to

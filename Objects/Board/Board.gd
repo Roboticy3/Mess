@@ -336,7 +336,7 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 		var occ:bool = pieces.has(square)
 		var take:bool = true
 		if occ: 
-			take = Instruction.can_take_from(from.team, pieces[square].team, from.table["ff"])
+			take = Instruction.can_take_from(from.get_team(), pieces[square].get_team(), from.table["ff"])
 			#move type 1 cannot take
 			take = take && type != 1
 			
@@ -400,12 +400,13 @@ func execute_turn(var v:Vector2):
 				
 	#execute desctructions, creations, and relocations
 	for d in destructions: destroy_piece(d)
-	for c in creations: make_piece(c, p.team)
+	for c in creations: make_piece(c, p.get_team())
 	#exclude the original move
 	for r in moves: if r != select: move_piece(r, moves[r])
-	
+
 	#update table using the movement instruction
 	m[move].update_table_line()
+	#print(p.table)
 	
 	#clear the marks dictionary and the piece's temporary behaviors
 	marks.clear()

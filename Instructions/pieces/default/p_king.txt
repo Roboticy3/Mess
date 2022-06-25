@@ -2,7 +2,6 @@ King
 
 meshes/king.obj
 
-hasmoved 0
 key 1
 
 m
@@ -15,3 +14,5 @@ m
 -1 0
 -1 1
 
+?!1 0 ?3 0 2 0
+?!-1 0 ?-3 0 moves = 0 -2 0

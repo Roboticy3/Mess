@@ -26,6 +26,7 @@ const SYMBL : String = ">=<=!="
 
 #fill variables of the object fully
 func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
+	
 	contents = _contents.strip_edges()
 	table = _table
 	pieces = _pieces
@@ -33,40 +34,37 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictio
 	#format contents into wrds
 	format()
 	
-#format a string into the wrds Array
-func format(var start = 0, var square = null, var string = contents) -> void:
+#format a string into the wrds Array, optionally pull a table from another piece on the board
+func format(var start:int = 0, var length:int = -1, var square = null, var string = contents) -> void:
+	
+	#if wrds is empty, construct it from contents
+	wrds = to_string_array()
+	
+	#if length is -1, set it to the length of the array - start
+	if length == -1: length = wrds.size() - start
+	#otherwise, fit length to wrds
+	else: length = min(wrds.size() - start, length)
 	
 	#take table from another square if a square is specified
 	if square in pieces:
 		table = pieces[square].table
-	
-	#convert string to sequence of numbers
-	wrds = to_string_array(string, start)
-	
-	#return to exit the method if wrds is empty
-	if wrds.size() == 0: return
 
 	#replace terms in table key set with their value pairs
-	for i in wrds.size():
+	for i in range(start, start + length):
 		var w:String = wrds[i]
-		#help parser later by stripping edges in each word
+		#remove white space
 		w = w.strip_edges()
-		#take conditional indicator into secondary String so w can be added back onto it later
-		var q:String = ""
-		if w.begins_with("?"):
-			w = w.substr(1)
-			q = "?"
+		
 		#try to find each of the table variables in w
 		for v in table:
 			w = w.replace(v, String(table[v]))
 			
-		#reform the string
-		w = q + w
+		#send the formatted string back into wrds
 		wrds[i] = w
 
 #WIP evaluate conditional statements, made up of a wrds Array of length 3 or more that can solve inequalities
 #returning [] is equivalent to returning false and anything else is equivalent to true
-func vectorize(var start:int = 0):
+func vectorize(var start:int = 0) -> Array:
 	
 	#reformat content to catch table updates
 	format()
@@ -91,42 +89,74 @@ func vectorize(var start:int = 0):
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
 	w[0] = w[0].substr(1)
 	
+	#check for a shebang to invert the conditional
+	var negate:bool = false
+	if w[0].begins_with("!"):
+		negate = true
+		w[0] = w[0].substr(1)
+	
 	#if next word is a conditional, the conditional consists of a simple comparison
-	if SYMBL.find(w[1]) != -1:
-		if evaluate(w):
+	if w.size() > 3 && SYMBL.find(w[1]) != -1:
+		#print(w,table)
+		var e:bool = evaluate(w)
+		if negate: e = !e
+		if e:
 			return vectorize(start + 3)
 		#if the conditional fails, return nothing
 		return []
 	
-	#take parsed versions of first and second wrds to determine the type of conditional
+	#if the table does not indicate this instruction is defining a piece, do not proceed further
+	if !("px" in table && "py" in table): return []
+	
+	#otherwise, see if the 4th word is a comparator
+	#no comparator means a square is being checked for presence
+	#4th meams another piece's table is being 
+	var length:int = 2
+	if SYMBL.find(w[3]) != -1: 
+		length = 5
+	
+	#if the statement is too short for the position, return an empty array
+	if w.size() <= length: return []
+	
+	#read the square being looked at by this instruction
 	var u = parse(w[0])
 	var v = parse(w[1])
 	
-	#if second word is a number and table has px and py vars, a vector is being checked from pieces
-	if "px" in table && "py" in table:
-		#form square to check from this Instruction's Piece's position, direction, and vector from u and v
-		var x:Vector2 = Vector2(table["px"], table["py"])
-		#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
-		var y:Vector2 = Vector2(u, v).rotated(table["angle"])
-		y = (x + y).round()
-		
-		#if square is empty, check cannot proceed, so return empty array
-		if !pieces.has(y):
-			return []
-		
-		#if square is populated, check if 4th element is a conditional,
-		#if so, an element of the table from a piece at the square is being checked
-		if w.size() > 5 && SYMBL.find(w[3]) != -1:
-			if can_take_from(pieces[x].team, pieces[y].team, pieces[x].table["ff"]):
-				#reformat wrds from the table of the piece being read
-				format(start, y)
-				#then evaluate the conditional from w[2] to w[4]
-				if evaluate(w, 2):
-					return vectorize(start + 5)
-			return []
-		
-		#if there is no conditional statement, a square is being checked for presence, a check which has already passed
+	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
+	var x:Vector2 = Vector2(table["px"], table["py"])
+	#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
+	var y:Vector2 = Vector2(u, v).rotated(table["angle"])
+	y = (x + y).round()
+	
+	#check if the square is empty, if so treat as false when asking for a square or its pieces property
+	#this can still be negated
+	if !pieces.has(y):
+		if negate: return vectorize(start + length)
+		return []
+	
+	#if a square was being checked for presence, vectorize from the end of that square
+	#or.. yknow.. negate it
+	if length == 2:
+		if negate: return []
 		return vectorize(start + 2)
+		
+	#if a square was being checked for its piece's property, 
+	#evaluate it against the other end of the comparator
+	if length == 5:
+		#format the one term on the left of the comparator to use the table of the piece being checked against
+		format(2, 1, y)
+		#reinitialize w to use the reformatted wrds Array
+		w = wrds.slice(start, wrds.size() - 1)
+		#evaluate the comparison
+		var e:bool = evaluate(w, 2)
+		if negate: e = !e
+		if e:
+			return vectorize(start + 5)
+	
+	#if all else fails, return an empty Array
+	return []
+
+	
 
 static func can_take_from(var from:int, var to:int, var ff:int) -> bool:
 	if to == from && ff == 0:
@@ -144,7 +174,7 @@ func array_parse(var start:int = 0):
 		#if there is a conditional in a later index of wrds, 
 		#call vectorize starting at that point and append the result to nums, then break the loop
 		if w[i].begins_with("?"):
-			nums.append_array(vectorize(i))
+			nums.append_array(vectorize(start + i))
 			break
 		var n = parse(w[i])
 		nums.append(n)

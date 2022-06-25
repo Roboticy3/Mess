@@ -10,7 +10,6 @@ extends Node
 var path:String = ""
 #the path to the mesh .obj the piece will appear as and the team
 var mesh:String = "Instructions/pieces/default/meshes/pawn.obj"
-var team:int = 0
 
 #instructions for marking squares when selected
 var mark:Array = []
@@ -23,7 +22,8 @@ var behaviors:Dictionary = {}
 #any property kept in table is accessible by the Instruction class in its vectorize() function
 var table:Dictionary = {"moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
-			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1}
+			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1,
+			 "team":0}
 
 #piece types considered by the creation phase, indicated by their string path
 var piece_types:Array = []
@@ -33,7 +33,7 @@ var moves:int = 0
 #initiate a piece with a path to its instruction behaviours, its team and its position
 func _init(var _p:String, var _team:Team = Team.new(), var _team_index:int = 0, var v = Vector2.ZERO):
 	path = _p
-	team = _team_index
+	set_team(_team_index)
 	set_forward(_team.forward)
 	table["ff"]  = _team.ff
 	set_pos(v)
@@ -157,6 +157,12 @@ func set_pos(var v:Vector2) -> void:
 func get_pos() -> Vector2:
 	return Vector2(table["px"], table["py"])
 	
+func set_team(var team:int = 0) -> void:
+	table["team"] = team
+
+func get_team() -> int:
+	return table["team"]
+	
 func relative_to_square(var pos:Vector2):
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 	var x:Vector2 = get_pos()
@@ -169,4 +175,4 @@ func rotate_to_forward(var direction:Vector2):
 	return direction.rotated(table["angle"]).round()
 	
 func _to_string():
-	return name + " " + String(team)
+	return name + " " + String(get_team())

@@ -65,9 +65,9 @@ func _to_string():
 #generate material of a piece from itself and its parent board
 static func pmat(var p:Piece = piece, var b:Board = board):
 	var t = b.teams
-	if p.team < t.size():
+	if p.get_team() < t.size():
 		var m = SpatialMaterial.new()
-		m.albedo_color = t[p.team].color
+		m.albedo_color = t[p.get_team()].color
 		#set opacity based on piece's opacity value multiplied by board's piece_opacity value
 		var o:float = p.table["opacity"] * b.table["piece_opacity"]
 		if o < 1:
