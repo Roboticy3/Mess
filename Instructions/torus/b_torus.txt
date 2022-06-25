@@ -18,21 +18,27 @@ default/p_bishop.txt
 default/p_queen.txt
 default/p_king.txt
 
-0 0 0 1 1 
-0 0 1 1
-0 0 2 1
-0 0 3 1
-0 0 4 1
-0 0 5 1
-0 0 6 1
-0 0 7 1
-0 1 0 0 
-0 2 1 0
-0 3 2 0
-0 3 5 0
-0 2 6 0
-0 1 7 0
-0 5 4 0 0
-1 5 4 7
-0 4 3 0
-1 4 3 7
+#pawns
+0 0 1 0 1 #enable symmetry
+0 1 1 
+0 2 1
+0 3 1
+0 4 1
+0 5 1
+0 6 1
+0 7 1
+
+#rooks, bishops, knights
+1 0 0 
+2 1 0
+3 2 0
+3 5 0
+2 6 0
+1 7 0
+
+#kings and queens
+5 4 0 0 0 #disable symmetry
+4 3 0
+5 4 7 1
+4 3 7
+

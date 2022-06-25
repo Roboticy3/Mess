@@ -79,7 +79,7 @@ func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 func m_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	var c:String = I.contents
 	#primitive comment parser and empty checking to avoid adding empty marks
-	c.substr(0, c.find("#"))
+	c = c.substr(0, c.find("#"))
 	if !c.empty(): mark.append(I)
 
 #the take, create, and relocate phases reference indexes of the mark array throught the persist array
@@ -117,7 +117,7 @@ func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	if vec.size() < 4: return
 	if vec.size() > 4: persist[2] = vec[4]
 
-	var v:Vector2 = relative_to_square(Vector2(vec[1], vec[2]))
+	var v:Vector2 = relative_to_square(Vector2(vec[0], vec[1]))
 	var u:Vector2 = relative_to_square(Vector2(vec[2], vec[3]))
 
 	#slight rewrite of update_behaviors to create Dictionaries

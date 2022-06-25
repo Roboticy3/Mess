@@ -400,15 +400,29 @@ func execute_turn(var v:Vector2):
 				
 	#execute desctructions, creations, and relocations
 	for d in destructions: destroy_piece(d)
-	for c in creations: make_piece(c, p.get_team())
-	#exclude the original move
-	for r in moves: if r != select: move_piece(r, moves[r])
+	for c in creations: 
+		#don't create pieces that are out of bounds
+		if is_surrounding(Vector2(c[1], c[2])): make_piece(c, p.get_team())
+		#delete creations that are out of bounds so BoardMesh does not attempt to emulate them
+		else: creations.erase(c)
+	for r in moves: 
+		#exclude the original move from relocation checks
+		if select == r: continue
+		
+		#dont accept relocations to out of bounds positions
+		if is_surrounding(moves[r]): move_piece(r, moves[r])
 
+		#delete the relocations responsible for movement out of bounds,
+		#and add these beginning relocation positions to destructions so BoardMesh will remove them too
+		else:
+			destructions.append(r)
+			moves.erase(r)
+		
 	#update table using the movement instruction
 	m[move].update_table_line()
-	#print(p.table)
+	#print(move,b)
 	
-	#clear the marks dictionary and the piece's temporary behaviors
+	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
 	b.clear()
 	
