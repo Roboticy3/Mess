@@ -23,7 +23,7 @@ var behaviors:Dictionary = {}
 var table:Dictionary = {"moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
 			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1,
-			 "team":0}
+			 "team":0, "collision":1}
 
 #piece types considered by the creation phase, indicated by their string path
 var piece_types:Array = []
@@ -121,26 +121,26 @@ func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	var u:Vector2 = relative_to_square(Vector2(vec[2], vec[3]))
 
 	#slight rewrite of update_behaviors to create Dictionaries
-	var mark:int = -1
+	var m:int = -1
 	if persist[2] != null: mark = persist[2]
-	if behaviors.has(mark):
-		if behaviors[mark].has("r"):
-			behaviors[mark]["r"][v] = u
+	if behaviors.has(m):
+		if behaviors[m].has("r"):
+			behaviors[m]["r"][v] = u
 		else:
-			behaviors[mark]["r"] = {v : u}
+			behaviors[m]["r"] = {v : u}
 	else:
-		behaviors[mark] = {"r":{v:u}}
+		behaviors[m] = {"r":{v:u}}
 	pass
 			
 #update the behaviors Dictionary with new behaviors, automatically filling out missing elements
-func update_behaviors(var mark:int, var stage:String, var behavior) -> void:
-	if behaviors.has(mark): 
-		if behaviors[mark].has(stage):
-			behaviors[mark][stage].append(behavior)
+func update_behaviors(var m:int, var stage:String, var behavior) -> void:
+	if behaviors.has(m): 
+		if behaviors[m].has(stage):
+			behaviors[m][stage].append(behavior)
 		else:
-			behaviors[mark][stage] = [behavior]
+			behaviors[m][stage] = [behavior]
 	else:
-		behaviors[mark] = {stage: [behavior] }
+		behaviors[m] = {stage: [behavior] }
 
 func set_forward(var f:Vector2) -> void:
 	table["fx"] = f.x
@@ -167,12 +167,13 @@ func relative_to_square(var pos:Vector2):
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 	var x:Vector2 = get_pos()
 	#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
-	pos = rotate_to_forward(pos)
+	pos = transform(pos)
 	return (x + pos)
 
 #rotate a direction to match the forward direction of this
-func rotate_to_forward(var direction:Vector2):
-	return direction.rotated(table["angle"]).round()
+func transform(var v:Vector2) -> Vector2:
+	var d:Vector2 = v.rotated(table["angle"]) * get_forward().length()
+	return d.round()
 	
 func _to_string():
 	return name + " " + String(get_team())

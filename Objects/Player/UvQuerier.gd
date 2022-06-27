@@ -31,6 +31,8 @@ func set_mesh(var mesh:Mesh) -> void:
 #if no uv position is found, it returns Vector2(NaN, NaN)
 func query(var screen_position:Vector2) -> Vector2:
 	
+	if texture.get_size() == Vector2.ZERO: return Vector2(NAN, NAN)
+	
 	var image:Image = texture.get_data()
 	image.lock()
 	

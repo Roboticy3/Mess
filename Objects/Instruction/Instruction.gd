@@ -48,6 +48,11 @@ func format(var start:int = 0, var length:int = -1, var square = null, var strin
 	#take table from another square if a square is specified
 	if square in pieces:
 		table = pieces[square].table
+		
+	#sort table by key size, helps string replacement prioritize larger words
+	var keys:Array = table.keys()
+	var sort:StringSort = StringSort.new()
+	keys.sort_custom(sort, "sort")
 
 	#replace terms in table key set with their value pairs
 	for i in range(start, start + length):
@@ -55,8 +60,7 @@ func format(var start:int = 0, var length:int = -1, var square = null, var strin
 		#remove white space
 		w = w.strip_edges()
 		
-		#try to find each of the table variables in w
-		for v in table:
+		for v in keys:
 			w = w.replace(v, String(table[v]))
 			
 		#send the formatted string back into wrds
@@ -124,7 +128,6 @@ func vectorize(var start:int = 0) -> Array:
 	
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 	var x:Vector2 = Vector2(table["px"], table["py"])
-	#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
 	var y:Vector2 = Vector2(u, v).rotated(table["angle"])
 	y = (x + y).round()
 	
@@ -297,5 +300,18 @@ func update_table_line(var t:Dictionary = table) -> void:
 			break
 		i -= 2
 
+#copy of Piece.transform that does not require a reference to a Piece object
+func piece_transform(var v:Vector2, var forward:Vector2, var angle:float) -> Vector2:
+	var d:Vector2 = v.rotated(angle) * forward.length()
+	return d.round()
+
 func _to_string():
 	return contents
+
+#Object for sorting the table in format()
+class StringSort:
+	#sort elements by length
+	func sort(var a:String, var b:String) -> bool:
+		if a.length() < b.length():
+			return true
+		return false

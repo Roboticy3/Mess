@@ -2,6 +2,7 @@ rook
 meshes/rook.obj
 
 hasmoved 0
+ff 0s
 
 m
 0 1 2

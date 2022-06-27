@@ -313,3 +313,9 @@
 	 - add negation to conditionals
 	 - give king castling
 	 - go through test list
+6/25/2022
+	 - documented and fixed relocation
+	 - had crisis about most instructions not being compatible with portals
+	 - partially went through test list
+	NEXT
+	 - start designing a way to make instructions compatible with portals

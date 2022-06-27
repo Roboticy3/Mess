@@ -231,15 +231,18 @@ func destroy_piece(var at:Vector2):
 	remove_child(pieces[at])
 	pieces.erase(at)
 
-#DEPRICATED: highlight a square on the board by running square_to_child and adding the child's index to the square_mesh cache
-#NEW: highlight squares on the board by sending their positions to a texture which is rendered by mat_board
+#highlight squares on the board by sending their positions to a texture which is rendered by mat_board
 #only works if mat_board is a ShaderMaterial
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
-func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1):
+func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
+	#"clear" previous squares by ignoring the last sent texture to the shader
 	if mode == 1:
 		mat_highlight.set_shader_param("highlight_count", 0)
+	
+	#don't create a new image if no squares are being selected
+	if vs.empty(): return
 	
 	#shaders can't take in arrays, so use a texture with a height of 1 instead
 	var image:Image = Image.new()
@@ -266,11 +269,7 @@ func handle(var v:Vector2, var team:int = 0):
 	
 	var p:Dictionary = board.pieces
 	#print(v)
-	
-	#check if square is a selectable piece
-	if v in p && team == p[v].get_team():
-		#mark from selectable piece
-		mark_from(v)
+
 	#check if square is a square that can be moved to
 	if v in board.marks:
 		#get updates to the board to apply to BoardMesh while updating the Board's data as well
@@ -288,5 +287,9 @@ func handle(var v:Vector2, var team:int = 0):
 			destroy_piece(i)
 		#clear board marks
 		highlight_square()
+	#check if square is a selectable piece
+	elif v in p && team == p[v].get_team():
+		#mark from selectable piece
+		mark_from(v)
 		
 	return board.get_team() #get team from board in case there is one player which has to switch

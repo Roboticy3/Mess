@@ -1,2 +1,0 @@
-type 2 moves and friendly-fire
-instructions asking for nonexistent properties 

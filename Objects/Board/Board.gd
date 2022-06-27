@@ -276,6 +276,8 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 	var to:Vector2 = Vector2(data[0], data[1])
 	to = from.relative_to_square(to)
 	
+	#print(to)
+
 	#position of piece
 	var pos:Vector2 = from.get_pos()
 	#"to-pos" which the mark function is aiming for
@@ -285,7 +287,7 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 	#when both hit 1, to has been reached
 	var x:float = 0
 	var y:float = 0
-	#if either move is 0, set them to 1 automatically
+	#if either move is 0, x and/or y to 1 automatically
 	if tp.x == 0: x = 1
 	if tp.y == 0: y = 1
 	
@@ -336,7 +338,9 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 		var occ:bool = pieces.has(square)
 		var take:bool = true
 		if occ: 
-			take = Instruction.can_take_from(from.get_team(), pieces[square].get_team(), from.table["ff"])
+			var aggressive:int = 0
+			if type == 2: aggressive = 1
+			take = Instruction.can_take_from(from.get_team(), pieces[square].get_team(), from.table["ff"] + aggressive)
 			#move type 1 cannot take
 			take = take && type != 1
 			
@@ -420,7 +424,6 @@ func execute_turn(var v:Vector2):
 		
 	#update table using the movement instruction
 	m[move].update_table_line()
-	#print(move,b)
 	
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
