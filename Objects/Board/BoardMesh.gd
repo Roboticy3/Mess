@@ -258,8 +258,8 @@ func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 	mat_highlight.set_shader_param("highlights", tex)
 	mat_highlight.set_shader_param("highlight_count", vs.size())
 
-#use board.mark to highlight a set of square meshes
-func mark_from(var v:Vector2):
+#use board.mark to highlight a set of square meshes from a starting square v
+func mark(var v:Vector2) -> void:
 	var pos = board.mark(v).keys()
 	highlight_square(pos)
 	
@@ -290,6 +290,6 @@ func handle(var v:Vector2, var team:int = 0):
 	#check if square is a selectable piece
 	elif v in p && team == p[v].get_team():
 		#mark from selectable piece
-		mark_from(v)
+		mark(v)
 		
 	return board.get_team() #get team from board in case there is one player which has to switch

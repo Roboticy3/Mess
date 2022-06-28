@@ -118,6 +118,12 @@ static func square_to_uv(var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vecto
 	#subtract one half of the square size to get the uv coordinate in the center of the target square
 	return (pos + Vector2.ONE)/(size) - square/2
 
+#convert a square in uv space to a Bound object
+static func square_to_bound(var size:Vector2, var square:Vector2) -> Bound:
+	var center:Vector2 = square_to_uv(size, square)
+	var half_square:Vector2 = Vector2(1 / size.x, 1 / size.y) * 0.5
+	return Bound.new(center + half_square, center - half_square)
+
 #combine space converters into single function
 static func square_to_mdata(var graph:MeshGraph, var dups:DuplicateMap,
 	var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO) -> Array:
@@ -126,7 +132,7 @@ static func square_to_mdata(var graph:MeshGraph, var dups:DuplicateMap,
 
 #take an input board mdt, board, and piece to return a Transform for the associated PieceMesh accosiated with piece on the mdt constructed from a BoardMesh
 static func square_to_transform(var graph:MeshGraph, var dups:DuplicateMap,
-	var board:Board, var piece:Piece) -> Transform:
+	var board:Node, var piece:Piece) -> Transform:
 	
 	
 	#reference useful piece properties in other variables
@@ -166,7 +172,7 @@ static func square_to_transform(var graph:MeshGraph, var dups:DuplicateMap,
 
 #convert the normal of a square on the board to a set of basis vectors
 static func square_to_basis(var graph:MeshGraph, var dups:DuplicateMap,
-	var board:Board, var piece:Piece, var mdata:Array):
+	var board:Node, var piece:Piece, var mdata:Array):
 	
 	var mdt:MeshDataTool = graph.mdt
 	
@@ -200,6 +206,106 @@ static func square_to_basis(var graph:MeshGraph, var dups:DuplicateMap,
 	var b:Basis = Basis(rt, up, fd)
 	
 	return b
+
+#import mesh from .obj path
+static func path_to_mesh(var path:String = "", var debug:bool = false):
+	#parse board using parser script into loadable mesh
+	var m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
+	
+	#create mdt to read mesh
+	var mdt:MeshDataTool = MeshDataTool.new()
+	mdt.create_from_surface(m, 0)
+	#if mesh was not created correctly, read from default mesh path
+	if mdt.get_vertex_count() == 0:
+		path = "Instructions/default/meshes/default.obj"
+		m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
+	
+	return m
+
+#create a convex or concave shape from a mesh dependant on whether or not the mesh is flat
+static func mesh_to_shape(var m:Mesh):
+	return m.create_trimesh_shape()
+
+#fit uv to the square between Vector2.ZERO and Vector2.ONE
+static func clamp_uv(var uv:Vector2):
+	uv.x = fmod(uv.x, 1)
+	uv.y = fmod(uv.y, 1)
+	return uv
+
+#cast out a ray from the camera, given a physics state s
+static func raycast(var p:Vector2, var c:Camera, 
+	var w:World, var v:float = INF, var mask:int = 0x7FFFFFFF):
+	
+	#get physics state of the current scene
+	var s = w.direct_space_state
+	#origin and normal of the camera
+	var o:Vector3 = c.project_ray_origin(p)
+	var n:Vector3 = c.project_ray_normal(p)
+	#get ray intersection with that scene
+	var r = s.intersect_ray(o, n * v, [], mask)
+	#if the intersection lands, return r
+	if !r.empty():
+		return r
+	return null
+
+#add CSGsphere children to node at relative positions
+#setting mode to 1 will stop the method from deleting old csgballs
+static func debug_positions(var node:Node = null, var positions:Array = [], 
+	var radius:float = 0.1, var mode:int = 0, var albedo:Color = Color.white):
+	
+	#remove old debug objects
+	if mode != 1:
+		for c in node.get_children():
+			if c.name.find("debug") != -1:
+				node.remove_child(c)
+				
+	#if position map is empty, exit function
+	if positions.empty(): return
+	
+	#checks if positions is an Array of PoolRealArray, assumes all elements are of same type
+	var t:bool = positions[0] is PoolRealArray
+	
+	var mat:SpatialMaterial = SpatialMaterial.new()
+	mat.albedo_color = albedo
+	
+	#add new ones
+	for i in positions.size(): 
+		var p = positions[i]
+		#if positions is an array, recursively call method across its elements,
+		#shift color of successive recursions
+		if p is Array:
+			debug_positions(node, p, radius, 1, albedo)
+			continue
+			
+		if t:
+			p = DuplicateMap.array_to_vert_static(p)
+		
+		var csg = CSGSphere.new()
+		csg.radius = radius
+		csg.material = mat
+		csg.transform.origin = p
+		csg.name = "debug " + String(p)
+		node.add_child(csg)
+
+#debug positions alternative which instead takes a MeshDataTool and an array of vertex indices as arguments
+static func debug_vertices(var node:Node, var mdt:MeshDataTool, var positions:PoolIntArray = [],
+	var mode:int = 0, var radius:float = 0.1):
+		
+	if positions.size() == 0:
+		return
+	
+	var p:PoolVector3Array = PoolVector3Array()
+	p.resize(positions.size())
+	
+	for i in p.size():
+		p[i] = mdt.get_vertex(positions[i])
+	
+	debug_positions(node, p, mode, radius)
+	
+	
+###THE TRASH
+#I hate my code but don't always want to throw it away
+#BoardConverter has a lot so it goes here :)
 
 #run square to box and add mesh as a CSGMesh child of an input parent node
 static func square_to_child(var parent:Node, 
@@ -475,12 +581,32 @@ static func is_face_touching_uv_b(var mdt:MeshDataTool, var face:int, var v:Pool
 	
 	if touching: return out
 	return disconnected
-
-#convert a square in uv space to a Bound object
-static func square_to_bound(var size:Vector2, var square:Vector2):
-	var center:Vector2 = square_to_uv(size, square)
-	var half_square:Vector2 = Vector2(1 / size.x, 1 / size.y) * 0.5
-	return Bound.new(center + half_square, center - half_square)
+	
+#get all verts and faces connected to an index in mdt
+#return [0] is vert dictionary, return [1] is face dicitonary
+static func vert_to_triangle_fan(var dups:DuplicateMap, var i:int = 0, 
+	var verts:Dictionary = {}, var faces:Dictionary = {}, var edges:bool = false):
+	
+	var mdt:MeshDataTool = dups.mdt
+	
+	#get connected faces
+	var fs:Array
+	if edges:
+		fs = mdt.get_edge_faces(i)
+	else:
+		fs = mdt.get_vertex_faces(i)
+	
+	#loop through faces and add their verts
+	for f in fs:
+		#add face to faces dict so calling function can see the faces being searched
+		faces[f] = get_face_vertices(dups, f)[0]
+		for j in range(0, 3):
+			var v = mdt.get_face_vertex(f, j)
+			#same deal as faces
+			verts[v] = [f, mdt.get_vertex(v), mdt.get_vertex_normal(v)]
+	
+	#in case vert_to_triangle_fan doesnt have dictionary args, return them back out
+	return [verts, faces]
 
 #convert mouse position in pixels from the top left to uv from the bottom left
 static func mpos_to_screenuv(var pos:Vector2):
@@ -558,124 +684,3 @@ static func face_to_transform(var mdt:MeshDataTool, var i:int,
 	x = z.cross(y)
 	
 	return Transform(x, y, z, -o)
-
-#import mesh from .obj path
-static func path_to_mesh(var path:String = "", var debug:bool = false):
-	#parse board using parser script into loadable mesh
-	var m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
-	
-	#create mdt to read mesh
-	var mdt:MeshDataTool = MeshDataTool.new()
-	mdt.create_from_surface(m, 0)
-	#if mesh was not created correctly, read from default mesh path
-	if mdt.get_vertex_count() == 0:
-		path = "Instructions/default/meshes/default.obj"
-		m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
-	
-	return m
-
-#create a convex or concave shape from a mesh dependant on whether or not the mesh is flat
-static func mesh_to_shape(var m:Mesh):
-	return m.create_trimesh_shape()
-
-#get all verts and faces connected to an index in mdt
-#return [0] is vert dictionary, return [1] is face dicitonary
-static func vert_to_triangle_fan(var dups:DuplicateMap, var i:int = 0, 
-	var verts:Dictionary = {}, var faces:Dictionary = {}, var edges:bool = false):
-	
-	var mdt:MeshDataTool = dups.mdt
-	
-	#get connected faces
-	var fs:Array
-	if edges:
-		fs = mdt.get_edge_faces(i)
-	else:
-		fs = mdt.get_vertex_faces(i)
-	
-	#loop through faces and add their verts
-	for f in fs:
-		#add face to faces dict so calling function can see the faces being searched
-		faces[f] = get_face_vertices(dups, f)[0]
-		for j in range(0, 3):
-			var v = mdt.get_face_vertex(f, j)
-			#same deal as faces
-			verts[v] = [f, mdt.get_vertex(v), mdt.get_vertex_normal(v)]
-	
-	#in case vert_to_triangle_fan doesnt have dictionary args, return them back out
-	return [verts, faces]
-
-#fit uv to the square between Vector2.ZERO and Vector2.ONE
-static func clamp_uv(var uv:Vector2):
-	uv.x = fmod(uv.x, 1)
-	uv.y = fmod(uv.y, 1)
-	return uv
-
-#cast out a ray from the camera, given a physics state s
-static func raycast(var p:Vector2, var c:Camera, 
-	var w:World, var v:float = INF, var mask:int = 0x7FFFFFFF):
-	
-	#get physics state of the current scene
-	var s = w.direct_space_state
-	#origin and normal of the camera
-	var o:Vector3 = c.project_ray_origin(p)
-	var n:Vector3 = c.project_ray_normal(p)
-	#get ray intersection with that scene
-	var r = s.intersect_ray(o, n * v, [], mask)
-	#if the intersection lands, return r
-	if !r.empty():
-		return r
-	return null
-
-#add CSGsphere children to node at relative positions
-#setting mode to 1 will stop the method from deleting old csgballs
-static func debug_positions(var node:Node = null, var positions:Array = [], 
-	var radius:float = 0.1, var mode:int = 0, var albedo:Color = Color.white):
-	
-	#remove old debug objects
-	if mode != 1:
-		for c in node.get_children():
-			if c.name.find("debug") != -1:
-				node.remove_child(c)
-				
-	#if position map is empty, exit function
-	if positions.empty(): return
-	
-	#checks if positions is an Array of PoolRealArray, assumes all elements are of same type
-	var t:bool = positions[0] is PoolRealArray
-	
-	var mat:SpatialMaterial = SpatialMaterial.new()
-	mat.albedo_color = albedo
-	
-	#add new ones
-	for i in positions.size(): 
-		var p = positions[i]
-		#if positions is an array, recursively call method across its elements,
-		#shift color of successive recursions
-		if p is Array:
-			debug_positions(node, p, radius, 1, albedo)
-			continue
-			
-		if t:
-			p = DuplicateMap.array_to_vert_static(p)
-		
-		var csg = CSGSphere.new()
-		csg.radius = radius
-		csg.material = mat
-		csg.transform.origin = p
-		csg.name = "debug " + String(p)
-		node.add_child(csg)
-
-#debug positions alternative which instead takes a MeshDataTool and an array of vertex indices as arguments
-static func debug_vertices(var node:Node, var mdt:MeshDataTool, var positions:PoolIntArray = [],
-	var mode:int = 0, var radius:float = 0.1):
-		
-	if positions.size() == 0:
-		return
-	
-	var p:PoolVector3Array = PoolVector3Array()
-	p.resize(positions.size())
-	
-	for i in p.size():
-		p[i] = mdt.get_vertex(positions[i])
-	
-	debug_positions(node, p, mode, radius)

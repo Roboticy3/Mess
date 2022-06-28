@@ -3,8 +3,7 @@ extends Node
 
 #Piece class by Pablo Ibarz
 #created December 2021
-
-#store the behaviour of a piece
+#Reads a piece file to generate the behaviors of a piece and represents a piece on the board
 
 # name of piece and file path from which it reads instructions
 var path:String = ""
@@ -94,8 +93,6 @@ func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 		
 	if size > 1:
 		var v:Vector2 = Vector2(vec[0], vec[1])
-		#transform square to board space instead of local space
-		v = relative_to_square(v)
 		if persist[0] == null: update_behaviors(-1, "t", v)
 		else: update_behaviors(persist[0], "t", v)
 
@@ -106,7 +103,6 @@ func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	if vec.size() > 3: persist[1] = vec[3]
 	
 	var v:Vector2 = Vector2(vec[1], vec[2])
-	v = relative_to_square(v)
 	#update behaviors with the array [vec[0], v.x, v.y]
 	#this array can be used as the first argument for board.make_piece()
 	if persist[1] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
@@ -117,12 +113,12 @@ func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	if vec.size() < 4: return
 	if vec.size() > 4: persist[2] = vec[4]
 
-	var v:Vector2 = relative_to_square(Vector2(vec[0], vec[1]))
-	var u:Vector2 = relative_to_square(Vector2(vec[2], vec[3]))
+	var v:Vector2 = Vector2(vec[0], vec[1])
+	var u:Vector2 = Vector2(vec[2], vec[3])
 
 	#slight rewrite of update_behaviors to create Dictionaries
 	var m:int = -1
-	if persist[2] != null: mark = persist[2]
+	if persist[2] != null: m = persist[2]
 	if behaviors.has(m):
 		if behaviors[m].has("r"):
 			behaviors[m]["r"][v] = u
@@ -162,18 +158,15 @@ func set_team(var team:int = 0) -> void:
 
 func get_team() -> int:
 	return table["team"]
-	
-func relative_to_square(var pos:Vector2):
-	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
-	var x:Vector2 = get_pos()
-	#make sure to rotate y by forward direction, which is held in the "angle" entry in a piece table
-	pos = transform(pos)
-	return (x + pos)
 
-#rotate a direction to match the forward direction of this
+func get_ff() -> bool:
+	if table["ff"] == 1: return true
+	return false
+
+#transform a position from a pieces local space to the board's global space
 func transform(var v:Vector2) -> Vector2:
 	var d:Vector2 = v.rotated(table["angle"]) * get_forward().length()
-	return d.round()
+	return d.round() + get_pos()
 	
 func _to_string():
 	return name + " " + String(get_team())

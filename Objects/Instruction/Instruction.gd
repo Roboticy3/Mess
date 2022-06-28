@@ -158,11 +158,6 @@ func vectorize(var start:int = 0) -> Array:
 	
 	#if all else fails, return an empty Array
 	return []
-
-static func can_take_from(var from:int, var to:int, var ff:int) -> bool:
-	if to == from && ff == 0:
-		return false
-	return true
 			
 func array_parse(var start:int = 0):
 	var w:Array = wrds.slice(start, wrds.size() - 1)

@@ -249,12 +249,9 @@ func mark(var v:Vector2):
 		#vectors for marks must be of at least size 2
 		elif a.size() < 2:
 			continue
-			
-		#create dataset to sent into mark_step from a slice of a
-		a = [a[0], a[1], l, t, i]
 		
 		#append s to pos and add entry in debug dictionary
-		mark_step(p, a, pos)
+		mark_step(p, Vector2(a[0], a[1]), l, t, pos, i)
 	
 	#set positions to board mark dictionary
 	marks = pos
@@ -262,19 +259,24 @@ func mark(var v:Vector2):
 	
 	return pos
 
-#mark a path between Piece from's position and the position formed by the first two elements of data
-#the third and fourth indices of the data type indicate the line type and the move type
+#create a path of marks between Piece position and a target position
+#the behaviors of this path are determined by the line and type arguments
+#	line 0 will move through from towards to until it reaches to or is interrupted
+#	line 1 will try to jump to to and cannot be interrupted unless the final square is blocked
+#	line 2 will act similarly to 0 but will move in the same direction until interrupted instead of stopping at to
+#	type 0 will end the path at the first take
+#	type 1 will end the path right before the first take
+#	type 2 will override the friendly fire property of from, but otherwise works like type 0
+#	type 2 will override the friendly fire property of from, but otherwise works like type 0
+#s is the Dictionary that will be updated with a key for each new mark
+#if a mark was already present in s, it will not be reassigned to
+#index is what is assigned as the value of each mark in s
 #each key in the returned dictionary represents a possible move created by the current instruction, represented by mark
-func mark_step(var from:Piece, var data:Array, var s:Dictionary):
-	
-	#grab line, move type and index from data array
-	var line:int = data[2]
-	var type:int = data[3]
-	var index:int = data[4]
+func mark_step(var from:Piece, var to:Vector2,
+	var line:int = 0, var type:int = 0, var s:Dictionary = {}, var i:int = 0) -> Dictionary:
 	
 	#create a Vector2 object from the first two entries in a
-	var to:Vector2 = Vector2(data[0], data[1])
-	to = from.relative_to_square(to)
+	to = from.transform(to)
 	
 	#print(to)
 
@@ -338,9 +340,8 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 		var occ:bool = pieces.has(square)
 		var take:bool = true
 		if occ: 
-			var aggressive:int = 0
-			if type == 2: aggressive = 1
-			take = Instruction.can_take_from(from.get_team(), pieces[square].get_team(), from.table["ff"] + aggressive)
+			#check if the from piece can take the to square, overrided if type = 2
+			take = can_take_from(from.get_pos(), square) || type == 2
 			#move type 1 cannot take
 			take = take && type != 1
 			
@@ -349,10 +350,25 @@ func mark_step(var from:Piece, var data:Array, var s:Dictionary):
 				break
 		
 		#add instruction index to a new position in s
-		if !s.has(square): s[square] = index
+		if !s.has(square): s[square] = i
 		
 		#if square is occupied by a takeable piece, break after adding the square
-		if occ && take: break
+		if occ && take: 
+			break
+		
+	return s
+
+#given a from and to square, returns true if a piece in from can take the to square, and false otherwise
+func can_take_from(var from:Vector2, var to:Vector2) -> bool:
+	var teamf:int = -1
+	if pieces.has(from): teamf = pieces[from].get_team()
+	var teamt:int = -1
+	if pieces.has(to): teamt = pieces[to].get_team()
+	
+	if teamf == -1: return false
+	#from BoardConverter.gd
+	if teamf != teamt || pieces[from].get_ff(): return true
+	return false
 
 #execute a turn by moving a piece, updating both the piece's table and the board's pieces
 #the only argument taken is a mark to select from marks
@@ -365,8 +381,6 @@ func execute_turn(var v:Vector2):
 	
 	#move the selected piece and add to its moves counter
 	move_piece(select, v)
-	#set of movements based on the piece's instructions
-	var moves:Dictionary = {select:v}
 	
 	#regenerate the behaviors of piece within the current state of the board
 	var p:Piece = pieces[v]
@@ -385,42 +399,36 @@ func execute_turn(var v:Vector2):
 	
 	#see if any extra behaviors match the piece's move
 	var creations:Array = []
-	var destructions:PoolVector2Array = []
+	var destructions:Array = []
+	var moves:Dictionary = {}
 	#behaviors in the -1 key apply to all moves
-	if b.has(-1):
-		var b1:Dictionary = b[-1]
-		if b1.has("t"): destructions.append_array(b1["t"])
-		if b1.has("c"): creations.append_array(b1["c"])
-		#add relocation pairs to moves
-		if b1.has("r"): for i in b1["r"]: 
-			if pieces.has(i): moves[i] = b1["r"][i]
-	if b.has(move):
-		var bm:Dictionary = b[move]
-		if bm.has("t"): destructions.append_array(bm["t"])
-		if bm.has("c"): creations.append_array(bm["c"])
-		#add relocation pairs to moves
-		if bm.has("r"): for i in bm["r"]: 
-			if pieces.has(i): moves[i] = bm["r"][i]
+	#add behaviors from both the -1 key and the key of the current move index
+	add_behaviors(b, -1, destructions, creations, moves)
+	add_behaviors(b, move, destructions, creations, moves)
+	
+	#split moves into dictionaries of keys and their new postions, and values and their new postions
+	var movesk:Dictionary = {}
+	var movesv:Dictionary = {}
+	for i in moves:
+		movesk[i] = i
+		movesv[moves[i]] = moves[i]
 				
 	#execute desctructions, creations, and relocations
+	destructions = behavior_step(p, destructions, 0)
 	for d in destructions: destroy_piece(d)
-	for c in creations: 
-		#don't create pieces that are out of bounds
-		if is_surrounding(Vector2(c[1], c[2])): make_piece(c, p.get_team())
-		#delete creations that are out of bounds so BoardMesh does not attempt to emulate them
-		else: creations.erase(c)
-	for r in moves: 
-		#exclude the original move from relocation checks
-		if select == r: continue
-		
-		#dont accept relocations to out of bounds positions
-		if is_surrounding(moves[r]): move_piece(r, moves[r])
-
-		#delete the relocations responsible for movement out of bounds,
-		#and add these beginning relocation positions to destructions so BoardMesh will remove them too
-		else:
-			destructions.append(r)
-			moves.erase(r)
+	creations = behavior_step(p, creations, 1)
+	for c in creations: make_piece(c, p.get_team())
+	
+	movesk = behavior_step(p, movesk, 0)
+	movesv = behavior_step(p, movesv, 0)
+	#when executing relocations, send updated movesk and movesv back into moves, and erase the original moves
+	for i in moves: 
+		move_piece(movesk[i], movesv[moves[i]])
+		moves[movesk[i]] = movesv[moves[i]]
+		moves.erase(i)
+	
+	#make sure the basic move is in moves
+	moves[select] = v
 		
 	#update table using the movement instruction
 	m[move].update_table_line()
@@ -434,13 +442,82 @@ func execute_turn(var v:Vector2):
 	#return Board updates
 	return [moves, creations, destructions]
 
+#add to lists of destructions, creations, and moves based on a set of behaviors b and a move index
+func add_behaviors(var b:Dictionary, var move:int, 
+	var d:Array, var c:Array, var m:Dictionary) -> void:
+		
+	if b.has(move):
+		var bm:Dictionary = b[move]
+		if bm.has("t"): d.append_array(bm["t"])
+		if bm.has("c"): c.append_array(bm["c"])
+		#add relocation pairs to moves
+		if bm.has("r"): for i in bm["r"]: 
+			if pieces.has(i): m[i] = bm["r"][i]
+
+#given a Piece, an iterable set of behaviors and a mode,
+#pass each element of behaviors into mark_step() and call a method on the element if mark_step() produces a non-empty result
+func behavior_step(var p:Piece, var behaviors, var mode:int = 0):
+	
+	var dict:bool = behaviors is Dictionary
+	var set = behaviors.size()
+	if dict: set = behaviors.keys()
+	
+	for i in set: 
+		
+		var bi = behaviors[i]
+		
+		#get the square of the behavior
+		var b:Vector2
+		if mode == 1: b = Vector2(bi[1], bi[2])
+		else: b = bi
+		
+		#update this behavior so BoardMesh can see the updated version and then execute it
+		var b_new:Vector2
+		
+		#if the square is (0, 0), mark_step() does not need to be called
+		#just transform b out of the Piece's local space instead
+		if b == Vector2.ZERO: 
+			b_new = p.transform(b)
+		
+		else:
+			#pass them into mark_step() to process them into positions on the board
+			#process behaviors as a jump with strong taking type so they are not interrupted by other pieces
+			#mark_step() should also handle the conversion to global coordinates
+			var s:Dictionary = mark_step(p, b, 1, 2)
+			
+			#if mark_step() returns an empty dictionary, the behavior has failed
+			if s.empty():
+				#remove the failed behavior and decrement i so the next iteration isn't skipped
+				if dict: 
+					behaviors.erase(i)
+				else:
+					behaviors.remove(i)
+					i -= 1
+				#continue the loop so this behavior is not executed
+				continue
+			
+			b_new = s.keys()[0]
+		
+		#reassign the updated behavior based on the type of elements in behaviors[i]
+		if mode != 1: behaviors[i] = b_new
+		else: for j in bi.size():
+			if j == 1:
+				bi[j] = b_new.x
+			elif j == 2:
+				bi[j] = b_new.y
+				break
+
+	return behaviors
+
 #move the piece on from onto to
-func move_piece(var from:Vector2, var to:Vector2):
+func move_piece(var from:Vector2, var to:Vector2) -> bool:
+	if !pieces.has(from): return false
 	pieces[to] = pieces[from]
 	pieces.erase(from)
 	#update the piece's local position and increment its move count
 	pieces[to].set_pos(to)
 	pieces[to].table["moves"] += 1
+	return true
 
 #erase a piece from the board, return true if the method succeeds
 func destroy_piece(var at:Vector2) -> bool:
