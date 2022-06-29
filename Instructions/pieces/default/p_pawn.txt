@@ -1,6 +1,8 @@
-pawn
+
 
 double 0
+name pawn
+mesh meshes/pawn.obj
 
 m
 0 1 0 1

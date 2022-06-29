@@ -7,8 +7,6 @@ extends Node
 
 # name of piece and file path from which it reads instructions
 var path:String = ""
-#the path to the mesh .obj the piece will appear as and the team
-var mesh:String = "Instructions/pieces/default/meshes/pawn.obj"
 
 #instructions for marking squares when selected
 var mark:Array = []
@@ -19,15 +17,18 @@ var behaviors:Dictionary = {}
 #table are updated when a phase containing a string followed by a number is called
 #default values are a boolean 0/1 for whether the piece can be checkmated and an integet for the number of moves
 #any property kept in table is accessible by the Instruction class in its vectorize() function
-var table:Dictionary = {"moves":0, "fx":0, "fy":0, "ff":0,
+var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/default/meshes/default.obj",
+			 "moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
 			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1,
-			 "team":0, "collision":1}
+			 "team":0, "collision":0}
 
 #piece types considered by the creation phase, indicated by their string path
 var piece_types:Array = []
 
-var moves:int = 0
+#path with the final file location removed, 
+#used to construct file paths local to the project instead of the piece's pack
+var div:String = ""
 
 #initiate a piece with a path to its instruction behaviours, its team and its position
 func _init(var _p:String, var _team:Team = Team.new(), var _team_index:int = 0, var v = Vector2.ZERO):
@@ -40,38 +41,26 @@ func _init(var _p:String, var _team:Team = Team.new(), var _team_index:int = 0, 
 	_ready()
 	
 func _ready():
-	#open file
-	var f = File.new()
-	#if file does not exist, exit the function to create piece with no behaviour
-	if !f.file_exists(path): 
-		return null
+	#add .txt to the end of the file path if its not already present
+	if !path.ends_with(".txt"):
+		path += ".txt"
 	
 	#create list of interperetation functions to send to a Reader
 	#Piece only needs to add the mark instructions at ready
 	var funcs:Dictionary = {"m":"m_phase","t":"","c":"","r":""}
 	#use Reader to interperet the instruction file into usable behavior 
 	var r:Reader = Reader.new(self, funcs, path)
+	#if Reader sees a bad file, do not continue any further
+	if r.badfile: return
 	r.read()
+	
+	#set div to only include the file path up to the location of the piece
+	div = path.substr(0, path.find_last("/") + 1)
 
 func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
-	#break up string by spaces
-	var s:Array = I.to_string_array()
-	#create file object for checking paths
-	var f:File = File.new()
-	
-	#assign name if not done already
-	if s.size() > 0 && s[0].length() > 0:
-		if name == "":
-			name = s[0].strip_edges()
-		#try and set the piece's model path
-		var p:String = path.substr(0, path.find_last("/") + 1)
-		if f.file_exists(p + s[0]):
-			mesh = p + s[0]
-	
 	#try to update table from metadata line, essentially initializing the table
 	#only do table updates if I vectorizes to a non-empty array, this will allow for primitive conditionals before piece vars
-	var a:Array = I.vectorize()
-	if !a.empty(): I.update_table(table)
+	if !vec.empty(): I.update_table(table)
 
 #Piece behaviour phases are interpereted on the fly by a Board object,
 #and therefore only the instruction needs to be stored
@@ -163,10 +152,16 @@ func get_ff() -> bool:
 	if table["ff"] == 1: return true
 	return false
 
+func get_name() -> String:
+	return table["name"]
+
+func get_mesh() -> String:
+	return div + String(table["mesh"])
+
 #transform a position from a pieces local space to the board's global space
 func transform(var v:Vector2) -> Vector2:
 	var d:Vector2 = v.rotated(table["angle"]) * get_forward().length()
 	return d.round() + get_pos()
 	
 func _to_string():
-	return name + " " + String(get_team())
+	return get_name() + " " + String(get_team())

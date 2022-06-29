@@ -1,8 +1,8 @@
-klein
+name klein
 
 scale 1.1
 
-meshes/klein.obj
+mesh meshes/klein.obj
 
 b
 0 0 7 15

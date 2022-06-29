@@ -1,5 +1,5 @@
-knight
-meshes/knight.obj
+name knight
+mesh meshes/knight.obj
 
 m
 1 2 1

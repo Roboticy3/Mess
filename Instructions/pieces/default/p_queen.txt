@@ -1,5 +1,5 @@
-queen
-meshes/queen.obj
+name queen
+mesh meshes/queen.obj
 
 m
 0 1 2

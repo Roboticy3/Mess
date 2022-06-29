@@ -1,5 +1,5 @@
-rook
-meshes/rook.obj
+name rook
+mesh meshes/rook.obj
 
 hasmoved 0
 ff 0s

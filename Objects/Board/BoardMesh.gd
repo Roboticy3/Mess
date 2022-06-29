@@ -94,7 +94,7 @@ func format_b_path():
 func init_mesh():
 	
 	#set mesh from obj path and copy into shorthand m
-	mesh = BoardConverter.path_to_mesh(board.mesh)
+	mesh = BoardConverter.path_to_mesh(board.get_mesh())
 	var m = mesh
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(m, 0)
@@ -186,24 +186,33 @@ func create_piece(var p:Piece, var v:Vector2):
 	#destroy any piece currently occupying the square
 	if pieces.has(v): destroy_piece(v)
 	
+	var can_collide:bool = false
+	
 	#if the piece is not recorded in the piece_types dict, update dict with its data
 	var pdata = {}
-	if !([p._to_string()] in piece_types):
+	if !([p.get_name()] in piece_types):
 		pdata["mat"] = PieceMesh.pmat(p, board)
-		pdata["mesh"] = BoardConverter.path_to_mesh(p.mesh)
-		#only add collision if piece collision is enabled by the board
-		if board.table["piece_collision"] == 1:
-			pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
-		else: pdata["shape"] = CollisionShape.new()
+		pdata["mesh"] = BoardConverter.path_to_mesh(p.get_mesh())
+		
+		#flag collision to be added if the piece and board collision modes align correctly
+		var bpcoll:bool = board.table["piece_collision"] == 1
+		var pcoll:int = board.table["collision"]
+		if bpcoll || pcoll == 2 && pcoll != 1:
+			can_collide = true
+		
+		pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
 		pdata["transform"] = BoardConverter.square_to_transform(graph, duplicates, board, p)
 		piece_types[p._to_string()] = pdata
 	#otherwise, copy piece data out of current dict
 	else:
-		pdata = piece_types[p.name]
+		pdata = piece_types[p.get_name()]
+	
+	var coll = pdata["shape"]
+	if can_collide: coll = CollisionShape.new()
 	
 	#create the piece mesh with all the right references, then add the PieceMesh object to self's tree
 	var pm = PieceMesh.new(p, board 
-			,pdata["shape"], pdata["mesh"], pdata["mat"]
+			,coll, pdata["mesh"], pdata["mat"]
 			)
 	add_child(pm)
 	

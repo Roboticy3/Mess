@@ -18,6 +18,9 @@ var size:int = 8
 #if set to true, read() will not call any functions until it reaches a defined key
 var wait:bool = false
 
+#set to true when this Reader is assigned a bad file
+var badfile:bool = false
+
 #initialize the Reader object
 #size represents the number of properties Reader can store across multiple lines, default 8
 func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8):
@@ -25,16 +28,15 @@ func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _si
 	funcs = _funcs
 	size = _size
 	
-	file = File.new()
-	var f:String = _path
+	badfile = !set_file(_path)
+			
+func set_file(var f:String) -> bool:
 	
-	#make sure file ends with ".txt", then check if they are valid
-	if !f.ends_with(".txt"):
-		f += ".txt"
+	file = File.new()
 		
 	#check if file d + f exists, if not, read from default
 	if !file.file_exists(f):
-		print("instruction file not found")
+		return false
 	else:
 		file.open(f, File.READ)
 		
@@ -42,6 +44,7 @@ func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _si
 		#if not, attach a blank function to "phase", the default name for a phase function
 		if !funcs.has("~"):
 			funcs["~"] = "_phase"
+	return true
 	
 #read the instruction file starting from a certain stage
 func read(var stage:int = -1):

@@ -1,8 +1,6 @@
-torus
+name torus
 
-meshes/torus.obj
-
-oogabooga 1
+mesh meshes/torus.obj
 
 b
 0 0 7 7

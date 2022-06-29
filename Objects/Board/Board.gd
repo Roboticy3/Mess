@@ -16,7 +16,6 @@ var turn:int = 0
 
 #the instruction and mesh path of the board
 var path:String = ""
-var mesh:String = ""
 
 #the rectangular boundries and portals which define the shape of the board
 var bounds:Array = Array()
@@ -28,9 +27,13 @@ var maximum = Vector2(-1000000, -1000000)
 var minimum = Vector2.INF
 var size = Vector2.ONE
 
+#the path to this piece, excluding its name
+var div:String = ""
+
 #store a set of variables declared in metadata phase
 var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1, 
-	"piece_scale":0.2, "piece_opacity":1, "piece_collision":1}
+	"piece_scale":0.2, "piece_opacity":1, "piece_collision":1,
+	"name":"*name*","mesh":"Instructions/default/meshes/default.obj"}
 
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
@@ -38,43 +41,35 @@ var marks:Dictionary = {}
 var select:Vector2
 
 func _ready():
+	#add .txt to the end of the file path if its not already present
+	if !path.ends_with(".txt"):
+		path += ".txt"
 	
 	#store the following values across multiple lines in Reade object
 	var persist:PoolIntArray = [-1, 0]
-	
 	#tell Reader object which functions to call
 	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
 	
 	#read the Instruction file
 	var r:Reader = Reader.new(self, funcs, path)
+	#if Reader sees a bad file, do not continue any further
+	if r.badfile: return
 	r.read()
+	
+	#set div to only include the file path up to the location of the piece
+	div = path.substr(0, path.find_last("/") + 1)
+	
+	
 
 #x_phase() functions are called by the Reader object in ready to initialize the board
 #all x_phase functions take in the same arguments I, vec, and file
 
 #_phase is the default phase and defines metadata for the board like mesh and name
 func _phase(var I:Instruction, var vec:Array, var persist:Array):
-	#code from line 64 of Piece.gd
-	#break up string by spaces
-	var s = I.to_string_array()
-	
-	#allow operations to be done with the first word if s has size
-	if s.size() > 0 && s[0].length() > 0:
-		var p:String = path.substr(0, path.find_last("/") + 1) + s[0]
-		var b = File.new()
-		#assign name if not done already
-		if (name == ""):
-			name = s[0].strip_edges()
-		#only assign mesh after name
-		elif b.file_exists(p) && p.ends_with(".obj"):
-			mesh = p
-	
-	#update string table with variables
-	I.update_table(table)
+	if !vec.empty(): I.update_table(table)
 
 #b_phase implicitly defines the mesh and defines the boundaries of the board from sets of 4 numbers
 func b_phase(var I:Instruction, var vec:Array, var persist:Array):
-	if mesh.empty(): mesh = "Instructions/default/meshes/default.obj"
 	
 	#board creation waits until there is a 4 number list in vec, then creates a bound
 	if (vec.size() >= 4):
@@ -128,7 +123,7 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 		var p = Piece.new(c)
 		
 		#only use named pieces to avoid ambiguous pieces on the board
-		if !p.name.match(""):
+		if !p.get_name().match(""):
 			piece_types.append(c)
 			#when a piece is assigned, skip the rest of the g phase loop
 			return
@@ -526,8 +521,14 @@ func destroy_piece(var at:Vector2) -> bool:
 	return true
 
 #get the team of the current turn by taking turn % teams.size()
-func get_team():
+func get_team() -> int:
 	return turn % teams.size()
+	
+func get_name() -> String:
+	return table["name"]
+	
+func get_mesh() -> String:
+	return div + String(table["mesh"])
 
 func _init(var _path:String):
 	path = _path
@@ -536,7 +537,7 @@ func _init(var _path:String):
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
 	
-	var s:String = name
+	var s:String = get_name()
 	s += "\n["
 	#convert team array to string
 	for i in teams.size(): 
@@ -551,7 +552,7 @@ func _to_string():
 			#check if square contains a piece
 			var v = Vector2(j, i)
 			if pieces.has(v):
-				var c = pieces[v].name[0]
+				var c = pieces[v].get_name()[0]
 				#add the letter to the string and the used letters array
 				s += c
 			else:

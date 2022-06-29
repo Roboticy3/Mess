@@ -1,6 +1,6 @@
-King
+name King
 
-meshes/king.obj
+mesh meshes/king.obj
 
 key 1
 

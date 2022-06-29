@@ -1,6 +1,6 @@
-loop
+name loop
 
-meshes/loop.obj
+mesh meshes/loop.obj
 
 
 b
