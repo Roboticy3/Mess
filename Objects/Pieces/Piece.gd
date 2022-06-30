@@ -17,7 +17,7 @@ var behaviors:Dictionary = {}
 #table are updated when a phase containing a string followed by a number is called
 #default values are a boolean 0/1 for whether the piece can be checkmated and an integet for the number of moves
 #any property kept in table is accessible by the Instruction class in its vectorize() function
-var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/default/meshes/default.obj",
+var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/pieces/default/meshes/pawn.obj",
 			 "moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
 			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1,
@@ -44,6 +44,9 @@ func _ready():
 	#add .txt to the end of the file path if its not already present
 	if !path.ends_with(".txt"):
 		path += ".txt"
+		
+	#set div to only include the file path up to the location of the piece
+	div = path.substr(0, path.find_last("/") + 1)
 	
 	#create list of interperetation functions to send to a Reader
 	#Piece only needs to add the mark instructions at ready
@@ -53,14 +56,20 @@ func _ready():
 	#if Reader sees a bad file, do not continue any further
 	if r.badfile: return
 	r.read()
-	
-	#set div to only include the file path up to the location of the piece
-	div = path.substr(0, path.find_last("/") + 1)
 
 func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 	#try to update table from metadata line, essentially initializing the table
 	#only do table updates if I vectorizes to a non-empty array, this will allow for primitive conditionals before piece vars
-	if !vec.empty(): I.update_table(table)
+	var key:String = ""
+	if !vec.empty(): key = I.update_table(table)
+	#if no key was returned, update table has failed
+	if key.empty(): return
+	
+	#let meshes access folders outside of this piece's pack if they start with an @
+	if key.match("mesh"):
+		if table[key].begins_with("@"):
+			table[key] = table[key].substr(1, -1)
+		else: table[key] = div + table[key]
 
 #Piece behaviour phases are interpereted on the fly by a Board object,
 #and therefore only the instruction needs to be stored
@@ -156,7 +165,7 @@ func get_name() -> String:
 	return table["name"]
 
 func get_mesh() -> String:
-	return div + String(table["mesh"])
+	return String(table["mesh"])
 
 #transform a position from a pieces local space to the board's global space
 func transform(var v:Vector2) -> Vector2:

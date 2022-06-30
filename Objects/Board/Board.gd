@@ -56,6 +56,8 @@ func _ready():
 	if r.badfile: return
 	r.read()
 	
+	print(piece_types)
+	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
 	
@@ -66,7 +68,15 @@ func _ready():
 
 #_phase is the default phase and defines metadata for the board like mesh and name
 func _phase(var I:Instruction, var vec:Array, var persist:Array):
-	if !vec.empty(): I.update_table(table)
+	var key:String = ""
+	if !vec.empty(): key = I.update_table(table)
+
+	if key.empty(): return
+
+	if key.match("mesh"):
+		if table[key].begins_with("@"):
+			table[key] = table[key].substr(1, -1)
+		else: table[key] = div + table[key]
 
 #b_phase implicitly defines the mesh and defines the boundaries of the board from sets of 4 numbers
 func b_phase(var I:Instruction, var vec:Array, var persist:Array):

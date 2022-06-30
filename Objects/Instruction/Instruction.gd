@@ -268,7 +268,7 @@ func is_unformatted(var i:int = 0, var start:int = s) -> bool:
 	return false
 
 #take in a table to update with self, returns true on success
-func update_table(var t:Dictionary=table, var start:int = 0) -> bool:
+func update_table(var t:Dictionary=table, var start:int = 0) -> String:
 	#populate piece table by trying taking numbers from the second word
 	var s = to_string_array(contents, start)
 	#check if last two terms in array make up a key pair
@@ -277,21 +277,19 @@ func update_table(var t:Dictionary=table, var start:int = 0) -> bool:
 		var j:int = s.size() - 1
 		#try to parse values
 		var n = [parse(s[i], true), parse(s[j], true)]
-		#keys must be strings, but values can be floats or strings (jank)
+		#keys must be strings, but values can be floats or strings
 		if n[0] == null:
-			var a = n[1]
-			if a == null: a = s[j]
-			t[s[i]] = a
-			#print(s[i],":",a)
-			return true
-	return false
+			if n[1] == null: t[s[i]] = s[j]
+			else: t[s[i]] = n[1]
+			return s[i]
+	return ""
 
 #do all the table updates in a given line
 func update_table_line(var t:Dictionary = table) -> void:
 	var i = wrds.size() - 2
 	while i > 0:
-		var try:bool = update_table(t, i)
-		if !try: 
+		var try:String = update_table(t, i)
+		if try.empty(): 
 			break
 		i -= 2
 

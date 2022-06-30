@@ -1,2 +1,0 @@
-out-of-order board blocks
-multiple piece types with the same name

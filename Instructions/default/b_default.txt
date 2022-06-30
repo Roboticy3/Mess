@@ -2,7 +2,7 @@
 #you can type anything here and it shouldnt ruin things
 
 name default_board
-mesh meshes/default.obj
+mesh @Instructions/default/meshes/default.obj
 
 piece_scale 0.1
 
@@ -24,6 +24,7 @@ default/p_knight.txt
 default/p_bishop.txt
 default/p_queen.txt
 default/p_king.txt
+testing/p_pawn.txt
 
 #pawns
 0 0 1 0 1 #enable symmetry
