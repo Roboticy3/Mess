@@ -25,16 +25,12 @@ var uv_query:UvQuerier
 
 #debug cube is an object than can be moved around to visualize test features
 var debug_cube:CSGBox
-
-#map of keyboard keybinds using scancode for key buttons and button indices for mouse buttons
-var keymap:Dictionary = {"z":87,"x":68,"-z":83,"-x":65,"y":32,"-y":16777237,
-						"slct":1,"grab":2, "zin":4, "zout":5}
 				
 #keep track of the player's target_motion and camera rotation
 #this way the global input map doesn't have to be used
-var target_motion:Dictionary = {"z":0, "x":0, "y":0, "r":Vector2.ZERO, "zoom":0}
+var target_motion:Dictionary = {"v":Vector3.ZERO, "r":Vector2.ZERO, "zoom":0}
 #momentum chases target_motion to smooth movement
-var momentum:Dictionary = {"z":0, "x":0, "y":0, "zoom":0}
+var momentum:Dictionary = {"v":Vector3.ZERO, "zoom":0}
 
 #the acceleration of momentum in u/s/s
 export (float) var accel = 50.0
@@ -44,6 +40,9 @@ export (float) var speed = 4.0
 
 #sensitivity of the player in rad/100pix
 export (float) var sens = 0.75
+
+#dead zone on the controller axes
+export (PoolRealArray) var dead_zone = [0.1, 0.1]
 
 #last click the player made in uv_space
 export (Vector2) var uv_last = Vector2.ZERO
@@ -63,51 +62,58 @@ func set_mesh(var mesh:Mesh) -> void:
 
 #run movement functions on physics timestep
 func _physics_process(delta):
+	#apply movement based on target motion
+	move(delta)
 	look(delta)
 	accelerate(delta)
-	move(delta)
+
+#handle non-button inputs with Events
+func _input(event):
+	#if the mouse is moving and the camera rotate button is being held, rotate the camera
+	if event is InputEventMouseMotion && Input.is_action_pressed("ck_1"):
+		var e:InputEventMouseMotion = event
+		target_motion["r"] = e.speed
+
+#handle button inputs each frame
+func _process(delta):
+	#movement buttons
+	var z:float = Input.get_action_raw_strength("mv_back") - Input.get_action_raw_strength("mv_forward")
+	var x:float = Input.get_action_raw_strength("mv_right") - Input.get_action_raw_strength("mv_left")
+	var y:float = Input.get_action_raw_strength("mv_up") - Input.get_action_raw_strength("mv_down")
+	var v:Vector3 = Vector3(x, y, z)
+	if v.length() < dead_zone[0]: v = Vector3.ZERO
+	else: v *= speed
+	target_motion["v"] = v
+	
+	#controller look
+	var azimuth:float = Input.get_action_raw_strength("lk_right") - Input.get_action_strength("lk_left")
+	var zenith:float = Input.get_action_strength("lk_down") - Input.get_action_raw_strength("lk_up")
+	var r:Vector2 = Vector2(azimuth, zenith)
+	if r.length() < dead_zone[1]: r = Vector2.ZERO
+	else: r *= Input.get_action_raw_strength("ck_1") * 500
+	target_motion["r"] = r
 	
 #apply acceleration so momentum approaches target_motion
 func accelerate(var delta:float):
 	for tm in momentum.keys():
-		var d = sign(target_motion[tm] - momentum[tm])
+		var d = target_motion[tm] - momentum[tm]
 		momentum[tm] += d * accel * delta
-
-#set target_motion to player transforms
-func move(var delta:float):
-	#get local axes of the camera
-	var axes = transform.basis
-	
-	#flatten y of axes for movement
-			#flip z axis
-	axes = {"z":(axes.z * -Vector3(1, 0, 1)).normalized(),
-			"x":(axes.x * Vector3(1, 0, 1)).normalized(),
-			#up is always up
-			"y":Vector3.UP}
-	
-	#multiply vectors by target_motion and apply the translation and rotation
-	#flip z
-	var vector = Vector3.ZERO
-	for a in axes.keys():
-		vector += axes[a] * momentum[a] * delta
-	
-	#move by origin
-	#transform.origin += vector * delta
-	
-	#use move_and_collide to stop player from moving through the board
-	var col = move_and_collide(vector)
 
 func look(delta):
 	#multiply rotation motions by delta and sens
 	var axes = transform.basis
 	var rots = target_motion["r"] * delta * -sens/100
+	print(rots)
+	
 	#use true y axis for horizontal rotation to make rotation more intuitive
 	transform = rotate(Vector3.UP, rots.x)
+	
 	#do not rotate vertical camera past cutoffs
 	var limit = 0.95
 	var rot = rotate(axes.x, rots.y)
 	if abs(rot.basis.z.y) < limit:
 		transform = rot
+	
 	#counteract any roll that the camera might have suffered
 	var tilt = (transform.basis.x / transform.basis.y).y
 	transform = rotate(transform.basis.z, -tan(tilt))
@@ -123,60 +129,9 @@ func rotate(var axis:Vector3 = Vector3.UP, var phi:float = 0, var origin:Vector3
 	t = t.rotated(axis, phi)
 	t.origin = o
 	return t
-
-#activated on button presses and mouse movements
-func _input(event):
-	if event is InputEventMouseButton || event is InputEventKey:
-		update_target_motion(event)
 	
-	#set rotation vector when looking
-	if event is InputEventMouseMotion && looking:
-		target_motion["r"] = event.speed
-
-#take an input_event and check if it is a movement key, then use set_target_motion() accordingly
-func update_target_motion(var event):
-	
-	#get value of event based on type
-	var escan = 0
-	if event is InputEventKey:
-		escan = event.scancode
-	elif event is InputEventMouseButton:
-		escan = event.button_index
-	
-	for i in keymap.keys():
-		#get value on possible movment inputs
-		var vscan = keymap[i]
-		
-		#see if current input matches any set actions
-		#if there's a match, execute the appropriate code
-		if vscan == escan:
-			if i in ["z", "x", "y"]:
-				set_target_motion(event.is_pressed(), i)
-			elif i in ["-z", "-x", "-y"]: 
-				set_target_motion(event.is_pressed(), i)
-			elif vscan == keymap["slct"] && event.is_pressed():
-				request_square(event)
-			#only look if user is right-clicking
-			elif vscan == keymap["grab"]:
-				#stop values from overflowing on rising or falling edge of click
-				target_motion["r"] = Vector2.ZERO
-				if event.is_pressed():
-					looking = true
-				else:
-					looking = false
-
-#set target_motion to non-zero if event.is_pressed()
-func set_target_motion(var on_off:bool = true, var key:String = "z"):
-	var s = speed
-	#wtf?
-	if key.begins_with("-"): 
-		s *= -1
-		key.erase(0, 1)
-	
-	if on_off:
-		target_motion[key] = s
-	else:
-		target_motion[key] = 0
+func move(var delta:float) -> void:
+	move_and_collide(momentum["v"] * delta)
 		
 #try to select a uv from the board
 func request_square(var event:InputEventMouseButton):
