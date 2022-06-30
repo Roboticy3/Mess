@@ -42,7 +42,10 @@ export (float) var speed = 4.0
 export (float) var sens = 0.75
 
 #dead zone on the controller axes
+#index 0 for left stick and 1 for right
 export (PoolRealArray) var dead_zone = [0.1, 0.1]
+#controller look sensitivity
+export (int) var stick_sens = 500
 
 #last click the player made in uv_space
 export (Vector2) var uv_last = Vector2.ZERO
@@ -63,7 +66,7 @@ func set_mesh(var mesh:Mesh) -> void:
 #run movement functions on physics timestep
 func _physics_process(delta):
 	#apply movement based on target motion
-	move(delta)
+	move_and_slide(momentum["v"])
 	look(delta)
 	accelerate(delta)
 
@@ -76,22 +79,22 @@ func _input(event):
 
 #handle button inputs each frame
 func _process(delta):
-	#movement buttons
+	#movement buttons sum to velocities along either axis
 	var z:float = Input.get_action_raw_strength("mv_back") - Input.get_action_raw_strength("mv_forward")
 	var x:float = Input.get_action_raw_strength("mv_right") - Input.get_action_raw_strength("mv_left")
 	var y:float = Input.get_action_raw_strength("mv_up") - Input.get_action_raw_strength("mv_down")
-	var v:Vector3 = Vector3(x, y, z)
+	#transform x and z movement to match rotation
+	var h:Vector3 = (x * transform.basis.x + z * transform.basis.z) * Vector3(1, 0, 1)
+	print(h)
+	var v:Vector3 = Vector3(0, y, 0) + h
 	if v.length() < dead_zone[0]: v = Vector3.ZERO
 	else: v *= speed
 	target_motion["v"] = v
 	
-	#controller look
-	var azimuth:float = Input.get_action_raw_strength("lk_right") - Input.get_action_strength("lk_left")
-	var zenith:float = Input.get_action_strength("lk_down") - Input.get_action_raw_strength("lk_up")
-	var r:Vector2 = Vector2(azimuth, zenith)
-	if r.length() < dead_zone[1]: r = Vector2.ZERO
-	else: r *= Input.get_action_raw_strength("ck_1") * 500
-	target_motion["r"] = r
+	#clicking on pieces
+	var click:bool = Input.is_action_just_pressed("ck_0")
+	if click:
+		request_square(get_viewport().get_mouse_position())
 	
 #apply acceleration so momentum approaches target_motion
 func accelerate(var delta:float):
@@ -103,7 +106,6 @@ func look(delta):
 	#multiply rotation motions by delta and sens
 	var axes = transform.basis
 	var rots = target_motion["r"] * delta * -sens/100
-	print(rots)
 	
 	#use true y axis for horizontal rotation to make rotation more intuitive
 	transform = rotate(Vector3.UP, rots.x)
@@ -129,15 +131,12 @@ func rotate(var axis:Vector3 = Vector3.UP, var phi:float = 0, var origin:Vector3
 	t = t.rotated(axis, phi)
 	t.origin = o
 	return t
-	
-func move(var delta:float) -> void:
-	move_and_collide(momentum["v"] * delta)
 		
-#try to select a uv from the board
-func request_square(var event:InputEventMouseButton):
+#try to select a square on the board given a position on the screen
+func request_square(var position:Vector2):
 	
 	#create raycast data
-	var r = BoardConverter.raycast(event.position, camera, 
+	var r = BoardConverter.raycast(position, camera, 
 		get_world(), vision)
 	
 	#if ray hits something
@@ -148,7 +147,7 @@ func request_square(var event:InputEventMouseButton):
 			square = r["collider"].piece.get_pos()
 		#otherwise, return uv square of board
 		else:
-			var uv = uv_query.query(event.position)
+			var uv = uv_query.query(position)
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
 		#handle square selection
