@@ -70,7 +70,7 @@ material = ExtResource( 5 )
 
 [node name="Board" type="StaticBody" parent="."]
 script = ExtResource( 3 )
-path = "Instructions/default"
+path = "Instructions/torus"
 board_shape_path = NodePath("Board Shape")
 board_collider_path = NodePath("Board Collision")
 

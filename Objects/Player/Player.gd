@@ -21,7 +21,7 @@ var camera:Camera
 
 #Viewport the Player can use to sample uv coordinates from the board
 export (NodePath) var viewport_path:NodePath
-var uv_query:UvQuerier
+var uv_query:Node
 
 #debug cube is an object than can be moved around to visualize test features
 var debug_cube:CSGBox
@@ -43,7 +43,7 @@ export (float) var sens = 0.75
 
 #dead zone on the controller axes
 #index 0 for left stick and 1 for right
-export (PoolRealArray) var dead_zone = [0.1, 0.1]
+export (PoolRealArray) var dead_zone = [0.05, 0.05]
 #controller look sensitivity
 export (int) var stick_sens = 500
 
@@ -57,7 +57,7 @@ var looking:bool = false
 func _ready():
 	#use NodePaths to find nodes
 	camera = get_node(camera_path)
-	uv_query = get_node(viewport_path) as UvQuerier
+	uv_query = get_node(viewport_path)
 	
 func set_mesh(var mesh:Mesh) -> void:
 	uv_query.set_mesh(mesh)
@@ -80,21 +80,37 @@ func _input(event):
 #handle button inputs each frame
 func _process(delta):
 	#movement buttons sum to velocities along either axis
-	var z:float = Input.get_action_raw_strength("mv_back") - Input.get_action_raw_strength("mv_forward")
-	var x:float = Input.get_action_raw_strength("mv_right") - Input.get_action_raw_strength("mv_left")
-	var y:float = Input.get_action_raw_strength("mv_up") - Input.get_action_raw_strength("mv_down")
+	var xz:Vector2 = Input.get_vector("mv_left", "mv_right", "mv_forward", "mv_back")
+	var y:float = Input.get_axis("mv_down","mv_up")
 	#transform x and z movement to match rotation
-	var h:Vector3 = (x * transform.basis.x + z * transform.basis.z) * Vector3(1, 0, 1)
-	print(h)
+	var bx:Vector3 = transform.basis.x * Vector3(1, 0, 1)
+	var bz:Vector3 = transform.basis.z * Vector3(1, 0, 1)
+	var h:Vector3 = (xz.x * bx.normalized() + xz.y * bz.normalized())
 	var v:Vector3 = Vector3(0, y, 0) + h
 	if v.length() < dead_zone[0]: v = Vector3.ZERO
-	else: v *= speed
+	else: v *= speed / (1 + 4 * Input.get_action_raw_strength("ctrl"))
 	target_motion["v"] = v
 	
 	#clicking on pieces
 	var click:bool = Input.is_action_just_pressed("ck_0")
 	if click:
-		request_square(get_viewport().get_mouse_position())
+		request_square(uv_query.get_mouse_position())
+	
+	#controller look
+	var azimuth:float = Input.get_axis("lk_left","lk_right")
+	var zenith:float = Input.get_axis("lk_up","lk_down")
+	var r:Vector2 = Vector2(azimuth, zenith)
+	if r.length() < dead_zone[1]: r = Vector2.ZERO
+	else: 
+		#use r to move the mouse within the screen to select a piece
+		var mpos:Vector2 = uv_query.get_mouse_position()
+		var ck1:float = Input.get_action_raw_strength("ck_1")
+		if ck1 == 0: uv_query.warp_mouse(mpos + r / uv_query.size * stick_sens * 50)
+		
+		#if r is not going to be zero, multiply r by the stick sensitivity and the state of the look button (0 or 1)
+		#this makes r not zero if and only if both the right stick is moving and the look button is being held
+		r *= ck1 * stick_sens
+	target_motion["r"] = r
 	
 #apply acceleration so momentum approaches target_motion
 func accelerate(var delta:float):
