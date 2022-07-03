@@ -1,0 +1,189 @@
+[gd_resource type="Theme" load_steps=20 format=2]
+
+[ext_resource path="res://UI/Fonts/COUR.TTF" type="DynamicFontData" id=1]
+[ext_resource path="res://UI/Fonts/Title.tres" type="DynamicFont" id=2]
+[ext_resource path="res://UI/Fonts/Text.tres" type="DynamicFont" id=3]
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.3008, 0.34874, 0.47, 1 )
+
+[sub_resource type="StyleBoxEmpty" id=3]
+
+[sub_resource type="StyleBoxFlat" id=4]
+bg_color = Color( 0.4224, 0.48972, 0.66, 1 )
+
+[sub_resource type="StyleBoxFlat" id=5]
+bg_color = Color( 0.301961, 0.34902, 0.470588, 1 )
+
+[sub_resource type="StyleBoxFlat" id=6]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+
+[sub_resource type="StyleBoxFlat" id=7]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+
+[sub_resource type="StyleBoxFlat" id=10]
+bg_color = Color( 0.423529, 0.490196, 0.658824, 1 )
+
+[sub_resource type="StyleBoxFlat" id=11]
+bg_color = Color( 0.301961, 0.34902, 0.470588, 1 )
+
+[sub_resource type="StyleBoxFlat" id=12]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+
+[sub_resource type="StyleBoxFlat" id=8]
+bg_color = Color( 0.301961, 0.34902, 0.470588, 1 )
+
+[sub_resource type="StyleBoxFlat" id=9]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+
+[sub_resource type="ImageTexture" id=15]
+
+[sub_resource type="ImageTexture" id=16]
+
+[sub_resource type="StyleBoxFlat" id=13]
+bg_color = Color( 0.301961, 0.34902, 0.470588, 1 )
+
+[sub_resource type="StyleBoxFlat" id=14]
+bg_color = Color( 0.133333, 0.152941, 0.207843, 1 )
+
+[sub_resource type="DynamicFont" id=1]
+font_data = ExtResource( 1 )
+
+[resource]
+default_font = SubResource( 1 )
+Button/colors/font_color = Color( 0.54902, 0.54902, 0.54902, 1 )
+Button/fonts/font = ExtResource( 3 )
+Button/styles/hover = SubResource( 2 )
+Button/styles/normal = SubResource( 3 )
+Button/styles/pressed = SubResource( 4 )
+CheckBox/colors/font_color = Color( 0, 0, 0, 1 )
+CheckBox/colors/font_color_disabled = Color( 0, 0, 0, 1 )
+CheckBox/colors/font_color_focus = Color( 0, 0, 0, 1 )
+CheckBox/colors/font_color_hover = Color( 0, 0, 0, 1 )
+CheckBox/colors/font_color_pressed = Color( 0, 0, 0, 1 )
+CheckBox/colors/icon_color_hover = Color( 0, 0, 0, 1 )
+CheckButton/colors/font_color = Color( 0, 0, 0, 1 )
+CheckButton/colors/font_color_disabled = Color( 0, 0, 0, 1 )
+CheckButton/colors/font_color_focus = Color( 0, 0, 0, 1 )
+CheckButton/colors/font_color_hover = Color( 0, 0, 0, 1 )
+CheckButton/colors/font_color_pressed = Color( 0, 0, 0, 1 )
+CheckButton/colors/icon_color_hover = Color( 0, 0, 0, 1 )
+Editor/colors/accent_color = Color( 0, 0, 0, 1 )
+Editor/colors/axis_x_color = Color( 0, 0, 0, 1 )
+Editor/colors/axis_y_color = Color( 0, 0, 0, 1 )
+Editor/colors/axis_z_color = Color( 0, 0, 0, 1 )
+Editor/colors/base_color = Color( 0, 0, 0, 1 )
+Editor/colors/box_selection_fill_color = Color( 0, 0, 0, 1 )
+Editor/colors/box_selection_stroke_color = Color( 0, 0, 0, 1 )
+Editor/colors/contrast_color_1 = Color( 0, 0, 0, 1 )
+Editor/colors/contrast_color_2 = Color( 0, 0, 0, 1 )
+Editor/colors/dark_color_1 = Color( 0, 0, 0, 1 )
+Editor/colors/dark_color_2 = Color( 0, 0, 0, 1 )
+Editor/colors/dark_color_3 = Color( 0, 0, 0, 1 )
+Editor/colors/disabled_font_color = Color( 0, 0, 0, 1 )
+Editor/colors/error_color = Color( 0, 0, 0, 1 )
+Editor/colors/font_color = Color( 0, 0, 0, 1 )
+Editor/colors/highlight_color = Color( 0, 0, 0, 1 )
+Editor/colors/highlighted_font_color = Color( 0, 0, 0, 1 )
+Editor/colors/mono_color = Color( 0, 0, 0, 1 )
+Editor/colors/prop_category = Color( 0, 0, 0, 1 )
+Editor/colors/prop_section = Color( 0, 0, 0, 1 )
+Editor/colors/prop_subsection = Color( 0, 0, 0, 1 )
+Editor/colors/property_color = Color( 0, 0, 0, 1 )
+Editor/colors/sub_inspector_property_color = Color( 0, 0, 0, 1 )
+Editor/colors/success_color = Color( 0, 0, 0, 1 )
+Editor/colors/warning_color = Color( 0, 0, 0, 1 )
+EditorHelp/colors/headline_color = Color( 0, 0, 0, 1 )
+EditorProperty/colors/property_color = Color( 0, 0, 0, 1 )
+EditorProperty/colors/warning_color = Color( 0, 0, 0, 1 )
+FileDialog/colors/files_disabled = Color( 0, 0, 0, 1 )
+FileDialog/colors/folder_icon_modulate = Color( 0, 0, 0, 1 )
+GraphEdit/colors/activity = Color( 0, 0, 0, 1 )
+GraphEdit/colors/grid_major = Color( 0, 0, 0, 1 )
+GraphEdit/colors/grid_minor = Color( 0, 0, 0, 1 )
+GraphEdit/colors/selection_fill = Color( 0, 0, 0, 1 )
+GraphEdit/colors/selection_stroke = Color( 0, 0, 0, 1 )
+GraphEditMinimap/colors/resizer_color = Color( 0, 0, 0, 1 )
+GraphNode/colors/close_color = Color( 0, 0, 0, 1 )
+GraphNode/colors/resizer_color = Color( 0, 0, 0, 1 )
+GraphNode/colors/title_color = Color( 0, 0, 0, 1 )
+ItemList/colors/font_color = Color( 0, 0, 0, 1 )
+ItemList/colors/font_color_selected = Color( 0, 0, 0, 1 )
+ItemList/colors/guide_color = Color( 0, 0, 0, 1 )
+Label/colors/font_color = Color( 0.878431, 0.878431, 0.878431, 1 )
+Label/colors/font_color_shadow = Color( 0, 0, 0, 1 )
+Label/constants/shadow_offset_x = 8
+Label/constants/shadow_offset_y = 8
+Label/fonts/font = ExtResource( 2 )
+LineEdit/colors/clear_button_color = Color( 0, 0, 0, 1 )
+LineEdit/colors/clear_button_color_pressed = Color( 0, 0, 0, 1 )
+LineEdit/colors/cursor_color = Color( 0.878431, 0.878431, 0.878431, 1 )
+LineEdit/colors/font_color = Color( 0.54902, 0.54902, 0.54902, 1 )
+LineEdit/colors/font_color_selected = Color( 0.878431, 0.878431, 0.878431, 1 )
+LineEdit/colors/font_color_uneditable = Color( 0.301961, 0.34902, 0.470588, 1 )
+LineEdit/colors/selection_color = Color( 0.423529, 0.490196, 0.658824, 1 )
+LineEdit/fonts/font = ExtResource( 3 )
+LineEdit/styles/focus = SubResource( 5 )
+LineEdit/styles/normal = SubResource( 6 )
+LineEdit/styles/read_only = SubResource( 7 )
+LinkButton/colors/font_color = Color( 0, 0, 0, 1 )
+LinkButton/colors/font_color_disabled = Color( 0, 0, 0, 1 )
+LinkButton/colors/font_color_focus = Color( 0, 0, 0, 1 )
+LinkButton/colors/font_color_hover = Color( 0, 0, 0, 1 )
+LinkButton/colors/font_color_pressed = Color( 0, 0, 0, 1 )
+MenuButton/colors/font_color = Color( 0.54902, 0.54902, 0.54902, 1 )
+MenuButton/colors/font_color_disabled = Color( 1, 1, 1, 0.3 )
+MenuButton/colors/font_color_focus = Color( 0.878431, 0.878431, 0.878431, 1 )
+MenuButton/colors/font_color_hover = Color( 0.878431, 0.878431, 0.878431, 1 )
+MenuButton/colors/font_color_pressed = Color( 1, 1, 1, 1 )
+MenuButton/constants/hseparation = 3
+MenuButton/fonts/font = ExtResource( 3 )
+MenuButton/styles/disabled = null
+MenuButton/styles/focus = SubResource( 10 )
+MenuButton/styles/hover = SubResource( 11 )
+MenuButton/styles/normal = SubResource( 12 )
+MenuButton/styles/pressed = null
+OptionButton/colors/font_color = Color( 0.54902, 0.54902, 0.54902, 1 )
+OptionButton/colors/font_color_disabled = Color( 0.301961, 0.34902, 0.470588, 1 )
+OptionButton/colors/font_color_focus = Color( 0.878431, 0.878431, 0.878431, 1 )
+OptionButton/colors/font_color_hover = Color( 0.878431, 0.878431, 0.878431, 1 )
+OptionButton/colors/font_color_pressed = Color( 0.878431, 0.878431, 0.878431, 1 )
+OptionButton/colors/icon_color_hover = Color( 0, 0, 0, 1 )
+OptionButton/styles/focus = SubResource( 8 )
+OptionButton/styles/normal = SubResource( 9 )
+PopupMenu/colors/font_color = Color( 0.878431, 0.878431, 0.878431, 1 )
+PopupMenu/colors/font_color_accel = Color( 0, 0, 0, 1 )
+PopupMenu/colors/font_color_disabled = Color( 0.301961, 0.34902, 0.470588, 1 )
+PopupMenu/colors/font_color_hover = Color( 0.54902, 0.54902, 0.54902, 1 )
+PopupMenu/colors/font_color_separator = Color( 0, 0, 0, 1 )
+PopupMenu/fonts/font = ExtResource( 3 )
+PopupMenu/icons/radio_checked = SubResource( 15 )
+PopupMenu/icons/radio_unchecked = SubResource( 16 )
+PopupMenu/styles/hover = SubResource( 13 )
+PopupMenu/styles/panel = SubResource( 14 )
+ProgressBar/colors/font_color = Color( 0, 0, 0, 1 )
+RichTextLabel/colors/default_color = Color( 0, 0, 0, 1 )
+RichTextLabel/colors/font_color_shadow = Color( 0, 0, 0, 1 )
+TabContainer/colors/font_color_bg = Color( 0, 0, 0, 1 )
+TabContainer/colors/font_color_fg = Color( 0, 0, 0, 1 )
+Tabs/colors/font_color_bg = Color( 0, 0, 0, 1 )
+Tabs/colors/font_color_fg = Color( 0, 0, 0, 1 )
+TextEdit/colors/caret_color = Color( 0, 0, 0, 1 )
+TextEdit/colors/font_color = Color( 0, 0, 0, 1 )
+TextEdit/colors/font_color_readonly = Color( 0, 0, 0, 1 )
+TextEdit/colors/selection_color = Color( 0, 0, 0, 1 )
+ThemeEditor/colors/preview_picker_overlay_color = Color( 0, 0, 0, 1 )
+ToolButton/colors/font_color = Color( 0, 0, 0, 1 )
+ToolButton/colors/font_color_focus = Color( 0, 0, 0, 1 )
+ToolButton/colors/font_color_hover = Color( 0, 0, 0, 1 )
+ToolButton/colors/font_color_pressed = Color( 0, 0, 0, 1 )
+TooltipLabel/colors/font_color = Color( 0, 0, 0, 1 )
+TooltipLabel/colors/font_color_shadow = Color( 0, 0, 0, 1 )
+Tree/colors/custom_button_font_highlight = Color( 0, 0, 0, 1 )
+Tree/colors/drop_position_color = Color( 0, 0, 0, 1 )
+Tree/colors/font_color = Color( 0, 0, 0, 1 )
+Tree/colors/font_color_selected = Color( 0, 0, 0, 1 )
+Tree/colors/guide_color = Color( 0, 0, 0, 1 )
+Tree/colors/relationship_line_color = Color( 0, 0, 0, 1 )
+Tree/colors/title_button_color = Color( 0, 0, 0, 1 )
+WindowDialog/colors/title_color = Color( 0, 0, 0, 1 )

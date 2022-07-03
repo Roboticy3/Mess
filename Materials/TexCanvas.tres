@@ -1,0 +1,38 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=2]
+
+[ext_resource path="res://Textures/Checkerboard_tile.svg" type="Texture" id=1]
+
+[sub_resource type="Shader" id=1]
+code = "// NOTE: Shader automatically converted from Godot Engine 3.4.stable's CanvasItemMaterial.
+
+shader_type canvas_item;
+render_mode blend_mix;
+
+//texture being drawn
+uniform sampler2D tex;
+
+//scale of the texture
+uniform vec2 scale;
+
+//tint of the texture
+uniform vec4 tint : hint_color;
+//base color which texture is layered over
+uniform vec4 base : hint_color;
+//transparency of the texture
+uniform float base_amount : hint_range(0, 1);
+
+uniform float blur : hint_range(0, 8);
+
+void fragment(){
+	vec4 col = tint * textureLod(tex, UV * scale, blur);
+	COLOR = base * base_amount + col * (1f - base_amount);
+}"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/scale = Vector2( 0, 0 )
+shader_param/tint = Color( 0.14902, 0.172549, 0.231373, 1 )
+shader_param/base = Color( 0.3456, 0.40068, 0.54, 1 )
+shader_param/base_amount = 0.216
+shader_param/blur = 5.412
+shader_param/tex = ExtResource( 1 )

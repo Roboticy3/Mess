@@ -44,10 +44,8 @@ var graph:MeshGraph
 
 var players:Array = Array()
 
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	#copy path to a usable board path
-	format_b_path()
+#construct the Board and the BoardMesh
+func begin():
 	#otherwise, take path as-is (no operation)
 	print(path)
 	
@@ -72,23 +70,6 @@ func _ready():
 	
 	#send mesh and collision shape to physics objects
 	send_shape(m)
-
-#format the path parameter from a folder name to a board instruction
-#naming convention: Instructions/board(/) -> Instructions/board/b_board.txt
-func format_b_path():
-	var _path:String = "" + path
-	#if path ends in "/", copy folder name and remove end
-	var i:int = _path.find_last("/")
-	var p:String = _path.substr(i)
-	if i + 1 == _path.length():
-		_path = _path.substr(0, _path.length() - 1)
-		i = _path.find_last("/")
-		p = _path.substr(i)
-	#if path does not prefix with _b, assume it is a folder and add b_folder_name.txt onto the end
-	if _path.find("b_") != 0:
-		p = p.substr(1)
-		path = _path + "/b_" + p + ".txt"
-	return _path
 
 #create a mesh and send it out to the Board Shape Node in BoardMesh's tree
 func init_mesh():

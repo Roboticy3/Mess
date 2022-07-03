@@ -61,13 +61,14 @@ func _ready():
 	
 func set_mesh(var mesh:Mesh) -> void:
 	uv_query.set_mesh(mesh)
-	
 
 #run movement functions on physics timestep
 func _physics_process(delta):
-	#apply movement based on target motion
+	#apply movement based on momentum
 	move_and_slide(momentum["v"])
+	#rotate the camera
 	look(delta)
+	#update momentum based on target_motion
 	accelerate(delta)
 
 #handle non-button inputs with Events
@@ -85,10 +86,13 @@ func _process(delta):
 	#transform x and z movement to match rotation
 	var bx:Vector3 = transform.basis.x * Vector3(1, 0, 1)
 	var bz:Vector3 = transform.basis.z * Vector3(1, 0, 1)
+	
+	#create movement vector and account for deadzone manually
 	var h:Vector3 = (xz.x * bx.normalized() + xz.y * bz.normalized())
 	var v:Vector3 = Vector3(0, y, 0) + h
 	if v.length() < dead_zone[0]: v = Vector3.ZERO
 	else: v *= speed / (1 + 4 * Input.get_action_raw_strength("ctrl"))
+	#apply movement to target motion
 	target_motion["v"] = v
 	
 	#clicking on pieces
@@ -112,7 +116,7 @@ func _process(delta):
 		r *= ck1 * stick_sens
 	target_motion["r"] = r
 	
-#apply acceleration so momentum approaches target_motion
+#make momentum move towards target motion
 func accelerate(var delta:float):
 	for tm in momentum.keys():
 		var d = target_motion[tm] - momentum[tm]
@@ -157,13 +161,14 @@ func request_square(var position:Vector2):
 	
 	#if ray hits something
 	if r != null && !r.empty():
-		#REWORK check if collider is a piece, if so return piece position
+		#check if collider is a piece, if so return piece position
 		var square:Vector2
-		if r["collider"] is KinematicBody:
+		if r["collider"] is PieceMesh:
 			square = r["collider"].piece.get_pos()
 		#otherwise, return uv square of board
 		else:
 			var uv = uv_query.query(position)
+			print(uv)
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
 		#handle square selection
