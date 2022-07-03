@@ -39,7 +39,6 @@ __meta__ = {
 }
 
 [node name="Title Screen" type="Control" parent="."]
-visible = false
 margin_right = 40.0
 margin_bottom = 40.0
 __meta__ = {
@@ -86,6 +85,7 @@ menu_path = NodePath("../../../../Load Board")
 focus_path = NodePath("../../../../Load Board/Center Frame/Input/Board Finder")
 
 [node name="Load Board" type="Control" parent="."]
+visible = false
 margin_right = 40.0
 margin_bottom = 40.0
 __meta__ = {

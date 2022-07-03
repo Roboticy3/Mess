@@ -325,3 +325,9 @@
 	 - started documenting board syntax. don't think I can finish it without implementing portals
 	NEXT
 	 - decide whether to first persue a menu, portals, or win conditions
+7/2/2022
+	 - i decided a menu would be the least difficult thing to set up, so i did. The menu can load any board
+	NEXT
+	 - add quit to main menu and quit to desktop buttons in-game
+	 - reduce warnings and non-fatal errors that occur during gameplay
+	 - flesh out some other boards
