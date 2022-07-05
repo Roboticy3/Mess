@@ -62,7 +62,7 @@ func generate_graphs():
 func generate_vertex_faces(var vert:PoolRealArray, 
 	var dups:Dictionary = duplicates.duplicates):
 
-	var faces:PoolIntArray
+	var faces := PoolIntArray()
 	for i in dups[vert]:
 		for f in mdt.get_vertex_faces(i):
 			if pool_int_array_has(faces, f): continue

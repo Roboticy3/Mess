@@ -13,7 +13,7 @@ var contents = ""
 var wrds:Array = []
 #the starting index of the last vectorize() call, allows other objects to read wrds from this index
 #can also be set to override the default starting index of 0
-var s:int = 0
+var last_start:int = 0
 
 #table of piece/board properties and pieces on the board, referenced from a Board and/or a Piece object
 #table is used to read and write variables to the user Object
@@ -35,7 +35,7 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictio
 	format()
 	
 #format a string into the wrds Array, optionally pull a table from another piece on the board
-func format(var start:int = 0, var length:int = -1, var square = null, var string = contents) -> void:
+func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 	
 	#if wrds is empty, construct it from contents
 	wrds = to_string_array()
@@ -79,15 +79,15 @@ func vectorize(var start:int = 0) -> Array:
 	#final return statements sent start back to s
 	#only try to work with non-empty arrays
 	if w.empty():
-		s = start
+		last_start = start
 		return []
 	#if input is not a conditional, return parsed array
 	if !w[0].begins_with("?"):
-		s = start
+		last_start = start
 		return array_parse(start)
 	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
 	if w.size() < 3:
-		s = start
+		last_start = start
 		return []
 		
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
@@ -212,23 +212,31 @@ func evaluate(var w:Array = [], var start:int = 0):
 #convert a single word string (no " " or "\n" characters) into a float using the Expression class
 #nullable bool allows for failed parses to return null instead of 0.0
 func parse(var string=contents, var nullable:bool = false):
+	
+	#first try and convert the string into a float using the float constructor
+	var f := float(string)
+	#if this outputs zero, it could've failed, implying a more complex expression
+	#in these cases, run the rest of the method, otherwise return f
+	if f != 0: return f
+	
 	#create Expression to parse off of
 	var expression = Expression.new()
 	
 	#use parse method and then execute method
-	expression.parse(string)
-	#old comments from when this function was nullable, I love when im right!
-		#if the parse was "successful", add the result
-		#this could be the cause of some bullshit later
-	#I assume parse breaks up the string into numbers and operators, and execute takes those and does the computation
-	var n = expression.execute()
-	if (n != null):
-		return n
+	var err:int = expression.parse(string)
+	#if the parse fails, default to 0
+	if err > 0: return 0.0
 	
-	#never return null unless user asks for it so other code doesn't have to type-check the result
-	if nullable: return null
-	var default:float = 0
-	return default
+	#I assume parse breaks up the string into numbers and operators, and execute takes those and does the computation
+	#Fill in the first two arguments with their default values to reach "p_show_error" and set it to false to clean up the debugger
+	#errors in this method will simply make has_execute_failed() return true, which is an intended possibility
+	var n = expression.execute(Array(), null, false)
+	#if the execute failed, n will be null
+	if expression.has_execute_failed():
+		#never return null unless user asks for it so other code doesn't have to type-check the result
+		if nullable: return null
+		return 0.0
+	return n
 
 #convert instruction text to string array of words for easier parsing
 func to_string_array(var c:String = contents, var start:int = 0):
@@ -252,7 +260,7 @@ func to_string_array(var c:String = contents, var start:int = 0):
 	return a.slice(start, a.size() - 1)
 	
 #returns true if the formatted wrds array is the same as the contents array at index i
-func is_unformatted(var i:int = 0, var start:int = s) -> bool:
+func is_unformatted(var i:int = 0, var start:int = last_start) -> bool:
 	i += start
 	
 	if i >= wrds.size(): return false

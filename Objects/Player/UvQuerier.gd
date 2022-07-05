@@ -24,8 +24,9 @@ func _ready() -> void:
 	target = get_node(target_path)
 	csg = get_node(csg_path)
 	
-func set_mesh(var mesh:Mesh) -> void:
-	csg.mesh = mesh
+func set_mesh(var m:Mesh) -> void:
+	mesh = m
+	csg.mesh = m
 
 #returns the uv position on the closest CSGMesh to the camera at the input screen_position
 #if no uv position is found, it returns Vector2(NaN, NaN)
@@ -58,10 +59,8 @@ func sRGBx_to_linear(var x:float) -> float:
 	if x <= 0.04045: return x / 12.92
 	else: return pow((x + 0.055)/1.055, 2.4)
 	
-	return 0.0
-	
 #match this Viewport's Camera's settings to the main Camera's
-func _process(var delta:float) -> void:
+func _process(var _delta:float) -> void:
 	camera.global_transform = target.global_transform
 	camera.h_offset = target.h_offset
 	camera.v_offset = target.v_offset

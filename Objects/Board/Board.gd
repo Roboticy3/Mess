@@ -44,9 +44,8 @@ func _ready():
 	#add .txt to the end of the file path if its not already present
 	if !path.ends_with(".txt"):
 		path += ".txt"
+		
 	
-	#store the following values across multiple lines in Reade object
-	var persist:PoolIntArray = [-1, 0]
 	#tell Reader object which functions to call
 	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
 	
@@ -67,6 +66,7 @@ func _ready():
 #all x_phase functions take in the same arguments I, vec, and file
 
 #_phase is the default phase and defines metadata for the board like mesh and name
+#warning-ignore:unused_argument
 func _phase(var I:Instruction, var vec:Array, var persist:Array):
 	var key:String = ""
 	if !vec.empty(): key = I.update_table(table)
@@ -79,6 +79,8 @@ func _phase(var I:Instruction, var vec:Array, var persist:Array):
 		else: table[key] = div + table[key]
 
 #b_phase implicitly defines the mesh and defines the boundaries of the board from sets of 4 numbers
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
 func b_phase(var I:Instruction, var vec:Array, var persist:Array):
 	
 	#board creation waits until there is a 4 number list in vec, then creates a bound
@@ -98,6 +100,8 @@ func b_phase(var I:Instruction, var vec:Array, var persist:Array):
 		size = maximum - minimum + Vector2.ONE
 
 #the t phase handles explicit team creation
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
 func t_phase(var I:Instruction, var vec:Array, var persist:Array):
 	#team creation takes in a vector of length 6
 	if (vec.size() >= 6):
@@ -155,7 +159,7 @@ func make_piece_macro(var vec:Array, var persist:Array) -> void:
 	var pos = make_piece(vec, persist[0])
 		
 	#symmetrize piece if symmetry is enabled
-	if persist[1] != 0:
+	if persist[1] != 0 && persist[1] != null:
 		pos = -pos + 2*(center)
 		vec[1] = pos.x
 		vec[2] = pos.y
@@ -385,7 +389,9 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 func execute_turn(var v:Vector2):
 	
 	#move the selected piece and add to its moves counter
-	move_piece(select, v)
+	#if the movement fails, return empty behaviors
+	var try := move_piece(select, v)
+	if !try: return [[], [], []]
 	
 	#regenerate the behaviors of piece within the current state of the board
 	var p:Piece = pieces[v]

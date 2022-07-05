@@ -12,6 +12,7 @@ export (String) var boards_dir := "Instructions/"
 #path to the selected Board
 export (String) var path := "Instructions/default/b_default.txt"
 
+#array of folders found that have boards in them
 var folders:PoolStringArray = []
 
 var popup:PopupMenu
@@ -22,7 +23,8 @@ signal new_selection
 func _ready() -> void:
 	popup = get_popup()
 	refresh()
-	popup.connect("id_pressed", self, "select")
+	#warning-ignore return_value_discarded
+	var _con_error:int = popup.connect("id_pressed", self, "select")
 
 #update the text in the MenuButton and the path to the selected Board
 func select(var idx:int = -1) -> void:
@@ -46,7 +48,6 @@ func refresh() -> void:
 	var count:int = 0
 	
 	#loop through each file in the directory
-	#warning-ignore return_value_discarded
 	dir.list_dir_begin()
 	var folder:String = dir.get_next()
 	#dir.get_next() will automatically spit out an empty string when the end of the directory is hit
@@ -66,9 +67,6 @@ func refresh() -> void:
 		if err != OK: 
 			folder = dir.get_next()
 			continue
-			
-		#add the folder to an array
-		folders.append(pf)
 		
 		#open the folder and iterate through its files
 		fdir.list_dir_begin(true) #flag to ignore navigational paths
@@ -84,6 +82,8 @@ func refresh() -> void:
 			
 			#if the file is still being read, it's probably a board, add it as an option
 			popup.add_radio_check_item(file, count)
+			#add this folder to the folder array
+			folders.append(pf)
 			count += 1
 			
 			file = fdir.get_next()

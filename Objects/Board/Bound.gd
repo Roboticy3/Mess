@@ -101,14 +101,16 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 	#convert edges into point/slope form
 	var blines:Array = [[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
 	for i in range(0, 4):
-		var _a:Vector2 = bsegs[i][0]
-		var _b:Vector2 = bsegs[i][1]
-		if _a.x - _b.x == 0:
+		#warning-ignore:shadowed_variable
+		var a:Vector2 = bsegs[i][0]
+		#warning-ignore:shadowed_variable
+		var b:Vector2 = bsegs[i][1]
+		if a.x - b.x == 0:
 			blines[i][0] = INF
 		else:
-			blines[i][0] = (_a.y - _b.y) / (_a.x - _b.x)
-		blines[i][1] = _a
-		blines[i][2] = _b
+			blines[i][0] = (a.y - b.y) / (a.x - b.x)
+		blines[i][1] = a
+		blines[i][2] = b
 	
 	#create intersection array
 	var intersections:PoolVector2Array = []
@@ -119,7 +121,9 @@ func edge_set_intersection(var edges:PoolVector2Array, var cyclic:bool = false):
 	
 	for i in range(0, edges.size() + s):
 		#translate line segment to ax + by = c form from element of edges
+		#warning-ignore:shadowed_variable
 		var a:Vector2 = edges[i]
+		#warning-ignore:shadowed_variable
 		var b:Vector2 = edges[(i + 1) % edges.size()]
 		var b0:float
 		if a.x - b.x == 0:

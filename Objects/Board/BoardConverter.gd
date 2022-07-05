@@ -48,7 +48,7 @@ static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap,
 	var distance:float = INF
 	var closest:Array = []
 	
-	var iters:int = 0
+	var _iters:int = 0
 	
 	while !queue.empty():
 		var i:int = queue.size() - 1
@@ -71,8 +71,9 @@ static func uv_to_mdata_graph(var graph:MeshGraph, var dups:DuplicateMap,
 				return a
 			queue.append(j)
 			
-		iters += 1
+		_iters += 1
 
+	#print(iters)
 	return closest
 
 #check if mdt face i surroundins pos,
@@ -128,7 +129,7 @@ static func square_to_bound(var size:Vector2, var square:Vector2) -> Bound:
 static func square_to_mdata(var graph:MeshGraph, var dups:DuplicateMap,
 	var size:Vector2 = Vector2.ONE, var pos:Vector2 = Vector2.ZERO) -> Array:
 	var uv = square_to_uv(size, pos)
-	return uv_to_mdata_linear(dups, uv)
+	return uv_to_mdata_graph(graph, dups, uv)
 
 #take an input board mdt, board, and piece to return a Transform for the associated PieceMesh accosiated with piece on the mdt constructed from a BoardMesh
 static func square_to_transform(var graph:MeshGraph, var dups:DuplicateMap,
@@ -173,8 +174,6 @@ static func square_to_transform(var graph:MeshGraph, var dups:DuplicateMap,
 #convert the normal of a square on the board to a set of basis vectors
 static func square_to_basis(var graph:MeshGraph, var dups:DuplicateMap,
 	var board:Node, var piece:Piece, var mdata:Array):
-	
-	var mdt:MeshDataTool = graph.mdt
 	
 	#up vector will take the normal of the square
 	var up:Vector3 = mdata[2].normalized()
@@ -465,7 +464,8 @@ static func square_to_box(var board:Node, var square:Vector2=Vector2.ZERO):
 #write vertex data of vertices on connected faces but not in b
 static func get_connected_to_square(var graph:MeshGraph, var dups:DuplicateMap,
 	var cfaces:PoolIntArray, var b:Bound, var faces:Dictionary, var outer:Dictionary,
-	var board:Node) -> void:
+#send in the board to debug off of if necessary
+	var _board:Node) -> void:
 	
 	var mdt:MeshDataTool = graph.mdt
 	
@@ -480,9 +480,9 @@ static func get_connected_to_square(var graph:MeshGraph, var dups:DuplicateMap,
 		#find verts on each that are outer vertices and assign verts to v, construct edges
 		for j in range(0, 3):
 			v[j] = mdt.get_face_vertex(f, j)
-			var uv:Vector2 = mdt.get_vertex_uv(v[j])
+			mdt.get_vertex_uv(v[j])
 		var inters:Array = [null, null, null]
-		var out:PoolIntArray = is_face_touching_uv_b(mdt, f, v, b, inters)
+		var out:PoolIntArray = is_face_touching_uv_b(mdt, v, b, inters)
 		
 		#if uv_to_mdata_graph approximated, corners can be disconnected
 		#add them to outer with no intersections anyways, so they can get compressed into corners
@@ -511,7 +511,7 @@ static func get_connected_to_square(var graph:MeshGraph, var dups:DuplicateMap,
 		for j in range(0, 3):
 			v[j] = mdt.get_face_vertex(f, j)
 		var inters:Array = [null, null, null]
-		var out:PoolIntArray = is_face_touching_uv_b(mdt, f, v, b, inters)
+		var out:PoolIntArray = is_face_touching_uv_b(mdt, v, b, inters)
 		searched[f] = [out, inters]
 
 		#if the face is not connected, do not continue to add its data to faces and outer,
@@ -548,7 +548,7 @@ const disconnected:PoolIntArray = PoolIntArray([-1])
 #return disconnected if not
 #fill and input intersections array, 
 #WARNING: intersections array will only store edge sets if an inner vertex is found 
-static func is_face_touching_uv_b(var mdt:MeshDataTool, var face:int, var v:PoolIntArray,
+static func is_face_touching_uv_b(var mdt:MeshDataTool, var v:PoolIntArray,
 	var b:Bound, var intersections:Array = []) -> PoolIntArray:
 	
 	#Array of outer vertices to return if face is touching

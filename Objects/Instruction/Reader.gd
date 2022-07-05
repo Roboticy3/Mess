@@ -35,19 +35,17 @@ func set_file(var f:String) -> bool:
 	file = File.new()
 		
 	#check if file d + f exists, if not, read from default
-	if !file.file_exists(f):
-		return false
-	else:
-		file.open(f, File.READ)
+	var file_error:int = file.open(f, File.READ)
+	if file_error > 0: return false
 		
-		#check if funcs contains default phase ""
-		#if not, attach a blank function to "phase", the default name for a phase function
-		if !funcs.has("~"):
-			funcs["~"] = "_phase"
+	#check if funcs contains default phase ""
+	#if not, attach a blank function to "phase", the default name for a phase function
+	if !funcs.has("~"):
+		funcs["~"] = "_phase"
 	return true
 	
 #read the instruction file starting from a certain stage
-func read(var stage:int = -1):
+func read():
 	#convert file to string array by line
 	var content = file.get_as_text().rsplit("\n")
 

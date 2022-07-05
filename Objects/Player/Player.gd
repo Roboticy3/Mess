@@ -79,7 +79,7 @@ func _input(event):
 		target_motion["r"] = e.speed
 
 #handle button inputs each frame
-func _process(delta):
+func _process(_delta):
 	#movement buttons sum to velocities along either axis
 	var xz:Vector2 = Input.get_vector("mv_left", "mv_right", "mv_forward", "mv_back")
 	var y:float = Input.get_axis("mv_down","mv_up")
@@ -168,7 +168,6 @@ func request_square(var position:Vector2):
 		#otherwise, return uv square of board
 		else:
 			var uv = uv_query.query(position)
-			print(uv)
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
 		#handle square selection

@@ -78,6 +78,7 @@ static func mdata_to_array_static(var mdata:Array):
 	var n:Vector3 = mdata[2]
 	return format_vectors_static(p, n, u)
 
+#warning-ignore:shadowed_variable
 static func mdt_to_array(var mdt:MeshDataTool, var i:int) -> PoolRealArray:
 	var p:Vector3 = mdt.get_vertex(i)
 	var u:Vector2 = mdt.get_vertex_uv(i)
@@ -106,6 +107,7 @@ func array_to_vert(var a:PoolRealArray, var mode:int = 0, var start:int = 0):
 	return null
 
 #array_to_vert without the size check so it can exist statically
+#warning-ignore:shadowed_variable
 static func array_to_vert_static(var a:PoolRealArray, var mode:int = 0, 
 	var modes:Array = [true, true, true], var start:int = 0):
 	#return parts of the array relevant to mode

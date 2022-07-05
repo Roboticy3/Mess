@@ -192,7 +192,7 @@ func create_piece(var p:Piece, var v:Vector2):
 	if !can_collide: coll = CollisionShape.new()
 	
 	#create the piece mesh with all the right references, then add the PieceMesh object to self's tree
-	var pm = PieceMesh.new(p, board 
+	var pm := PieceMesh.new(p, board 
 			,coll, pdata["mesh"], pdata["mat"]
 			)
 	add_child(pm)

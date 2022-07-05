@@ -1,5 +1,5 @@
 class_name PieceMesh
-extends KinematicBody
+extends StaticBody
 
 #PieceMesh class by Pablo Ibarz
 #created January 2022
@@ -22,16 +22,17 @@ var aabb:AABB
 func _init(var _piece:Piece, var _board:Board, 
 	#these parameters defined the physical properties of PieceMesh
 	var _shape:CollisionShape = null, var _mesh:ArrayMesh = null, var _mat:Material = null):
+	
 	piece = _piece
 	board = _board
-	
 	shape = _shape
 	mesh = _mesh
-	#generate mdt and aabb from mesh
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(mesh, 0)
-	aabb = mesh.get_aabb()
 	mat = _mat
+	
+	#generate the aabb and initialize the piece
+	aabb = mesh.get_aabb()
 	_ready()
 
 # Called when the node enters the scene tree for the first time.

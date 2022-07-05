@@ -8,7 +8,7 @@ extends Node
 #and assign a set of properties matching values.
 
 #scene to move to
-export (PackedScene) var scene
+export (PackedScene) var scene:PackedScene
 #signal to load the scene
 export (String) var load_signal := "button_up"
 
@@ -24,7 +24,8 @@ signal failed_to_load
 #connect the release of this button to changing the scene
 func _ready():
 	current = get_tree()
-	connect(load_signal, self, "change_scene")
+	var con_error:int = connect(load_signal, self, "change_scene")
+	if con_error > 0: print(name + " has no signal \"" + load_signal + "\"")
 
 #change the scene
 func change_scene():
@@ -46,7 +47,7 @@ func change_scene():
 	#load the new scene and give it the data it needs to instantiate correctly
 	var next_scene:Node = scene.instance()
 	next_scene.set("path", path)
-	print(path)
+	
 	#add the scene into the SceneTree to load it into the game
 	root.add_child(next_scene)
 

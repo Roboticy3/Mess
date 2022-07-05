@@ -11,7 +11,7 @@ extends Node
 export (NodePath) var board_mesh := NodePath("Board")
 var path:String
 
-#apply the values in data to its key paths
+#apply the values in data to its key paths and initialize Boardmesh
 func _ready():
 	var bm:BoardMesh = get_node(board_mesh)
 	bm.path = path

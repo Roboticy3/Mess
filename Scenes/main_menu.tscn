@@ -23,9 +23,6 @@ anchor_bottom = 1.0
 margin_right = 896.0
 margin_bottom = 480.0
 script = ExtResource( 7 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="Background" type="ColorRect" parent="."]
 material = ExtResource( 3 )
@@ -172,15 +169,9 @@ margin_left = 1289.0
 margin_top = 602.0
 margin_right = 1600.0
 margin_bottom = 694.0
-script = ExtResource( 6 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-target_path = NodePath("../Center Frame/Input/Board Path")
-target_property_name = "text"
-target_signal_name = "copy"
-destination_path = NodePath("Ready")
-destination_property_name = "path"
 
 [node name="Ready" type="Button" parent="Load Board/Buttons"]
 margin_right = 311.0
@@ -190,6 +181,16 @@ text = "Ready"
 align = 2
 script = ExtResource( 10 )
 scene = ExtResource( 11 )
+
+[node name="CopyText" type="Control" parent="Load Board/Buttons/Ready"]
+margin_right = 40.0
+margin_bottom = 40.0
+script = ExtResource( 6 )
+target_path = NodePath("../../../Center Frame/Input/Board Path")
+target_property_name = "text"
+target_signal_name = "copy"
+destination_path = NodePath("..")
+destination_property_name = "path"
 
 [node name="Refresh" type="Button" parent="Load Board/Buttons"]
 margin_top = 32.0
@@ -210,4 +211,5 @@ script = ExtResource( 4 )
 menu_path = NodePath("../../../Title Screen")
 focus_path = NodePath("../../../Title Screen/Title Frame/Buttons/Load Board")
 
+[connection signal="text_changed" from="Load Board/Center Frame/Input/Board Path" to="Load Board/Center Frame/Input/Board Path" method="emit"]
 [connection signal="pressed" from="Load Board/Buttons/Refresh" to="Load Board/Center Frame/Input/Board Finder" method="refresh"]

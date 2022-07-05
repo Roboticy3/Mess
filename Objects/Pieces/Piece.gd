@@ -57,6 +57,7 @@ func _ready():
 	if r.badfile: return
 	r.read()
 
+#warning-ignore:unused_argument
 func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 	#try to update table from metadata line, essentially initializing the table
 	#only do table updates if I vectorizes to a non-empty array, this will allow for primitive conditionals before piece vars
@@ -73,6 +74,8 @@ func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 
 #Piece behaviour phases are interpereted on the fly by a Board object,
 #and therefore only the instruction needs to be stored
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
 func m_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	var c:String = I.contents
 	#primitive comment parser and empty checking to avoid adding empty marks
@@ -83,6 +86,7 @@ func m_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 #they are meant to be called when a piece moves, so they take care of vectorizing their instructions
 
 #add Vector2 behaviors for squares to be cleared
+#warning-ignore:unused_argument
 func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	
 	var size = vec.size()
@@ -95,6 +99,7 @@ func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 		else: update_behaviors(persist[0], "t", v)
 
 #add Arrays of length 4 for piece type, creation position, and mark index
+#warning-ignore:unused_argument
 func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	
 	if vec.size() < 3: return
@@ -107,6 +112,7 @@ func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	else: update_behaviors(persist[1], "c", [vec[0], v.x, v.y])
 
 #add Dictionaries of paired from and to coordinates under the right mark index
+#warning-ignore:unused_argument
 func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	if vec.size() < 4: return
 	if vec.size() > 4: persist[2] = vec[4]

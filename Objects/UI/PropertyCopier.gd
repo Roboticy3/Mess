@@ -27,9 +27,12 @@ export (String) var destination_property_name:String
 signal copy
 
 func _ready():
+	#get the target and destination nodes
 	target = get_node(target_path)
 	destination = get_node(destination_path)
-	target.connect(target_signal_name, self, "copy_property")
+	#connect the target signal to copy_property() (cant wait for gdscript 2.0 lmao)
+	var con_error:int = target.connect(target_signal_name, self, "copy_property")
+	if con_error > 0: print(target.name + " has no signal \"" + target_signal_name + "\"")
 
 #try to copy a property from target, return true if the property being copied exists, and false otherwise
 func copy_property(var property_name:String = target_property_name) -> bool:
@@ -39,7 +42,9 @@ func copy_property(var property_name:String = target_property_name) -> bool:
 	
 	#if property_name exists, set destination_property_name to its value
 	destination.set(destination_property_name, p)
-	emit_signal("copy")
+	emit()
 	return true
-	
-	
+
+#emit the copy signal, optional arguments for connecting to anonymous functions
+func emit(var _args = null):
+	emit_signal("copy")
