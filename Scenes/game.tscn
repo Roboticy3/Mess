@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://Materials/viewport_debug.tres" type="Material" id=1]
 [ext_resource path="res://Instructions/torus/meshes/torus.obj" type="ArrayMesh" id=2]
@@ -9,9 +9,11 @@
 [ext_resource path="res://Materials/UVs.tres" type="Material" id=7]
 [ext_resource path="res://Materials/DwithHighlights.tres" type="Material" id=8]
 [ext_resource path="res://Objects/Loading/DataPasser.gd" type="Script" id=9]
-
-[sub_resource type="SpatialMaterial" id=1]
-albedo_color = Color( 0.839216, 0.054902, 0.054902, 1 )
+[ext_resource path="res://Objects/UI/SwitchMenu.gd" type="Script" id=10]
+[ext_resource path="res://UI/Themes/MenuTheme.tres" type="Theme" id=11]
+[ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=12]
+[ext_resource path="res://Objects/UI/ScaleToWindow.gd" type="Script" id=13]
+[ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=14]
 
 [sub_resource type="SphereShape" id=2]
 radius = 0.20507
@@ -21,10 +23,6 @@ viewport_path = NodePath("Player/Viewport")
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 9 )
-
-[node name="Debug" type="CSGBox" parent="."]
-transform = Transform( 0.01, 0, 0, 0, 0.25, 0, 0, 0, 0.01, 0, -2.08857, 0 )
-material = SubResource( 1 )
 
 [node name="Player" type="KinematicBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )
@@ -43,7 +41,6 @@ current = true
 
 [node name="CSGBox" type="CSGBox" parent="Player/Player Camera"]
 transform = Transform( 8.64581e-16, -4.37114e-08, -1, 1, 4.37114e-08, -1.0461e-15, -4.37114e-08, 1, -4.37114e-08, -0.928716, -0.466045, -1.67538 )
-visible = false
 width = 0.803534
 height = 0.002
 depth = 1.31484
@@ -82,3 +79,58 @@ mesh = ExtResource( 2 )
 material = ExtResource( 8 )
 
 [node name="Board Collision" type="CollisionShape" parent="Board"]
+
+[node name="UI" type="Control" parent="."]
+visible = false
+modulate = Color( 1, 1, 1, 0.607843 )
+margin_right = 1920.0
+margin_bottom = 1080.0
+script = ExtResource( 13 )
+
+[node name="ColorRect" type="ColorRect" parent="UI"]
+margin_right = 1920.0
+margin_bottom = 1080.0
+color = Color( 0.133333, 0.152941, 0.207843, 1 )
+
+[node name="Label" type="Label" parent="UI"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -718.0
+margin_right = 20.0
+margin_bottom = 14.0
+theme = ExtResource( 11 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 0 )
+text = "Menu"
+align = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI"]
+anchor_left = 0.15
+anchor_top = 0.887
+anchor_right = 0.85
+anchor_bottom = 0.905
+alignment = 1
+
+[node name="Quit To Menu" type="Button" parent="UI/HBoxContainer"]
+margin_left = 369.0
+margin_right = 649.0
+margin_bottom = 28.0
+theme = ExtResource( 11 )
+text = "    Quit To Menu    "
+script = ExtResource( 12 )
+scene_path = "res://Scenes/main_menu.tscn"
+require_data = false
+
+[node name="Quit To Desktop" type="Button" parent="UI/HBoxContainer"]
+margin_left = 653.0
+margin_right = 975.0
+margin_bottom = 28.0
+theme = ExtResource( 11 )
+text = "    Quit To Desktop    "
+script = ExtResource( 14 )
+
+[node name="SwitchMenu" type="Node" parent="."]
+script = ExtResource( 10 )
+menu_path = NodePath("../UI")
+signal_name = "ui_cancel"
+is_signal_input = true
+is_overlay = true

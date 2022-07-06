@@ -7,7 +7,7 @@ code = "
 //Shader created by Pablo Ibarz on 6/8/2022
 //spatial shader with default settings
 shader_type spatial;
-render_mode blend_mix,depth_draw_alpha_prepass,cull_disabled,diffuse_burley,specular_schlick_ggx;
+render_mode blend_mix,depth_draw_alpha_prepass,cull_disabled,unshaded;
 
 //the front color of highlighted squares
 uniform vec4 front : hint_color;

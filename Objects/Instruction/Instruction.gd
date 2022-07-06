@@ -212,20 +212,16 @@ func evaluate(var w:Array = [], var start:int = 0):
 #convert a single word string (no " " or "\n" characters) into a float using the Expression class
 #nullable bool allows for failed parses to return null instead of 0.0
 func parse(var string=contents, var nullable:bool = false):
-	
-	#first try and convert the string into a float using the float constructor
-	var f := float(string)
-	#if this outputs zero, it could've failed, implying a more complex expression
-	#in these cases, run the rest of the method, otherwise return f
-	if f != 0: return f
-	
+
 	#create Expression to parse off of
 	var expression = Expression.new()
 	
 	#use parse method and then execute method
 	var err:int = expression.parse(string)
 	#if the parse fails, default to 0
-	if err > 0: return 0.0
+	if err > 0:
+		if nullable: return null
+		return 0.0
 	
 	#I assume parse breaks up the string into numbers and operators, and execute takes those and does the computation
 	#Fill in the first two arguments with their default values to reach "p_show_error" and set it to false to clean up the debugger
@@ -236,6 +232,7 @@ func parse(var string=contents, var nullable:bool = false):
 		#never return null unless user asks for it so other code doesn't have to type-check the result
 		if nullable: return null
 		return 0.0
+	
 	return n
 
 #convert instruction text to string array of words for easier parsing

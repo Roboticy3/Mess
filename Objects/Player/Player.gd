@@ -168,6 +168,7 @@ func request_square(var position:Vector2):
 		#otherwise, return uv square of board
 		else:
 			var uv = uv_query.query(position)
+			print(uv)
 			square = BoardConverter.uv_to_square(board_mesh.size, uv)
 
 		#handle square selection

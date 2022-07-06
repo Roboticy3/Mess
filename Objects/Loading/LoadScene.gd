@@ -8,9 +8,13 @@ extends Node
 #and assign a set of properties matching values.
 
 #scene to move to
-export (PackedScene) var scene:PackedScene
+export (String, FILE, "*.tscn,*.scn") var scene_path:String
+var scene
 #signal to load the scene
 export (String) var load_signal := "button_up"
+
+#if set to false, change_scene() will fully execute even if path is left blank
+export (bool) var require_data := true
 
 #board path to be sent to the next scene
 export (String) var path := ""
@@ -23,6 +27,7 @@ signal failed_to_load
 
 #connect the release of this button to changing the scene
 func _ready():
+	scene = load(scene_path)
 	current = get_tree()
 	var con_error:int = connect(load_signal, self, "change_scene")
 	if con_error > 0: print(name + " has no signal \"" + load_signal + "\"")
@@ -30,7 +35,7 @@ func _ready():
 #change the scene
 func change_scene():
 	
-	if path.empty():
+	if path.empty() && require_data:
 		emit_signal("failed_to_load")
 		return
 	

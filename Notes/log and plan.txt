@@ -331,3 +331,8 @@
 	 - add quit to main menu and quit to desktop buttons in-game
 	 - reduce warnings and non-fatal errors that occur during gameplay
 	 - flesh out some other boards
+7/5/2022
+	 - reduced debugger errors and warnings to only 7
+	 - some of the more significant changes involved making PieceMesh inherit from StaticBody instead of KinematicBody (but RigidBody works to), making Expression methods ignore errors, and adding #warning-ignore comments above a lot of phase methods that aren't using all the arguments given to them by Reader
+	NEXT
+	 - add quit to main menu 
