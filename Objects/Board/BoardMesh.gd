@@ -216,8 +216,10 @@ func move_piece(var from:Vector2, var to:Vector2):
 	var p:PieceMesh = pieces[to]
 	p.transform = BoardConverter.square_to_transform(graph, duplicates, board, p.piece)
 
-#destroy the PieceMesh at the input Vector2 square, assumes input is in pieces
+#destroy the PieceMesh at the input Vector2 square
+#do not attempt to destroy at an empty square
 func destroy_piece(var at:Vector2):
+	if !pieces.has(at): return
 	remove_child(pieces[at])
 	pieces.erase(at)
 
@@ -225,7 +227,7 @@ func destroy_piece(var at:Vector2):
 #only works if mat_board is a ShaderMaterial
 #if mode is set to 1, hide all squares outside of the array
 #if mode is set to 2, hide all squares in the array
-func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
+func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 	#"clear" previous squares by ignoring the last sent texture to the shader
 	if mode == 1:
@@ -250,8 +252,10 @@ func highlight_square(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
-	var pos = board.mark(v).keys()
-	highlight_square(pos)
+	var pos = board.mark(v)
+	board.marks = pos
+	board.select = v
+	highlight_squares(pos.keys())
 	
 #run this method whenever a player clicks on a square
 #generally handles all interactions a Player object could have with the main Board object
@@ -263,20 +267,21 @@ func handle(var v:Vector2, var team:int = 0):
 	#check if square is a square that can be moved to
 	if v in board.marks:
 		#get updates to the board to apply to BoardMesh while updating the Board's data as well
-		var moves:Array = board.execute_turn(v)
-		#move mesh of piece into correct place
-		for i in moves[0]:
-			move_piece(i, moves[0][i])
-		#create meshes of pieces created during the turn
-		for i in moves[1]:
-			#m a g i c
-			var square := Vector2(i[1], i[2])
-			create_piece(board.pieces[square], square)
-		#destroy meshes of pieces removed during the turn
-		for i in moves[2]:
-			destroy_piece(i)
+		#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
+		var changes:Dictionary = board.execute_turn(v)
+		for c in changes:
+			var a:Array = changes[c]
+			for i in a.size():
+				if a[i] is Vector2:
+					move_piece(a[i], c)
+				elif a[i] is int:
+					#create_piece can just ask for the piece at c since Board has already moved the right piece there
+					create_piece(board.pieces[c], c)
+				else:
+					destroy_piece(c)
+		
 		#clear board marks
-		highlight_square()
+		highlight_squares()
 	#check if square is a selectable piece
 	elif v in p && team == p[v].get_team():
 		#mark from selectable piece

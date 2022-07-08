@@ -336,3 +336,15 @@
 	 - some of the more significant changes involved making PieceMesh inherit from StaticBody instead of KinematicBody (but RigidBody works to), making Expression methods ignore errors, and adding #warning-ignore comments above a lot of phase methods that aren't using all the arguments given to them by Reader
 	NEXT
 	 - add quit to main menu 
+7/6/2022
+	 - added quit to menu and quit to desktop in game
+	NEXT
+	 - start working on win conditions
+7/8/2022
+	 - started planning out win conditions in a notebook. I mathematically defined a checkmate as a tree of depth 2, where each layer is a turn. The first turn is the layer of the team getting searched for a checkmate, which branches out into all their possible moves. The next layer is the next team and all their possible moves. If every branch of the first layer has a branch on the second layer where a win condition for the second team or a lose condition for the first team is satisfied, thats checkmate. This doesn't always work as intended with more than 2 teams, so boards should have an option to disable it. Checks are when a teams win condition or another teams lose condition are satisfied by any of its moves outside of its turn, and a stalemate is a checkmate in the absence of a check.
+	 - What all that crap basically means is that I need a way to simulate future board states without executing them, and so I need to separate execute_turn() into execute_turn() and compute_turn(), which does this simulation.
+	 - made compute_turn()
+	 - saw that for relocation to work as intended, relocations need to be reformatted into an array of PoolVector2Arrays of length 2 or more. This way, they are explicitly ordered as they are in a piece's instruction set
+	NEXT
+	 - reformat relocation
+	 - begin working on storage system for simulated board states
