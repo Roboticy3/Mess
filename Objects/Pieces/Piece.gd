@@ -111,7 +111,7 @@ func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	if persist[1] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
 	else: update_behaviors(persist[1], "c", [vec[0], v.x, v.y])
 
-#add Dictionaries of paired from and to coordinates under the right mark index
+#add arrays of starting and ending positions in an orderded array so relocation can be executed in the order they were written
 #warning-ignore:unused_argument
 func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
 	if vec.size() < 4: return
@@ -125,11 +125,11 @@ func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 	if persist[2] != null: m = persist[2]
 	if behaviors.has(m):
 		if behaviors[m].has("r"):
-			behaviors[m]["r"][v] = u
+			behaviors[m]["r"].append(PoolVector2Array([v, u]))
 		else:
-			behaviors[m]["r"] = {v : u}
+			behaviors[m]["r"] = [PoolVector2Array([v, u])]
 	else:
-		behaviors[m] = {"r":{v:u}}
+		behaviors[m] = {"r":[PoolVector2Array([v, u])]}
 	pass
 			
 #update the behaviors Dictionary with new behaviors, automatically filling out missing elements

@@ -377,32 +377,29 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 #execute a turn by moving a piece, updating both the piece's table and the board's pieces
 #the only argument taken is a mark to select from marks
 #assumes both v is in pieces and v is in bounds
-#returns a dictionary of changes to the board
-func execute_turn(var v:Vector2) -> Dictionary:
+#returns an Array of changes to the board
+func execute_turn(var v:Vector2) -> Array:
 	
-	#gain a dictionary of changes to execute
-	var changes:Dictionary = compute_turn(v)
+	#gain an Array of changes to execute
+	var changes := compute_turn(v)
 
 	#gain reference to the target piece and marks
 	var p:Piece = pieces[select]
 	var m:Array = p.mark
 	var move:int = marks[v]
 	
-	print(changes)
+	#the zeroth index of changes should be the updated piece dictionary
+	p.table = changes[0]
 	
 	#execute the changes
-	for c in changes:
-		var a:Array = changes[c]
-		for i in a.size():
-			if a[i] is Vector2:
-				move_piece(a[i], c)
-			elif a[i] is int:
-				make_piece([a[i], c.x, c.y], p.get_team())
-			else:
-				destroy_piece(c)
-		
-	#update table using the movement instruction
-	m[move].update_table_line()
+	for i in changes.size():
+		var c = changes[i]
+		if c is PoolVector2Array:
+			move_piece(c[0], c[1])
+		elif c is Array:
+			make_piece(c, p.get_team())
+		elif c is Vector2:
+			destroy_piece(c)
 	
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
@@ -413,41 +410,51 @@ func execute_turn(var v:Vector2) -> Dictionary:
 	#return Board updates
 	return changes
 	
-#compute a turn into a Dictionary of changes without updating the board
-#changes is a set of Vector2 and Array pairs, where the array is a set of changes with its Vector2 key as the target
-func compute_turn(var v:Vector2) -> Dictionary:
+#compute a turn into an Array of changes without updating the board
+#changes are a set of PoolVector2Arrays of length 2 for relocations, Arrays for piece creation, and Vector2s for destructions
+func compute_turn(var v:Vector2) -> Array:
 	
 	#reference the piece being moved
 	var p:Piece = pieces[select]
+	
+	#the piece's mark instructions
+	var m:Array = p.mark
+	#the index of m that was used to move
+	var move:int = marks[v]
+	#temporarily update the piece's table with its mark's updates
+	var old_table:Dictionary = p.table.duplicate()
+	m[move].update_table_line()
+	p.table["moves"] += 1
+	
+	#print(p.table)
+	
 	#pair the m phase with nothing since marks are not being generated
 	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
 	var reader:Reader = Reader.new(p, funcs, p.path)
 	reader.wait = true
 	reader.read()
 	
-	#the piece's behaviours
-	var m:Array = p.mark
-	#the index of m that was used to move
-	var move:int = marks[v]
+	#print(p.behaviors)
 	
 	#convert the piece's behaviors into a set of changes
-	#keys are target squares and values and squares to relocate from, a piece to create, or null to destroy
-	var changes:Dictionary = {}
+	#changes contain the piece's behaviors this turn
+	var changes:Array = [p.table, PoolVector2Array([select, v])]
 	#add changes from the piece
 	changes_from_piece(changes, p, v)
 	changes_from_piece(changes, p, v, move)
 	
+	#revert the changes to the piece's table
+	p.table = old_table
+	m[move].table = old_table
+	
 	return changes
 
 #update a Dictionary of changes to the board from an index of a behaviors dictionary
-func changes_from_piece(var changes:Dictionary, var piece:Piece, 
+func changes_from_piece(var changes:Array, var piece:Piece, 
 	var v:Vector2, var idx:int = -1) -> void:
 		
 	#gain reference to the piece's behaviors
 	var behaviors:Dictionary = piece.behaviors
-	
-	#add the main move being done to changes
-	changes[v] = [select]
 	
 	#do not try to execute this method if the index of behaviors is missing or empty
 	if !behaviors.has(idx) || behaviors[idx].empty(): return
@@ -461,10 +468,11 @@ func changes_from_piece(var changes:Dictionary, var piece:Piece,
 	piece.set_pos(v)
 	
 	#check if one type of behavior is present
-	if bm.has("r"): for r in bm["r"]:
+	if bm.has("r"): for i in bm["r"].size():
 		#pos is the position being relocated to
 		#r is the position being relocated from
-		var pos:Vector2 = bm["r"][r]
+		var r:Vector2 = bm["r"][i][0]
+		var pos:Vector2 = bm["r"][i][1]
 		
 		#if the relocation is from 0, 0, this piece is being moved
 		var move := false
@@ -485,11 +493,8 @@ func changes_from_piece(var changes:Dictionary, var piece:Piece,
 		
 		#if the piece is being moved, update its position temporarily for transform() calls in later changes
 		if move: piece.set_pos(r)
-		
-		#add the change into an array of changes at a destination square
-		#the square being moved to in case of relocation
-		if !changes.has(pos): changes[pos] = [c]
-		else: changes[pos].append(c)
+
+		changes.append(PoolVector2Array([r, pos]))
 	
 	if bm.has("c"): for c in bm["c"]:
 		#creations are Vector2 and int pairs
@@ -500,8 +505,7 @@ func changes_from_piece(var changes:Dictionary, var piece:Piece,
 		#if the creation fails, do not add any change
 		if pos == Vector2.INF: continue
 		
-		if !changes.has(pos): changes[pos] = [p_type]
-		else: changes[pos].append(p_type)
+		changes.append([p_type, pos.x, pos.y])
 	
 	if bm.has("t"): for d in bm["t"]:
 		#destructions are Vector2 and null pairs
@@ -510,8 +514,7 @@ func changes_from_piece(var changes:Dictionary, var piece:Piece,
 		#if the destruction fails, do not add any change
 		if d == Vector2.INF: continue
 		
-		if !changes.has(d): changes[d] = [null]
-		else: changes[d].append(null)
+		changes.append(d)
 		
 	#reset the piece's position
 	piece.set_pos(select)
@@ -534,7 +537,7 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	pieces.erase(from)
 	#update the piece's local position and increment its move count
 	pieces[to].set_pos(to)
-	pieces[to].table["moves"] += 1
+	#pieces[to].table["moves"] += 1
 	return true
 
 #erase a piece from the board, return true if the method succeeds

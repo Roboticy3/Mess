@@ -268,17 +268,17 @@ func handle(var v:Vector2, var team:int = 0):
 	if v in board.marks:
 		#get updates to the board to apply to BoardMesh while updating the Board's data as well
 		#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
-		var changes:Dictionary = board.execute_turn(v)
-		for c in changes:
-			var a:Array = changes[c]
-			for i in a.size():
-				if a[i] is Vector2:
-					move_piece(a[i], c)
-				elif a[i] is int:
-					#create_piece can just ask for the piece at c since Board has already moved the right piece there
-					create_piece(board.pieces[c], c)
-				else:
-					destroy_piece(c)
+		var changes:Array = board.execute_turn(v)
+		for i in changes.size():
+			var c = changes[i]
+			if c is PoolVector2Array:
+				move_piece(c[0], c[1])
+			elif c is Array:
+				var square:Vector2 = Vector2(c[1],c[2])
+				create_piece(board.pieces[square],square)
+			elif c is Vector2:
+				destroy_piece(c)
+			
 		
 		#clear board marks
 		highlight_squares()

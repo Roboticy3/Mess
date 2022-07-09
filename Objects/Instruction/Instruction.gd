@@ -90,6 +90,8 @@ func vectorize(var start:int = 0) -> Array:
 		last_start = start
 		return []
 		
+	#print(w)
+		
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
 	w[0] = w[0].substr(1)
 	

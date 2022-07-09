@@ -348,3 +348,8 @@
 	NEXT
 	 - reformat relocation
 	 - begin working on storage system for simulated board states
+7/9/2022
+	 - reformatted relocation to use arrays
+	 - decided that pieces could mutate other piece's tables in future updates (with current infrastructure it shouldn't be too hard to implement, but it seems unnessecary and difficult to format for users)
+	NEXT
+	 - begin implementing win conditions
