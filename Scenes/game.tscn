@@ -23,6 +23,7 @@ viewport_path = NodePath("Player/Viewport")
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 9 )
+path = "Instructions/torus/b_torus.txt"
 
 [node name="Player" type="KinematicBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )
@@ -69,7 +70,7 @@ material = ExtResource( 7 )
 
 [node name="Board" type="StaticBody" parent="."]
 script = ExtResource( 4 )
-path = "Instructions/torus"
+path = "Instructions/torus/b_torus.txt"
 board_shape_path = NodePath("Board Shape")
 board_collider_path = NodePath("Board Collision")
 

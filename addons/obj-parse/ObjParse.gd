@@ -12,7 +12,11 @@ class_name ObjParse
 static func _parse_mtl_file(path, var debug:bool = false):
 	if debug: print("Parsing mtl file " + path)
 	var file = File.new()
-	file.open(path, File.READ)
+	var err:int = file.open(path, File.READ)
+	if err > 0:
+		print("ObjParse::_parse_mtl_file() says \"file not found\"") 
+		return {}
+	
 	var obj = file.get_as_text()
 
 	var mats = {}
@@ -64,9 +68,12 @@ static func _get_texture(mtl_filepath, tex_filename, var debug:bool = false):
 	if debug: print("    Debug: texture is " + str(tex))
 	return tex
 
-static func parse_obj(obj_path, mtl_path, var debug:bool = false):
+static func parse_obj(obj_path, mtl_path, var debug:bool = false) -> Mesh:
 	var file = File.new()
-	file.open(obj_path, File.READ)
+	var err:int = file.open(obj_path, File.READ)
+	if err > 0: 
+		print("ObjParse::parse_obj() says \"file not found\"")
+		return Mesh.new()
 	var obj = file.get_as_text()
 	var mats = _parse_mtl_file(mtl_path, debug)
 

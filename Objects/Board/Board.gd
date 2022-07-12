@@ -52,14 +52,13 @@ func _ready():
 	#read the Instruction file
 	var r:Reader = Reader.new(self, funcs, path)
 	#if Reader sees a bad file, do not continue any further
-	if r.badfile: return
+	if r.badfile: 
+		print("Board not found at path \"" + path + "\"")
+		return
 	r.read()
-	
-	print(piece_types)
 	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
-	
 	
 
 #x_phase() functions are called by the Reader object in ready to initialize the board
@@ -144,26 +143,21 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 	
 	#if this line has not declared a path, check if it can create a piece
 	if vec.size() >= 3 && piece_types.size() > 0:
-		make_piece_macro(vec, persist)
-		
-
-#use and update the persistent data array in g_phase to call make_piece with the appropriate conditions from a vector
-func make_piece_macro(var vec:Array, var persist:Array) -> void:
-	#check for persistent settings of team and symmetry
-	if vec.size() >= 4:
-		persist[0] = vec[3]
-		if vec.size() >= 5:
-			persist[1] = vec[4]
+		#check for persistent settings of team and symmetry
+		if vec.size() >= 4:
+			persist[0] = vec[3]
+			if vec.size() >= 5:
+				persist[1] = vec[4]
+				
+		#make a piece with the updated persist settings
+		var pos = make_piece(vec, persist[0])
 			
-	#make a piece with the updated persist settings
-	var pos = make_piece(vec, persist[0])
-		
-	#symmetrize piece if symmetry is enabled
-	if persist[1] != 0 && persist[1] != null:
-		pos = -pos + 2*(center)
-		vec[1] = pos.x
-		vec[2] = pos.y
-		make_piece(vec, persist[0] + 1)
+		#symmetrize piece if symmetry is enabled
+		if persist[1] != 0 && persist[1] != null:
+			pos = -pos + 2*(center)
+			vec[1] = pos.x
+			vec[2] = pos.y
+			make_piece(vec, persist[0] + 1)
 
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
@@ -333,11 +327,11 @@ func mark_step(var from:Piece, var to:Vector2,
 		#print(ts,Vector2(x, y))
 		
 		#if line type is 1, and the final square is not yet being checked, skip to next square
-		var final:bool = line == 1 && !last
-		if final: 
+		var ignore:bool = line == 1 && !last
+		if ignore: 
 			continue
 		
-		#break the loop if search leaves the board
+		#break the loop if search leaves the board and the piece cannot be jumping across it
 		if !is_surrounding(square): break
 		
 		#if the square being checked is occupied, check if the piece can be taken
@@ -385,8 +379,6 @@ func execute_turn(var v:Vector2) -> Array:
 
 	#gain reference to the target piece and marks
 	var p:Piece = pieces[select]
-	var m:Array = p.mark
-	var move:int = marks[v]
 	
 	#the zeroth index of changes should be the updated piece dictionary
 	p.table = changes[0]
@@ -482,19 +474,19 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		#relocations are pairs of Vector2s, both of which need to be transformed
 		pos = transform(pos, piece)
 		r = transform(r, piece)
-		var c = r
+		var c = PoolVector2Array([r, pos])
 		
 		#print(pos,r)
 		
 		#if the relocation target is invalid, set the change as a deletion
-		if pos == Vector2.INF: c = null
+		if pos == Vector2.INF: c = r
 		#if the relocation beginning is invalid, do not add any change
 		if r == Vector2.INF: continue
 		
 		#if the piece is being moved, update its position temporarily for transform() calls in later changes
 		if move: piece.set_pos(r)
 
-		changes.append(PoolVector2Array([r, pos]))
+		changes.append(c)
 	
 	if bm.has("c"): for c in bm["c"]:
 		#creations are Vector2 and int pairs

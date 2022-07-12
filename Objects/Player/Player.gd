@@ -5,9 +5,9 @@ class_name Player
 #created January 2022
 
 #store a reference to the board in the scene
-export (Resource) var board
+var board:Board
 #store reference to BoardMesh object in the physical board
-export (Mesh) var board_mesh
+var board_mesh:BoardMesh
 
 #the team with which the player can interact with
 export (int) var team = 0
@@ -77,6 +77,10 @@ func _input(event):
 	if event is InputEventMouseMotion && Input.is_action_pressed("ck_1"):
 		var e:InputEventMouseMotion = event
 		target_motion["r"] = e.speed
+		
+	#if the board_mesh has not been activated yet, do so on the first keystroke
+	if !board_mesh.awake && event is InputEventKey:
+		board_mesh.begin(board_mesh.path)
 
 #handle button inputs each frame
 func _process(_delta):

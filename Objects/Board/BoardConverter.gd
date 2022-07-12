@@ -209,13 +209,10 @@ static func square_to_basis(var graph:MeshGraph, var dups:DuplicateMap,
 #import mesh from .obj path
 static func path_to_mesh(var path:String = "", var debug:bool = false):
 	#parse board using parser script into loadable mesh
-	var m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
+	var m := ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
 	
-	#create mdt to read mesh
-	var mdt:MeshDataTool = MeshDataTool.new()
-	mdt.create_from_surface(m, 0)
 	#if mesh was not created correctly, read from default mesh path
-	if mdt.get_vertex_count() == 0:
+	if m.get_surface_count() == 0:
 		path = "Instructions/default/meshes/default.obj"
 		m = ObjParse.parse_obj(path, path.substr(0, path.length() - 3) + "mtl", debug)
 	

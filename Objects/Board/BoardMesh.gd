@@ -10,7 +10,7 @@ extends Node
 var board:Board
 
 #board instruction path, mesh object, mdt object (for BoardConverter), and default mesh path meant to be set in the editor
-export (String) var path:String = "Instructions/cube"
+export (String) var path:String
 export (Resource) var mesh = null
 var mdt:MeshDataTool = null
 export (Resource) var default = null
@@ -42,11 +42,13 @@ var duplicates:DuplicateMap
 var dups_pos_only:DuplicateMap
 var graph:MeshGraph
 
-var players:Array = Array()
+var players := Array()
 
+#set to true at the end of the begin() method, signifies that this BoardMesh and its Board are finished loading
+var awake := false
+	
 #construct the Board and the BoardMesh
-func begin():
-	#otherwise, take path as-is (no operation)
+func begin(var _path:String = ""):
 	print(path)
 	
 	#retrieve board reference from spatial parent if possible
@@ -70,6 +72,8 @@ func begin():
 	
 	#send mesh and collision shape to physics objects
 	send_shape(m)
+	
+	awake = true
 
 #create a mesh and send it out to the Board Shape Node in BoardMesh's tree
 func init_mesh():
@@ -104,7 +108,7 @@ func send_board():
 	#send self's data to player objects
 	var siblings = get_parent().get_children()
 	for s in siblings:
-		if s is Player:
+		if s is KinematicBody:
 			players.append(s)
 			s.set("board_mesh", self)
 			s.set("material", mat_board)
