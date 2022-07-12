@@ -11,6 +11,9 @@ var file:File
 #the Node functions are taken from
 var node:Node
 
+#the board vectors are transformed through
+var board
+
 #the functions being taken from node paired with their character stage definitions (e.g. 'm':"func", 'g':"func.001" etc)
 var funcs:Dictionary
 var size:int = 8
@@ -21,12 +24,24 @@ var wait:bool = false
 #set to true when this Reader is assigned a bad file
 var badfile:bool = false
 
+#set to true to nullify all elements of the persist array between blocks during read()
+var clear_persist:bool = false
+
+#set to false to not vectorize instructions being read
+var vectorize:bool = false
+
 #initialize the Reader object
 #size represents the number of properties Reader can store across multiple lines, default 8
-func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8):
+func _init(var _board, var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8,
+	var _clear_persist:bool = false, var _vectorize:bool = true):
+	
+	board = _board
 	node = _node
 	funcs = _funcs
 	size = _size
+	
+	clear_persist = _clear_persist
+	vectorize = _vectorize
 	
 	badfile = !set_file(_path)
 			
@@ -68,10 +83,10 @@ func read():
 		c = c.strip_edges()
 		
 		#create an instruction from the current line
-		var I = Instruction.new(c, node.table)
+		var I = Instruction.new(c, node.table, board)
 		
-		#append the current vector if it's valid
-		vec = I.vectorize()
+		#append the current vector if this Reader is vectorizing
+		if vectorize: vec = I.vectorize()
 		
 		#find if any of the stages match the current one
 		#if so, call the method paired with the current stage
@@ -84,5 +99,11 @@ func read():
 		#check if line matches a stage key
 		for s in stages:
 			if c.match(s):
+				
+				#if clear_persist is enabled, nullify all elements of persist
+				for i in size:
+					persist[i] = null
+				
 				begun = true
 				stg = c
+				break

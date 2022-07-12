@@ -50,7 +50,7 @@ func _ready():
 	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
 	
 	#read the Instruction file
-	var r:Reader = Reader.new(self, funcs, path)
+	var r:Reader = Reader.new(self, self, funcs, path)
 	#if Reader sees a bad file, do not continue any further
 	if r.badfile: 
 		print("Board not found at path \"" + path + "\"")
@@ -66,7 +66,7 @@ func _ready():
 
 #_phase is the default phase and defines metadata for the board like mesh and name
 #warning-ignore:unused_argument
-func _phase(var I:Instruction, var vec:Array, var persist:Array):
+func _phase(var I, var vec:Array, var persist:Array) -> void:
 	var key:String = ""
 	if !vec.empty(): key = I.update_table(table)
 
@@ -80,7 +80,7 @@ func _phase(var I:Instruction, var vec:Array, var persist:Array):
 #b_phase implicitly defines the mesh and defines the boundaries of the board from sets of 4 numbers
 #warning-ignore:unused_argument
 #warning-ignore:unused_argument
-func b_phase(var I:Instruction, var vec:Array, var persist:Array):
+func b_phase(var I, var vec:Array, var persist:Array) -> void:
 	
 	#board creation waits until there is a 4 number list in vec, then creates a bound
 	if (vec.size() >= 4):
@@ -101,7 +101,7 @@ func b_phase(var I:Instruction, var vec:Array, var persist:Array):
 #the t phase handles explicit team creation
 #warning-ignore:unused_argument
 #warning-ignore:unused_argument
-func t_phase(var I:Instruction, var vec:Array, var persist:Array):
+func t_phase(var I, var vec:Array, var persist:Array) -> void:
 	#team creation takes in a vector of length 6
 	if (vec.size() >= 6):
 		#the first three indicate color
@@ -115,7 +115,7 @@ func t_phase(var I:Instruction, var vec:Array, var persist:Array):
 
 #the g phase handles implicit team creation and places pieces on the board
 #uses persitant to create a "sub-stage" where pieces are placed on the board with symmetry
-func g_phase(var I:Instruction, var vec:Array, var persist:Array):
+func g_phase(var I, var vec:Array, var persist:Array) -> void:
 	#if there are no teams from the t phase, implicitly create black and white teams
 	if teams.empty():
 		teams.append(Team.new())
@@ -132,14 +132,9 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 	if b.file_exists(c):
 	
 		#initialize pieces from the paths in which they appear
-		#Piece.new() runs a file path check on a path input, so this works just fine
-		var p = Piece.new(c)
-		
-		#only use named pieces to avoid ambiguous pieces on the board
-		if !p.get_name().match(""):
-			piece_types.append(c)
-			#when a piece is assigned, skip the rest of the g phase loop
-			return
+		piece_types.append(c)
+		#when a piece is assigned, skip the rest of the g phase loop
+		return
 	
 	#if this line has not declared a path, check if it can create a piece
 	if vec.size() >= 3 && piece_types.size() > 0:
@@ -158,6 +153,11 @@ func g_phase(var I:Instruction, var vec:Array, var persist:Array):
 			vec[1] = pos.x
 			vec[2] = pos.y
 			make_piece(vec, persist[0] + 1)
+			
+#the w phase handles generating winning and losing conditions for different teams
+#uses persistent "sub-stage" for the team index win conditions are being assigned to 
+func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
+	pass
 
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
@@ -167,7 +167,7 @@ func make_piece(var i:Array, var team:int) -> Vector2:
 	#i[0] indicates the Piece's team and i[1] indicates the type
 	#check if they are in range
 	if team < teams.size() && i[0] < piece_types.size():
-		var p = Piece.new(piece_types[i[0]], teams[team], team, v)
+		var p = Piece.new(self, piece_types[i[0]], teams[team], team, v)
 		#bounce the position back from the piece to accound for px or py overriding the Piece's original position
 		v = p.get_pos()
 			
@@ -176,12 +176,6 @@ func make_piece(var i:Array, var team:int) -> Vector2:
 		pieces[v] = p
 	
 	return v
-	
-func get_piece(var v:Vector2):
-	if v in pieces:
-		return pieces[v]
-	else:
-		return null
 
 #create a boundary object from a vector of length 4
 func set_bound(var i:Array):
@@ -236,7 +230,6 @@ func mark(var v:Vector2):
 	for i in m.size():
 		
 		#give instruction reference to pieces and p.table so variables can be processed
-		m[i].pieces = pieces
 		m[i].table = p.table
 		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
@@ -338,10 +331,10 @@ func mark_step(var from:Piece, var to:Vector2,
 		var occ:bool = pieces.has(square)
 		var take:bool = true
 		if occ: 
-			#check if the from piece can take the to square, overrided if type = 2
-			take = can_take_from(from.get_pos(), square) || type == 2
-			#move type 1 cannot take
-			take = take && type != 1
+			#check if the from piece can take the to square
+			take = can_take_from(from.get_pos(), square)
+			#move type 1 cannot take, type 2 always can
+			take = take || type == 2 && type != 1
 			
 			#if piece cannot be taken, break the loop before adding the next mark
 			if !take:
@@ -422,7 +415,7 @@ func compute_turn(var v:Vector2) -> Array:
 	
 	#pair the m phase with nothing since marks are not being generated
 	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
-	var reader:Reader = Reader.new(p, funcs, p.path)
+	var reader:Reader = Reader.new(self, p, funcs, p.path)
 	reader.wait = true
 	reader.read()
 	
@@ -551,6 +544,15 @@ func get_mesh() -> String:
 func _init(var _path:String):
 	path = _path
 	_ready()
+	
+func has(var v) -> bool:
+	return pieces.has(v)
+	
+func get_piece(var v):
+	if !pieces.has(v):
+		print("Piece not found at key " + v)
+		return null
+	return pieces[v]
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():

@@ -30,8 +30,13 @@ var piece_types:Array = []
 #used to construct file paths local to the project instead of the piece's pack
 var div:String = ""
 
+#reference to this Piece's parent Board
+#can't be statically typed because cyclic ref error ffs
+var board
+
 #initiate a piece with a path to its instruction behaviours, its team and its position
-func _init(var _p:String, var _team:Team = Team.new(), var _team_index:int = 0, var v = Vector2.ZERO):
+func _init(var _b, var _p:String, var _team:Team = Team.new(), var _team_index:int = 0, var v = Vector2.ZERO):
+	board = _b
 	path = _p
 	set_team(_team_index)
 	set_forward(_team.forward)
@@ -52,17 +57,20 @@ func _ready():
 	#Piece only needs to add the mark instructions at ready
 	var funcs:Dictionary = {"m":"m_phase","t":"","c":"","r":""}
 	#use Reader to interperet the instruction file into usable behavior 
-	var r:Reader = Reader.new(self, funcs, path)
+	var r:Reader = Reader.new(board, self, funcs, path, 3, true, false)
 	#if Reader sees a bad file, do not continue any further
 	if r.badfile: return
 	r.read()
+	
 
 #warning-ignore:unused_argument
-func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
+func _phase(var I, var vec:Array = [], var persist:Array = []):
+	
 	#try to update table from metadata line, essentially initializing the table
 	#only do table updates if I vectorizes to a non-empty array, this will allow for primitive conditionals before piece vars
 	var key:String = ""
-	if !vec.empty(): key = I.update_table(table)
+	var s = I.to_string_array()
+	if !s.empty(): key = I.update_table(table)
 	#if no key was returned, update table has failed
 	if key.empty(): return
 	
@@ -76,7 +84,7 @@ func _phase(var I:Instruction, var vec:Array = [], var persist:Array = []):
 #and therefore only the instruction needs to be stored
 #warning-ignore:unused_argument
 #warning-ignore:unused_argument
-func m_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
+func m_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	var c:String = I.contents
 	#primitive comment parser and empty checking to avoid adding empty marks
 	c = c.substr(0, c.find("#"))
@@ -87,7 +95,7 @@ func m_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 
 #add Vector2 behaviors for squares to be cleared
 #warning-ignore:unused_argument
-func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
+func t_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	
 	var size = vec.size()
 	if size > 2:
@@ -100,29 +108,29 @@ func t_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> v
 
 #add Arrays of length 4 for piece type, creation position, and mark index
 #warning-ignore:unused_argument
-func c_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
+func c_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	
 	if vec.size() < 3: return
-	if vec.size() > 3: persist[1] = vec[3]
+	if vec.size() > 3: persist[0] = vec[3]
 	
 	var v:Vector2 = Vector2(vec[1], vec[2])
 	#update behaviors with the array [vec[0], v.x, v.y]
 	#this array can be used as the first argument for board.make_piece()
-	if persist[1] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
-	else: update_behaviors(persist[1], "c", [vec[0], v.x, v.y])
+	if persist[0] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
+	else: update_behaviors(persist[0], "c", [vec[0], v.x, v.y])
 
 #add arrays of starting and ending positions in an orderded array so relocation can be executed in the order they were written
 #warning-ignore:unused_argument
-func r_phase(var I:Instruction, var vec:Array = [], var persist:Array = []) -> void:
+func r_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	if vec.size() < 4: return
-	if vec.size() > 4: persist[2] = vec[4]
+	if vec.size() > 4: persist[0] = vec[4]
 
 	var v:Vector2 = Vector2(vec[0], vec[1])
 	var u:Vector2 = Vector2(vec[2], vec[3])
 
 	#slight rewrite of update_behaviors to create Dictionaries
 	var m:int = -1
-	if persist[2] != null: m = persist[2]
+	if persist[0] != null: m = persist[0]
 	if behaviors.has(m):
 		if behaviors[m].has("r"):
 			behaviors[m]["r"].append(PoolVector2Array([v, u]))

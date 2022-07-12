@@ -18,18 +18,22 @@ var last_start:int = 0
 #table of piece/board properties and pieces on the board, referenced from a Board and/or a Piece object
 #table is used to read and write variables to the user Object
 var table:Dictionary = {}
-#pieces is used to check squares
-var pieces:Dictionary = {}
+#board is used to transform vectors
+var board
 
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=!="
 
 #fill variables of the object fully
-func _init(var _contents:String="", var _table:Dictionary={}, var _pieces:Dictionary={}):
+func _init(var _contents:String="", var _table:Dictionary={}, var _board = null):
 	
 	contents = _contents.strip_edges()
 	table = _table
-	pieces = _pieces
+	board = _board
+	
+	if board == null:
+		print(self, " cannot process null Board.")
+		return
 	
 	#format contents into wrds
 	format()
@@ -46,8 +50,8 @@ func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 	else: length = min(wrds.size() - start, length)
 	
 	#take table from another square if a square is specified
-	if square in pieces:
-		table = pieces[square].table
+	if board.has(square):
+		table = board.get_piece(square).table
 		
 	#sort table by key size, helps string replacement prioritize larger words
 	var keys:Array = table.keys()
@@ -56,6 +60,9 @@ func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 
 	#replace terms in table key set with their value pairs
 	for i in range(start, start + length):
+		#don't try to work outside of the range of wrds
+		if i > wrds.size(): break
+		
 		var w:String = wrds[i]
 		#remove white space
 		w = w.strip_edges()
@@ -65,6 +72,14 @@ func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 			
 		#send the formatted string back into wrds
 		wrds[i] = w
+		
+#Object for sorting the table in format()
+class StringSort:
+	#sort elements by length
+	func sort(var a:String, var b:String) -> bool:
+		if a.length() < b.length():
+			return true
+		return false
 
 #WIP evaluate conditional statements, made up of a wrds Array of length 3 or more that can solve inequalities
 #returning [] is equivalent to returning false and anything else is equivalent to true
@@ -90,8 +105,6 @@ func vectorize(var start:int = 0) -> Array:
 		last_start = start
 		return []
 		
-	#print(w)
-		
 	#remove question mark from wrds[0] once it is confirmed of valid size and format
 	w[0] = w[0].substr(1)
 	
@@ -112,7 +125,7 @@ func vectorize(var start:int = 0) -> Array:
 		return []
 	
 	#if the table does not indicate this instruction is defining a piece, do not proceed further
-	if !("px" in table && "py" in table): return []
+	if !("px" in table): return []
 	
 	#otherwise, see if the 4th word is a comparator
 	#no comparator means a square is being checked for presence
@@ -130,12 +143,11 @@ func vectorize(var start:int = 0) -> Array:
 	
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 	var x:Vector2 = Vector2(table["px"], table["py"])
-	var y:Vector2 = Vector2(u, v).rotated(table["angle"])
-	y = (x + y).round()
+	var y:Vector2 = board.transform(Vector2(u, v), board.pieces[x])
 	
 	#check if the square is empty, if so treat as false when asking for a square or its pieces property
 	#this can still be negated
-	if !pieces.has(y):
+	if !board.has(y):
 		if negate: return vectorize(start + length)
 		return []
 	
@@ -149,8 +161,7 @@ func vectorize(var start:int = 0) -> Array:
 	#evaluate it against the other end of the comparator
 	if length == 5:
 		#format the one term on the left of the comparator to use the table of the piece being checked against
-		format(2, 1, y)
-		#reinitialize w to use the reformatted wrds Array
+		format(start + 2, 1, y)#reinitialize w to use the reformatted wrds Array
 		w = wrds.slice(start, wrds.size() - 1)
 		#evaluate the comparison
 		var e:bool = evaluate(w, 2)
@@ -238,7 +249,7 @@ func parse(var string=contents, var nullable:bool = false):
 	return n
 
 #convert instruction text to string array of words for easier parsing
-func to_string_array(var c:String = contents, var start:int = 0):
+func to_string_array(var c:String = contents, var start:int = 0) -> Array:
 
 	#cut spaces so that spaces between final whitespace is not counted
 	c = c.substr(0, c.find("#")).strip_edges()
@@ -275,9 +286,14 @@ func is_unformatted(var i:int = 0, var start:int = last_start) -> bool:
 	return false
 
 #take in a table to update with self, returns true on success
-func update_table(var t:Dictionary=table, var start:int = 0) -> String:
-	#populate piece table by trying taking numbers from the second word
-	var s = to_string_array(contents, start)
+func update_table(var t:Dictionary=table, var start:int = 0,
+	var s:Array = []) -> String:
+	
+	#make sure there is a set of unformatted words to work with
+	if s.empty(): s = to_string_array(contents, start)
+	#duplicate the input array to not mutate the original
+	else: s = s.duplicate().slice(start, -1)
+	
 	#check if last two terms in array make up a key pair
 	if s.size() > 1:
 		var i:int = s.size() - 2
@@ -293,9 +309,12 @@ func update_table(var t:Dictionary=table, var start:int = 0) -> String:
 
 #do all the table updates in a given line
 func update_table_line(var t:Dictionary = table) -> void:
-	var i = wrds.size() - 2
+	
+	var s = to_string_array()
+	var i = s.size() - 2
+	
 	while i > 0:
-		var try:String = update_table(t, i)
+		var try:String = update_table(t, i, s)
 		if try.empty(): 
 			break
 		i -= 2
@@ -307,11 +326,3 @@ func piece_transform(var v:Vector2, var forward:Vector2, var angle:float) -> Vec
 
 func _to_string():
 	return contents
-
-#Object for sorting the table in format()
-class StringSort:
-	#sort elements by length
-	func sort(var a:String, var b:String) -> bool:
-		if a.length() < b.length():
-			return true
-		return false
