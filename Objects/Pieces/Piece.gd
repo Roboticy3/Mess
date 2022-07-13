@@ -35,12 +35,18 @@ var div:String = ""
 var board
 
 #initiate a piece with a path to its instruction behaviours, its team and its position
-func _init(var _b, var _p:String, var _team:Team = Team.new(), var _team_index:int = 0, var v = Vector2.ZERO):
+func _init(var _b = null, var _p:String = "", 
+	var _teams:Array = [], var _team_index:int = 0, var v = Vector2.ZERO):
+	
+	#if _b is null, skip the initiation
+	if _b == null: return
+	
 	board = _b
 	path = _p
 	set_team(_team_index)
-	set_forward(_team.forward)
-	table["ff"]  = _team.ff
+	var _team = _teams[_team_index]
+	set_forward(_team.get_forward())
+	table["ff"]  = _team.get_ff()
 	set_pos(v)
 	
 	_ready()
@@ -62,7 +68,8 @@ func _ready():
 	if r.badfile: return
 	r.read()
 	
-
+#initialize variables in this Board's table
+#warning-ignore:unused_argument
 #warning-ignore:unused_argument
 func _phase(var I, var vec:Array = [], var persist:Array = []):
 	

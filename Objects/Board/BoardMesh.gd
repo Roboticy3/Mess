@@ -225,6 +225,7 @@ func move_piece(var from:Vector2, var to:Vector2):
 func destroy_piece(var at:Vector2):
 	if !pieces.has(at): return
 	remove_child(pieces[at])
+	#free the piece to avoid a memory leak
 	pieces[at].free()
 	pieces.erase(at)
 
@@ -259,7 +260,7 @@ func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 func mark(var v:Vector2) -> void:
 	var pos = board.mark(v)
 	board.marks = pos
-	board.select = v
+	board.set_selected(v)
 	highlight_squares(pos.keys())
 	
 #run this method whenever a player clicks on a square
@@ -287,6 +288,7 @@ func handle(var v:Vector2, var team:int = 0):
 		
 		#clear board marks
 		highlight_squares()
+		
 	#check if square is a selectable piece
 	elif v in p && team == p[v].get_team():
 		#mark from selectable piece

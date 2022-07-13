@@ -6,8 +6,8 @@ extends Node
 
 #store pairs of pieces and their location
 var pieces:Dictionary = {}
-#store the types of pieces on the board to avoid having to load pieces from scratch every time
-var piece_types:Array = []
+#store the set of pieces on the board by their file paths
+var piece_paths:Array = []
 
 #store a list of the teams on the board
 var teams:Array = []
@@ -33,12 +33,15 @@ var div:String = ""
 #store a set of variables declared in metadata phase
 var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1, 
 	"piece_scale":0.2, "piece_opacity":1, "piece_collision":1,
-	"name":"*name*","mesh":"Instructions/default/meshes/default.obj"}
+	"name":"*name*","mesh":"Instructions/default/meshes/default.obj",
+	"sx":INF,"sy":INF}
 
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
-#Vector2 of the piece in pieces marks belongs to
-var select:Vector2
+
+func _init(var _path:String):
+	path = _path
+	_ready()
 
 func _ready():
 	#add .txt to the end of the file path if its not already present
@@ -47,7 +50,8 @@ func _ready():
 		
 	
 	#tell Reader object which functions to call
-	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
+	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", 
+		"g":"g_phase", "w":"w_phase"}
 	
 	#read the Instruction file
 	var r:Reader = Reader.new(self, funcs, path)
@@ -112,6 +116,18 @@ func t_phase(var I, var vec:Array, var persist:Array) -> void:
 		var k = vec[5] == 1
 		teams.append(Team.new(i, j, k))
 		vec = []
+		
+	#allow for updates to the team's table after their declaration
+	var key:String = ""
+	var t:Dictionary = teams.back().table
+	if !vec.empty(): key = I.update_table(t)
+
+	if key.empty(): return
+
+	if key.match("mesh"):
+		if t[key].begins_with("@"):
+			t[key] = t[key].substr(1, -1)
+		else: t[key] = div + t[key]
 
 #the g phase handles implicit team creation and places pieces on the board
 #uses persitant to create a "sub-stage" where pieces are placed on the board with symmetry
@@ -131,13 +147,13 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 	var b = File.new()
 	if b.file_exists(c):
 	
-		#initialize pieces from the paths in which they appear
-		piece_types.append(c)
+		#cache the paths of valid pieces
+		piece_paths.append(c)
 		#when a piece is assigned, skip the rest of the g phase loop
 		return
 	
 	#if this line has not declared a path, check if it can create a piece
-	if vec.size() >= 3 && piece_types.size() > 0:
+	if vec.size() >= 3 && piece_paths.size() > 0:
 		#check for persistent settings of team and symmetry
 		if vec.size() >= 4:
 			persist[0] = vec[3]
@@ -162,18 +178,26 @@ func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
 func make_piece(var i:Array, var team:int) -> Vector2:
+	
+	#ignore arrays that are too small
+	if i.size() < 3: 
+		print("Board::make_piece() says \"cannot make piece from Array of size ", i.size(), "\"")
+		return Vector2.INF
+	
 	#extract the position from the input vector
 	var v = Vector2(i[1], i[2])
 	#i[0] indicates the Piece's team and i[1] indicates the type
 	#check if they are in range
-	if team < teams.size() && i[0] < piece_types.size():
-		var p = Piece.new(self, piece_types[i[0]], teams[team], team, v)
+	if team < teams.size() && i[0] < piece_paths.size():
+		#if they are in range, grab the piece from piece_types and update its data accordingly
+		var p:Piece = Piece.new(self, piece_paths[i[0]], teams, team, v)
+		
 		#bounce the position back from the piece to accound for px or py overriding the Piece's original position
 		v = p.get_pos()
 			
 		#add the piece to the dictionary
-		teams[team].pieces[v] = p
 		pieces[v] = p
+		teams[team].pieces[v] = p
 	
 	return v
 
@@ -334,7 +358,7 @@ func mark_step(var from:Piece, var to:Vector2,
 			#check if the from piece can take the to square
 			take = can_take_from(from.get_pos(), square)
 			#move type 1 cannot take, type 2 always can
-			take = take || type == 2 && type != 1
+			take = (take || type == 2) && type != 1
 			
 			#if piece cannot be taken, break the loop before adding the next mark
 			if !take:
@@ -371,7 +395,7 @@ func execute_turn(var v:Vector2) -> Array:
 	var changes := compute_turn(v)
 
 	#gain reference to the target piece and marks
-	var p:Piece = pieces[select]
+	var p:Piece = pieces[get_selected()]
 	
 	#the zeroth index of changes should be the updated piece dictionary
 	p.table = changes[0]
@@ -392,6 +416,7 @@ func execute_turn(var v:Vector2) -> Array:
 	
 	#increment turn
 	turn += 1
+	print(teams[get_team()].get_table("key"))
 	#return Board updates
 	return changes
 	
@@ -400,7 +425,7 @@ func execute_turn(var v:Vector2) -> Array:
 func compute_turn(var v:Vector2) -> Array:
 	
 	#reference the piece being moved
-	var p:Piece = pieces[select]
+	var p:Piece = pieces[get_selected()]
 	
 	#the piece's mark instructions
 	var m:Array = p.mark
@@ -423,7 +448,7 @@ func compute_turn(var v:Vector2) -> Array:
 	
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
-	var changes:Array = [p.table, PoolVector2Array([select, v])]
+	var changes:Array = [p.table, PoolVector2Array([get_selected(), v])]
 	#add changes from the piece
 	changes_from_piece(changes, p, v)
 	changes_from_piece(changes, p, v, move)
@@ -502,7 +527,7 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		changes.append(d)
 		
 	#reset the piece's position
-	piece.set_pos(select)
+	piece.set_pos(get_selected())
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:
@@ -517,19 +542,33 @@ func transform(var v:Vector2, var piece:Piece) -> Vector2:
 
 #move the piece on from onto to
 func move_piece(var from:Vector2, var to:Vector2) -> bool:
+	#if no piece is in the from square, do not attempt to move from it
 	if !pieces.has(from): return false
+	
+	#if the to square has a piece, destroy it
+	var _to_full := destroy_piece(to)
+	
+	#move the piece in both the board's pieces and the correct team's pieces
 	pieces[to] = pieces[from]
-	pieces.erase(from)
-	#update the piece's local position and increment its move count
+	var p:Piece = pieces[to]
+	teams[p.get_team()].pieces[to] = pieces[to]
+	
+	#erase handles this synchronization on its own
+	erase(from)
+	
+	#update the piece's local position and increment its move count, return a success
 	pieces[to].set_pos(to)
-	#pieces[to].table["moves"] += 1
 	return true
 
 #erase a piece from the board, return true if the method succeeds
 func destroy_piece(var at:Vector2) -> bool:
+	#do not attempt to erase an already empty square
 	if !pieces.has(at): return false
-	pieces.erase(at)
+	#otherwise, go ahead
+	erase(at)
 	return true
+
+#Various getters and setters
 
 #get the team of the current turn by taking turn % teams.size()
 func get_team() -> int:
@@ -540,19 +579,41 @@ func get_name() -> String:
 	
 func get_mesh() -> String:
 	return div + String(table["mesh"])
-
-func _init(var _path:String):
-	path = _path
-	_ready()
 	
-func has(var v) -> bool:
-	return pieces.has(v)
+func get_selected(var team:int = get_team()) -> Vector2:
+	if team > teams.size(): return Vector2.INF
+	return teams[team].get_selected()
+	
+func set_selected(var select:Vector2 = Vector2.INF, var team:int = get_team()) -> void:
+	if team > teams.size(): return
+	teams[team].set_selected(select)
 	
 func get_piece(var v):
 	if !pieces.has(v):
 		print("Piece not found at key " + v)
 		return null
 	return pieces[v]
+
+#pieces Dictionary interfaces and mutators, use these methods to ensure Board's pieces are synchronized with the Teams' pieces
+
+func has(var v) -> bool:
+	return pieces.has(v)
+
+func erase(var v) -> bool:
+	#if the piece is present, gain reference to it to reference its team
+	if pieces.has(v): 
+		var p:Piece = pieces[v]
+		
+		#then erase the piece in every correct dictionary
+		pieces.erase(v)
+		var b:bool = teams[p.get_team()].erase(v)
+		
+		#this can still fail if the piece is not present in the team's dictionary
+		#so return the result of the last erasure
+		return b
+	
+	#otherwise, return false
+	return false
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
@@ -561,7 +622,7 @@ func _to_string():
 	s += "\n["
 	#convert team array to string
 	for i in teams.size(): 
-		s += String(i) + ": (" + String(teams[i].color) + ")"
+		s += String(i) + ": (" + String(teams[i].get_color()) + ")"
 		if i < teams.size() - 1: s += ", "
 	s += "]\n"
 	
@@ -579,7 +640,7 @@ func _to_string():
 				#"." signifies a blank spot inside the board
 				if is_surrounding(v):
 					s += "."
-				#"#" signifies an oob spot
+				#"#" signifies an out-of-bounds spot
 				else:
 					s += "#"
 			s += " "
