@@ -57,7 +57,7 @@ func _ready():
 	#Piece only needs to add the mark instructions at ready
 	var funcs:Dictionary = {"m":"m_phase","t":"","c":"","r":""}
 	#use Reader to interperet the instruction file into usable behavior 
-	var r:Reader = Reader.new(board, self, funcs, path, 3, true, false)
+	var r:Reader = Reader.new(self, funcs, path, 3, board, true, false)
 	#if Reader sees a bad file, do not continue any further
 	if r.badfile: return
 	r.read()

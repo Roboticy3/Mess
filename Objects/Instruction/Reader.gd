@@ -32,8 +32,8 @@ var vectorize:bool = false
 
 #initialize the Reader object
 #size represents the number of properties Reader can store across multiple lines, default 8
-func _init(var _board, var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8,
-	var _clear_persist:bool = false, var _vectorize:bool = true):
+func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8,
+	var _board = null, var _clear_persist:bool = false, var _vectorize:bool = true):
 	
 	board = _board
 	node = _node

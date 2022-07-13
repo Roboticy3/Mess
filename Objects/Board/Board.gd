@@ -50,7 +50,7 @@ func _ready():
 	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", "g":"g_phase"}
 	
 	#read the Instruction file
-	var r:Reader = Reader.new(self, self, funcs, path)
+	var r:Reader = Reader.new(self, funcs, path)
 	#if Reader sees a bad file, do not continue any further
 	if r.badfile: 
 		print("Board not found at path \"" + path + "\"")
@@ -415,7 +415,7 @@ func compute_turn(var v:Vector2) -> Array:
 	
 	#pair the m phase with nothing since marks are not being generated
 	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
-	var reader:Reader = Reader.new(self, p, funcs, p.path)
+	var reader:Reader = Reader.new(p, funcs, p.path, 3, self)
 	reader.wait = true
 	reader.read()
 	

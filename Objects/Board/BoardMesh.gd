@@ -225,6 +225,7 @@ func move_piece(var from:Vector2, var to:Vector2):
 func destroy_piece(var at:Vector2):
 	if !pieces.has(at): return
 	remove_child(pieces[at])
+	pieces[at].free()
 	pieces.erase(at)
 
 #highlight squares on the board by sending their positions to a texture which is rendered by mat_board

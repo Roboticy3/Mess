@@ -21,6 +21,10 @@ var table:Dictionary = {}
 #board is used to transform vectors
 var board
 
+#set to true if this Instruction is working with squares on the board
+#automatically set to true if board is not null in init()
+var reads_board:bool = false
+
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=!="
 
@@ -29,11 +33,10 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _board = null)
 	
 	contents = _contents.strip_edges()
 	table = _table
-	board = _board
 	
-	if board == null:
-		print(self, " cannot process null Board.")
-		return
+	#if the board is being sent into the instruction for reference, then it is probably reading the board
+	if _board != null: reads_board = true
+	board = _board
 	
 	#format contents into wrds
 	format()
@@ -50,7 +53,7 @@ func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 	else: length = min(wrds.size() - start, length)
 	
 	#take table from another square if a square is specified
-	if board.has(square):
+	if reads_board && board.has(square):
 		table = board.get_piece(square).table
 		
 	#sort table by key size, helps string replacement prioritize larger words
@@ -124,8 +127,9 @@ func vectorize(var start:int = 0) -> Array:
 		#if the conditional fails, return nothing
 		return []
 	
-	#if the table does not indicate this instruction is defining a piece, do not proceed further
-	if !("px" in table): return []
+	#if the table does not indicate this instruction is for an object with position on the board, return nothing now
+	#otherwise, continue on to check if the conditional is asking for a square relative to this object's position
+	if !table.has("px") || !table.has("py"): return []
 	
 	#otherwise, see if the 4th word is a comparator
 	#no comparator means a square is being checked for presence
@@ -143,7 +147,7 @@ func vectorize(var start:int = 0) -> Array:
 	
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
 	var x:Vector2 = Vector2(table["px"], table["py"])
-	var y:Vector2 = board.transform(Vector2(u, v), board.pieces[x])
+	var y:Vector2 = board.transform(Vector2(u, v), board.get_piece(x))
 	
 	#check if the square is empty, if so treat as false when asking for a square or its pieces property
 	#this can still be negated
