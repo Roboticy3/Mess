@@ -353,3 +353,10 @@
 	 - decided that pieces could mutate other piece's tables in future updates (with current infrastructure it shouldn't be too hard to implement, but it seems unnessecary and difficult to format for users)
 	NEXT
 	 - begin implementing win conditions
+7/11-13/2022
+	 - added tables to Team.gd, they can now have variables declared under their definition in the t phase and can "aggregate" values from their pieces' tables by adding them all together
+	 - started working on multiple temporary table updates for multiple pieces in compute_turn()
+	 - added placeholder w phase to fill out with win condition interperetation
+	NEXT
+	 - finish implementation of multiple temporary table updates for compute_turn()
+	 - begin designing the format for a simple take-the-king win condition in the new w phase

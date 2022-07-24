@@ -416,7 +416,7 @@ func execute_turn(var v:Vector2) -> Array:
 	
 	#increment turn
 	turn += 1
-	print(teams[get_team()].get_table("key"))
+	#print(teams[get_team()].get_table("key"))
 	#return Board updates
 	return changes
 	
@@ -432,7 +432,9 @@ func compute_turn(var v:Vector2) -> Array:
 	#the index of m that was used to move
 	var move:int = marks[v]
 	#temporarily update the piece's table with its mark's updates
-	var old_table:Dictionary = p.table.duplicate()
+	var old_tables:Dictionary = {get_selected():p.table.duplicate()}
+	
+	#increment moves
 	m[move].update_table_line()
 	p.table["moves"] += 1
 	
@@ -450,60 +452,71 @@ func compute_turn(var v:Vector2) -> Array:
 	#changes contain the piece's behaviors this turn
 	var changes:Array = [p.table, PoolVector2Array([get_selected(), v])]
 	#add changes from the piece
-	changes_from_piece(changes, p, v)
-	changes_from_piece(changes, p, v, move)
+	changes_from_piece(changes, p, v, old_tables)
+	changes_from_piece(changes, p, v, old_tables, move)
 	
-	#revert the changes to the piece's table
-	p.table = old_table
-	m[move].table = old_table
+	#print(p.table)
+	print(old_tables)
+	
+	#reset the piece's position from the change in changes_from_piece
+	p.set_pos(get_selected())
+	
+	#revert the changes to the updated tables
+	p.table = old_tables[get_selected()]
+	m[move].table = old_tables[get_selected()]
 	
 	return changes
 
-#update a Dictionary of changes to the board from an index of a behaviors dictionary
+#update an Array of changes to the board from an index of a behaviors dictionary
 func changes_from_piece(var changes:Array, var piece:Piece, 
-	var v:Vector2, var idx:int = -1) -> void:
+	#square containing this move's mark, stored state of pieces being temporarily updated
+	#and the index of the move being made in piece's instructions
+	var v:Vector2, var old_tables:Dictionary, var idx:int = -1) -> void:
 		
 	#gain reference to the piece's behaviors
 	var behaviors:Dictionary = piece.behaviors
 	
+	#temporarily change the piece's position
+	piece.set_pos(v)
+	
 	#do not try to execute this method if the index of behaviors is missing or empty
-	if !behaviors.has(idx) || behaviors[idx].empty(): return
+	if !behaviors.has(idx) || behaviors[idx].empty(): 
+		return
 	
 	#iterate through each section of behaviors and convert their data into the changes dictionary
 	var bm:Dictionary = behaviors[idx]
 	
 	#print(bm)
 	
-	#temporarily change the piece's position
-	piece.set_pos(v)
-	
 	#check if one type of behavior is present
 	if bm.has("r"): for i in bm["r"].size():
-		#pos is the position being relocated to
-		#r is the position being relocated from
-		var r:Vector2 = bm["r"][i][0]
-		var pos:Vector2 = bm["r"][i][1]
+		var from:Vector2 = bm["r"][i][0]
+		var to:Vector2 = bm["r"][i][1]
 		
 		#if the relocation is from 0, 0, this piece is being moved
 		var move := false
-		if pos == Vector2.ZERO:
+		if to == Vector2.ZERO:
 			move = true
 		
-		#relocations are pairs of Vector2s, both of which need to be transformed
-		pos = transform(pos, piece)
-		r = transform(r, piece)
-		var c = PoolVector2Array([r, pos])
+		#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
+		to = transform(to, piece)
+		from = transform(from, piece)
+		var c = PoolVector2Array([from, to])
 		
 		#print(pos,r)
 		
 		#if the relocation target is invalid, set the change as a deletion
-		if pos == Vector2.INF: c = r
-		#if the relocation beginning is invalid, do not add any change
-		if r == Vector2.INF: continue
+		if to == Vector2.INF: c = from
+		#if the relocation beginning is invalid or empty, do not add any change
+		if from == Vector2.INF || !pieces.has(from): continue
+		
+		#store the current table of the piece being relocated, and update a duplicate of it
+		old_tables[from] = pieces[from].table.duplicate()
 		
 		#if the piece is being moved, update its position temporarily for transform() calls in later changes
-		if move: piece.set_pos(r)
-
+		if move: piece.set_pos(to)
+		
+		#add the change to the main Array
 		changes.append(c)
 	
 	if bm.has("c"): for c in bm["c"]:
@@ -525,9 +538,6 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		if d == Vector2.INF: continue
 		
 		changes.append(d)
-		
-	#reset the piece's position
-	piece.set_pos(get_selected())
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:

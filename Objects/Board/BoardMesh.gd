@@ -49,6 +49,7 @@ var awake := false
 	
 #construct the Board and the BoardMesh
 func begin(var _path:String = ""):
+	path = _path
 	print(path)
 	
 	#retrieve board reference from spatial parent if possible

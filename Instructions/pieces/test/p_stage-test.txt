@@ -1,0 +1,28 @@
+#replace default/p_pawn.txt with test/p_stage-test.txt to test all phases on boards with lots of pawns
+name burger_king
+
+whopper 0
+beans -4.2
+
+#mark, take, and create phases from p_pawn.txt
+m
+0 1 0 1
+?moves < 1 0 2 whopper 1
+?1 1 1 1 0 0
+?-1 1 -1 1 0 0
+?-1 0 whopper*moves = 1 ?-1 0 team != team -1 1 0 0
+?1 0 double*moves = 1 ?1 0 team != team 1 1 0 0
+
+t
+0 -1 4
+0 -1 5
+#additional take for easier testing
+0 2 -1
+
+c
+?double+moves >= 6 4 0 0
+
+#added relocation phase to test relocation
+r
+-1 -1 1 1 -1
+1 1 -1 -1 -1
