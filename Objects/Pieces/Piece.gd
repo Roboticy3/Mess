@@ -21,7 +21,7 @@ var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/pieces/defaul
 			 "moves":0, "fx":0, "fy":0, "ff":0,
 			 "scale_mode": 0, "rotate_mode":0, "translate_mode":0,
 			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1,
-			 "team":0, "collision":0}
+			 "team":0, "collision":0, "lx":0, "ly":0}
 
 #piece types considered by the creation phase, indicated by their string path
 var piece_types:Array = []
@@ -171,6 +171,13 @@ func set_pos(var v:Vector2) -> void:
 
 func get_pos() -> Vector2:
 	return Vector2(table["px"], table["py"])
+	
+func set_last_pos(var v:Vector2) -> void:
+	table["lx"] = v.x
+	table["ly"] = v.y
+	
+func get_last_pos() -> Vector2:
+	return Vector2(table["lx"], table["ly"])
 	
 func set_team(var team:int = 0) -> void:
 	table["team"] = team

@@ -393,12 +393,12 @@ func execute_turn(var v:Vector2) -> Array:
 	
 	#gain an Array of changes to execute
 	var changes := compute_turn(v)
-
+	
 	#gain reference to the target piece and marks
 	var p:Piece = pieces[get_selected()]
 	
-	#the zeroth index of changes should be the updated piece dictionary
-	p.table = changes[0]
+	#move this piece as its primary assumed behavior
+	move_piece(get_selected(), v)
 	
 	#execute the changes
 	for i in changes.size():
@@ -450,17 +450,19 @@ func compute_turn(var v:Vector2) -> Array:
 	
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
-	var changes:Array = [p.table, PoolVector2Array([get_selected(), v])]
+	var changes:Array = [PoolVector2Array([get_selected(), v])]
 	#add changes from the piece
 	changes_from_piece(changes, p, v, old_tables)
 	changes_from_piece(changes, p, v, old_tables, move)
+	
+	print(changes)
 	
 	#print(p.table)
 	#print(old_tables)
 	
 	#revert the changes to the updated tables
-	p.table = old_tables[get_selected()]
-	m[move].table = old_tables[get_selected()]
+	for i in old_tables:
+		pieces[i].table = old_tables[i]
 	
 	return changes
 
@@ -497,18 +499,41 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		if old_tables.has(from):
 			continue
 		
-		#if the relocation beginning is invalid or empty, do not add any change
-		if from == Vector2.INF || !has(from): 
+		#copy of from that can change to where the piece is located in pieces
+		var shadow_from:Vector2 = from
+		
+		#if the relocation beginning is empty, do not add any change
+		if !has(from): 
+			
+			#check if from is missing from pieces because of an unsynced update to the pieces tables
+			var found := false
+			for i in old_tables:
+				if pieces[i].get_pos() == from:
+					found = true
+					shadow_from = i
+					break
+			
+			#if nothing is found, do not add any change because the from square is empty
+			if !found: continue
+		
+		#same if its invalid
+		if from == Vector2.INF:
 			continue
 		
 		#if the relocation target is invalid, set the change as a deletion
 		if to == Vector2.INF: c = from
 		
-		#store the current table of the piece being relocated, and update a duplicate of it
-		old_tables[from] = pieces[from].table.duplicate()
+		print(c)
 		
-		#add the change to the main Array
-		pieces[from].set_pos(to)
+		#store the current table of the piece being relocated, and update a duplicate of it
+		#make sure there is actually a piece here, if not, old_tables will already contain an entry for it because it must have been moved
+		if !old_tables.has(shadow_from): 
+			old_tables[shadow_from] = pieces[shadow_from].table.duplicate()
+		
+		#temporarily update the table of the piece being moved
+		pieces[shadow_from].set_pos(to)
+		
+		#add change to Array
 		changes.append(c)
 	
 	if bm.has("c"): for c in bm["c"]:
@@ -563,6 +588,7 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	
 	#update the piece's local position and increment its move count, return a success
 	pieces[to].set_pos(to)
+	pieces[to].set_last_pos(from)
 	return true
 
 #erase a piece from the board, return true if the method succeeds

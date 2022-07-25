@@ -365,3 +365,7 @@
 	 - added old_table caching to the relocate stage of compute_turn()
 	NEXT
 	 - test old_table caching with relocating and implement it for other phases
+7/25/2022
+	 - undid a lot of the work with compute_turn() in favor of simpler systems
+	NEXT
+	 - implement triggers for win an lose conditions
