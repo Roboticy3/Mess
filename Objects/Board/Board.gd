@@ -456,10 +456,7 @@ func compute_turn(var v:Vector2) -> Array:
 	changes_from_piece(changes, p, v, old_tables, move)
 	
 	#print(p.table)
-	print(old_tables)
-	
-	#reset the piece's position from the change in changes_from_piece
-	p.set_pos(get_selected())
+	#print(old_tables)
 	
 	#revert the changes to the updated tables
 	p.table = old_tables[get_selected()]
@@ -486,43 +483,32 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 	#iterate through each section of behaviors and convert their data into the changes dictionary
 	var bm:Dictionary = behaviors[idx]
 	
-	#print(bm)
-	
 	#check if one type of behavior is present
-	if bm.has("r"): for i in bm["r"].size():
-		var from:Vector2 = bm["r"][i][0]
-		var to:Vector2 = bm["r"][i][1]
-		
-		#if the relocation is from 0, 0, this piece is being moved
-		var move := false
-		if to == Vector2.ZERO:
-			move = true
+	if bm.has("r"): for r in bm["r"].size():
+		var from:Vector2 = bm["r"][r][0]
+		var to:Vector2 = bm["r"][r][1]
 		
 		#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
 		to = transform(to, piece)
 		from = transform(from, piece)
 		var c = PoolVector2Array([from, to])
 		
-		#print(pos,r)
+		#if from is in old_tables, this piece has already been moved, so don't try to again
+		if old_tables.has(from):
+			continue
+		
+		#if the relocation beginning is invalid or empty, do not add any change
+		if from == Vector2.INF || !has(from): 
+			continue
 		
 		#if the relocation target is invalid, set the change as a deletion
 		if to == Vector2.INF: c = from
-		#if the relocation beginning is invalid or empty, do not add any change
-		if from == Vector2.INF || !pieces.has(from): 
-			continue
-		#if the piece being moved has a slot in old_tables, check if its position has a temporary update
-		if old_tables.has(from):
-			#if the position has a temporary update, do not try to relocate the piece
-			if piece.get_pos() != from:
-				continue
 		
 		#store the current table of the piece being relocated, and update a duplicate of it
 		old_tables[from] = pieces[from].table.duplicate()
 		
-		#if the piece is being moved, update its position temporarily for transform() calls in later changes
-		if move: piece.set_pos(to)
-		
 		#add the change to the main Array
+		pieces[from].set_pos(to)
 		changes.append(c)
 	
 	if bm.has("c"): for c in bm["c"]:
@@ -533,6 +519,9 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		
 		#if the creation fails, do not add any change
 		if pos == Vector2.INF: continue
+		
+		#if the piece type being created is outside of the board's paths, do not add any change
+		if p_type > piece_paths.size(): continue
 		
 		changes.append([p_type, pos.x, pos.y])
 	

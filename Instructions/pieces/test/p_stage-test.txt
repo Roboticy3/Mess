@@ -11,7 +11,7 @@ m
 ?1 1 1 1 0 0
 ?-1 1 -1 1 0 0
 ?-1 0 whopper*moves = 1 ?-1 0 team != team -1 1 0 0
-?1 0 double*moves = 1 ?1 0 team != team 1 1 0 0
+?1 0 whopper*moves = 1 ?1 0 team != team 1 1 0 0
 
 t
 0 -1 4
@@ -26,4 +26,3 @@ c
 r
 -1 -1 1 1 -1
 1 -1 -1 1 -1
-0 0 0 1 1
