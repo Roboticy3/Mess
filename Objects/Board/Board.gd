@@ -508,7 +508,13 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		#if the relocation target is invalid, set the change as a deletion
 		if to == Vector2.INF: c = from
 		#if the relocation beginning is invalid or empty, do not add any change
-		if from == Vector2.INF || !pieces.has(from): continue
+		if from == Vector2.INF || !pieces.has(from): 
+			continue
+		#if the piece being moved has a slot in old_tables, check if its position has a temporary update
+		if old_tables.has(from):
+			#if the position has a temporary update, do not try to relocate the piece
+			if piece.get_pos() != from:
+				continue
 		
 		#store the current table of the piece being relocated, and update a duplicate of it
 		old_tables[from] = pieces[from].table.duplicate()

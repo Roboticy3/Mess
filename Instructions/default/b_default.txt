@@ -18,7 +18,7 @@ t
 
 g
 #this phase places pieces on the board, pieces are collected into an array via the paths below and called from 0 - n in the order they appear
-test/p_stage-test.txt
+default/p_pawn.txt
 default/p_rook.txt
 default/p_knight.txt
 default/p_bishop.txt

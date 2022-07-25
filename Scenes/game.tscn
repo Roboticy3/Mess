@@ -23,7 +23,7 @@ viewport_path = NodePath("Player/Viewport")
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 9 )
-path = "Instructions/default/b_default.txt"
+path = "Instructions/torus/b_torus.txt"
 
 [node name="Player" type="KinematicBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )

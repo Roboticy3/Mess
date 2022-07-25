@@ -25,4 +25,5 @@ c
 #added relocation phase to test relocation
 r
 -1 -1 1 1 -1
-1 1 -1 -1 -1
+1 -1 -1 1 -1
+0 0 0 1 1

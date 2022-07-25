@@ -360,3 +360,8 @@
 	NEXT
 	 - finish implementation of multiple temporary table updates for compute_turn()
 	 - begin designing the format for a simple take-the-king win condition in the new w phase
+7/24/2022
+	 - made p_stage-test.txt to replace pawns with when testing complex behavior
+	 - added old_table caching to the relocate stage of compute_turn()
+	NEXT
+	 - test old_table caching with relocating and implement it for other phases
