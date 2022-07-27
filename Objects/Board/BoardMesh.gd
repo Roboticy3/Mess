@@ -46,6 +46,9 @@ var players := Array()
 
 #set to true at the end of the begin() method, signifies that this BoardMesh and its Board are finished loading
 var awake := false
+
+#signal to emit when the board emits its win signal
+signal win
 	
 #construct the Board and the BoardMesh
 func begin(var _path:String = ""):
@@ -54,6 +57,9 @@ func begin(var _path:String = ""):
 	
 	#retrieve board reference from spatial parent if possible
 	board = Board.new(path)
+	
+	#link the board's win signal to this BoardMesh win signal
+	board.connect("win", self, "win")
 	
 	#the size is the maximum corner of the board minus the minimum
 	#"1" is added because the uv map considers 0, 0 as the bottom left corner and not the bottom left square
@@ -295,4 +301,11 @@ func handle(var v:Vector2, var team:int = 0):
 		#mark from selectable piece
 		mark(v)
 		
-	return board.get_team() #get team from board in case there is one player which has to switch
+	return get_team() #get team from board in case there is one player which has to switch
+
+func get_team() -> int:
+	return board.get_team()
+
+func win() -> void:
+	print(get_team())
+	emit_signal("win")

@@ -39,6 +39,9 @@ var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1,
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
 
+#signal to emit when the game ends, winning team indicated by get_team()
+signal win
+
 func _init(var _path:String):
 	path = _path
 	_ready()
@@ -451,7 +454,13 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	
 	#increment turn
 	turn += 1
-	print(teams[get_team()].get_table("key"))
+	
+	#check lose condition
+	if teams[get_team()].get_table("key") < 1:
+		#if true get the team from the last turn and emit them as the winner
+		turn -= 1
+		emit_signal("win")
+
 	#return Board updates
 	return changes
 
