@@ -33,6 +33,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color( 0.133333, 0.152941, 0.207843, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Title Screen" type="Control" parent="."]
 margin_right = 40.0

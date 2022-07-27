@@ -365,7 +365,9 @@
 	 - added old_table caching to the relocate stage of compute_turn()
 	NEXT
 	 - test old_table caching with relocating and implement it for other phases
-7/25/2022
+7/25-26/2022
 	 - undid a lot of the work with compute_turn() in favor of simpler systems
+	 - merged compute_turn() with execute_turn()
 	NEXT
 	 - implement triggers for win an lose conditions
+	 - rework execute_turn() and changes_from_piece() to have compute-only and execute modes. This is better than having two separate methods execute_turn() and compute_turn() because they do very similar things

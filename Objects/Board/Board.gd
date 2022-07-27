@@ -389,40 +389,7 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 #the only argument taken is a mark to select from marks
 #assumes both v is in pieces and v is in bounds
 #returns an Array of changes to the board
-func execute_turn(var v:Vector2) -> Array:
-	
-	#gain an Array of changes to execute
-	var changes := compute_turn(v)
-	
-	#gain reference to the target piece and marks
-	var p:Piece = pieces[get_selected()]
-	
-	#move this piece as its primary assumed behavior
-	move_piece(get_selected(), v)
-	
-	#execute the changes
-	for i in changes.size():
-		var c = changes[i]
-		if c is PoolVector2Array:
-			move_piece(c[0], c[1])
-		elif c is Array:
-			make_piece(c, p.get_team())
-		elif c is Vector2:
-			destroy_piece(c)
-	
-	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
-	marks.clear()
-	p.behaviors.clear()
-	
-	#increment turn
-	turn += 1
-	#print(teams[get_team()].get_table("key"))
-	#return Board updates
-	return changes
-	
-#compute a turn into an Array of changes without updating the board
-#changes are a set of PoolVector2Arrays of length 2 for relocations, Arrays for piece creation, and Vector2s for destructions
-func compute_turn(var v:Vector2) -> Array:
+func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	
 	#reference the piece being moved
 	var p:Piece = pieces[get_selected()]
@@ -455,15 +422,37 @@ func compute_turn(var v:Vector2) -> Array:
 	changes_from_piece(changes, p, v, old_tables)
 	changes_from_piece(changes, p, v, old_tables, move)
 	
-	print(changes)
-	
 	#print(p.table)
 	#print(old_tables)
 	
 	#revert the changes to the updated tables
 	for i in old_tables:
 		pieces[i].table = old_tables[i]
+		
+	#if compute_only is enabled, skip the rest of the method
+	if compute_only: return changes
 	
+	#move this piece as its primary assumed behavior
+	move_piece(get_selected(), v)
+	
+	#execute the changes
+	for i in changes.size():
+		var c = changes[i]
+		if c is PoolVector2Array:
+			move_piece(c[0], c[1])
+		elif c is Array:
+			make_piece(c, p.get_team())
+		elif c is Vector2:
+			destroy_piece(c)
+	
+	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
+	marks.clear()
+	p.behaviors.clear()
+	
+	#increment turn
+	turn += 1
+	print(teams[get_team()].get_table("key"))
+	#return Board updates
 	return changes
 
 #update an Array of changes to the board from an index of a behaviors dictionary
@@ -523,7 +512,7 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		#if the relocation target is invalid, set the change as a deletion
 		if to == Vector2.INF: c = from
 		
-		print(c)
+		#print(c)
 		
 		#store the current table of the piece being relocated, and update a duplicate of it
 		#make sure there is actually a piece here, if not, old_tables will already contain an entry for it because it must have been moved
