@@ -30,6 +30,9 @@ var clear_persist:bool = false
 #set to false to not vectorize instructions being read
 var vectorize:bool = false
 
+#set to false to allow stages to compute even if a line does not vectorize to anything
+var allow_empty:bool = false
+
 #initialize the Reader object
 #size represents the number of properties Reader can store across multiple lines, default 8
 func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _size:int = 8,
@@ -86,7 +89,12 @@ func read():
 		var I = Instruction.new(c, node.table, board)
 		
 		#append the current vector if this Reader is vectorizing
-		if vectorize: vec = I.vectorize()
+		if vectorize: 
+			vec = I.vectorize()
+		
+			#if the vector turns out to be empty and empty vectors are not allowed, move to the next iteration
+			if !allow_empty && vec.empty():
+				continue
 		
 		#find if any of the stages match the current one
 		#if so, call the method paired with the current stage

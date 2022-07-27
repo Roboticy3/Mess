@@ -75,7 +75,7 @@ func _ready():
 #warning-ignore:unused_argument
 func _phase(var I, var vec:Array, var persist:Array) -> void:
 	var key:String = ""
-	if !vec.empty(): key = I.update_table(table)
+	key = I.update_table(table)
 
 	if key.empty(): return
 
@@ -123,7 +123,7 @@ func t_phase(var I, var vec:Array, var persist:Array) -> void:
 	#allow for updates to the team's table after their declaration
 	var key:String = ""
 	var t:Dictionary = teams.back().table
-	if !vec.empty(): key = I.update_table(t)
+	key = I.update_table(t)
 
 	if key.empty(): return
 
@@ -176,6 +176,7 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 #the w phase handles generating winning and losing conditions for different teams
 #uses persistent "sub-stage" for the team index win conditions are being assigned to 
 func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
+	
 	pass
 
 #set piece and return set position from array of length 4

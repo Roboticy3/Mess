@@ -371,3 +371,8 @@
 	NEXT
 	 - implement triggers for win an lose conditions
 	 - rework execute_turn() and changes_from_piece() to have compute-only and execute modes. This is better than having two separate methods execute_turn() and compute_turn() because they do very similar things
+7/27/2022
+	 - added UI for winning/losing
+	 - added win signal to Board and BoardMesh
+	NEXT
+	 - start adding w phase
