@@ -1,5 +1,4 @@
 class_name Team
-extends Node
 
 #All of the piece which belong to this team
 var pieces:Dictionary = {}
@@ -19,12 +18,17 @@ var table:Dictionary = {"ff":0,"fx":0,"fy":1,"angle":0, #friendly fire, forward 
 	"cr":1.0,"cg":1.0,"cb":1.0 #team color
 	}
 
+#store keys that table and pieces' tables have at the beginning of the game to keep track of their values even if they dissapear
+var start_keys:Array = []
+
 func _init(var _c:Color = Color.white, var _f:Vector2 = Vector2(0, 1), 
 	var _ff:int = 0, var _i:int = 0):
 	set_color(_c)
 	set_ff(_ff)
 	set_forward(_f)
 	i = _i
+	
+	start_keys = table.keys()
 	
 func set_ff(var mode:int) -> void:
 	table["ff"] = mode
@@ -51,16 +55,23 @@ func set_selected(var s:Vector2) -> bool:
 	
 func get_selected() -> Vector2:
 	return Vector2(table["sx"],table["sy"])
-	
+
+#has, erase, and add act on pieces
 func has(var v:Vector2) -> bool:
 	return pieces.has(v)
 	
 func erase(var v:Vector2) -> bool:
 	return pieces.erase(v)
 	
+func add(var p, var v:Vector2) -> void:
+	pieces[v] = p
+	for k in p.table: if !start_keys.has(k): start_keys.append(k)
+	
+#get and keys act on table
+	
 #return value paired with the input key from the team's table
 #if the key is in any pieces' tables, returns the sum of that key's piece values across all pieces
-func get_table(var key:String):
+func get(var key:String):
 	
 	#return value to modify, not strongly typed because it could either be a float, int or string in the end
 	var value = 0
@@ -88,6 +99,8 @@ func get_table(var key:String):
 	#otherwise, return the value
 	return value
 	
+func keys() -> Array: return start_keys
+
 func set_color(var c:Color) -> void:
 	table["cr"] = c.r
 	table["cg"] = c.g

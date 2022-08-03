@@ -14,7 +14,7 @@ static func _parse_mtl_file(path, var debug:bool = false):
 	var file = File.new()
 	var err:int = file.open(path, File.READ)
 	if err > 0:
-		print("ObjParse::_parse_mtl_file() says \"file not found\"") 
+		print("ObjParse::_parse_mtl_file() says \"file at " + path + " not found\"") 
 		return {}
 	
 	var obj = file.get_as_text()
@@ -72,7 +72,7 @@ static func parse_obj(obj_path, mtl_path, var debug:bool = false) -> Mesh:
 	var file = File.new()
 	var err:int = file.open(obj_path, File.READ)
 	if err > 0: 
-		print("ObjParse::parse_obj() says \"file not found\"")
+		print("ObjParse::parse_obj() says \"file at " + obj_path + " not found\"")
 		return Mesh.new()
 	var obj = file.get_as_text()
 	var mats = _parse_mtl_file(mtl_path, debug)

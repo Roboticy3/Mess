@@ -23,7 +23,7 @@ viewport_path = NodePath("Player/Viewport")
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 9 )
-path = "Instructions/torus/b_torus.txt"
+path = "Instructions/default/b_default.txt"
 
 [node name="Player" type="KinematicBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )
@@ -42,6 +42,7 @@ current = true
 
 [node name="CSGBox" type="CSGBox" parent="Player/Player Camera"]
 transform = Transform( 8.64581e-16, -4.37114e-08, -1, 1, 4.37114e-08, -1.0461e-15, -4.37114e-08, 1, -4.37114e-08, -0.928716, -0.466045, -1.67538 )
+visible = false
 width = 0.803534
 height = 0.002
 depth = 1.31484
@@ -142,6 +143,7 @@ menu_path = NodePath("../WinLoss")
 signal_path = NodePath("../Board")
 signal_name = "win"
 is_overlay = true
+invert_on_unhidden = false
 
 [node name="WinLoss" type="Control" parent="."]
 visible = false

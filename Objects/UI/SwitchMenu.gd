@@ -21,6 +21,9 @@ export (bool) var is_signal_input := false
 #making an overlay effect as long as that menu does not opaquely cover the screen
 export (bool) var is_overlay := false
 
+#if false, the target menu path will not be hidden if the signal with signal_name is emitted while the menu is still open
+export (bool) var invert_on_unhidden := true
+
 #set of nodes to not hide
 const EXCLUDE:PoolStringArray = PoolStringArray(
 	["Background"]
@@ -59,7 +62,7 @@ func _process(_delta):
 func switch():
 	#if node is already visible, invert the process
 	var vis := true
-	if node.get("visible"): vis = false
+	if node.get("visible") && invert_on_unhidden: vis = false
 	
 	#iterate through siblings and hide all the ones that do not match the target node
 	for s in siblings:

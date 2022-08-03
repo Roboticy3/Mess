@@ -47,7 +47,7 @@ func _init(var _node:Node, var _funcs:Dictionary, var _path:String = "", var _si
 	vectorize = _vectorize
 	
 	badfile = !set_file(_path)
-			
+	
 func set_file(var f:String) -> bool:
 	
 	file = File.new()
@@ -55,15 +55,16 @@ func set_file(var f:String) -> bool:
 	#check if file d + f exists, if not, read from default
 	var file_error:int = file.open(f, File.READ)
 	if file_error > 0: return false
-		
-	#check if funcs contains default phase ""
-	#if not, attach a blank function to "phase", the default name for a phase function
-	if !funcs.has("~"):
-		funcs["~"] = "_phase"
 	return true
 	
 #read the instruction file starting from a certain stage
 func read():
+	
+	#check if funcs contains default phase "~"
+	#if not, attach a blank function to "_phase", the default name for a phase function
+	if !funcs.has("~"):
+		funcs["~"] = "_phase"
+	
 	#convert file to string array by line
 	var content = file.get_as_text().rsplit("\n")
 
@@ -82,11 +83,16 @@ func read():
 	
 	#loop through instruction lines
 	for c in content:
-		#strip edges off line
-		c = c.strip_edges()
+		#strip comments and edges off line
+		c = c.substr(0, c.find("#")).strip_edges()
 		
-		#create an instruction from the current line
-		var I = Instruction.new(c, node.table, board)
+		#create an instruction from the current line, 
+		#disable cutting comments in this Instruction with the last argument because of the above code
+		var I = Instruction.new(c, node.table, board, false)
+		
+		#if the instruction is empty and that is not allowed, skip to the next iteration
+		if !allow_empty && I.wrds.empty():
+			continue
 		
 		#append the current vector if this Reader is vectorizing
 		if vectorize: 

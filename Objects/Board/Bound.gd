@@ -37,20 +37,6 @@ func ab_to_rect(var _a:Vector2 = Vector2.ZERO, var _b:Vector2 = Vector2.ZERO):
 func is_surrounding(var v:Vector2, var inclusive:bool = true):
 	if inclusive: return a.x >= v.x && a.y >= v.y && v.x >= b.x && v.y >= b.y
 	else: return a.x > v.x && a.y > v.y && v.x > b.x && v.y > b.y
-	
-#parse boundary from text content c with a midpoint mp and stopping point sp
-func from_text(var c:String, var mp:int, var sp:int):
-	if (mp == 0): mp = c.length()
-	if (sp == 0): sp = c.length()
-	#create the Vectors with Instruction's vectorize() method
-	#its kind of like using a claymore to cut a pizza, yummy!
-	var v = Instruction.new(c.substr(0, mp)).vectorize()
-	var v2 = Instruction.new(c.substr(mp, sp)).vectorize()
-	
-	#ok so im going back through my comments to push more readable code and..
-	#this is insane and i love it
-	_init(v, v2)
-	return self
 
 #check if boundary is zeroed
 func is_zero():

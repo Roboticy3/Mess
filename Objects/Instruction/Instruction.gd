@@ -25,14 +25,20 @@ var board
 #automatically set to true if board is not null in init()
 var reads_board:bool = false
 
+#set to false if this Instruction is only being fed "clean" lines with no comments or surrounding white space
+var cut_comments := true
+
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=!="
 
-#fill variables of the object fully
-func _init(var _contents:String="", var _table:Dictionary={}, var _board = null):
+#initialize this Instruction object with proper formatting regardless of inputs
+func _init(var _contents:String="", var _table:Dictionary={}, var _board = null,
+	var _cut_comments:bool = true):
 	
-	contents = _contents.strip_edges()
+	contents = _contents
 	table = _table
+	
+	cut_comments = _cut_comments
 	
 	#if the board is being sent into the instruction for reference, then it is probably reading the board
 	if _board != null: reads_board = true
@@ -42,7 +48,7 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _board = null)
 	format()
 	
 #format a string into the wrds Array, optionally pull a table from another piece on the board
-func format(var start:int = 0, var length:int = -1, var square = null) -> void:
+func format(var start:int = 0, var length:int = -1, var t = table) -> void:
 	
 	#if wrds is empty, construct it from contents
 	wrds = to_string_array()
@@ -51,13 +57,9 @@ func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 	if length == -1: length = wrds.size() - start
 	#otherwise, fit length to wrds
 	else: length = min(wrds.size() - start, length)
-	
-	#take table from another square if a square is specified
-	if reads_board && board.has(square):
-		table = board.get_piece(square).table
 		
 	#sort table by key size, helps string replacement prioritize larger words
-	var keys:Array = table.keys()
+	var keys:Array = t.keys()
 	var sort:StringSort = StringSort.new()
 	keys.sort_custom(sort, "sort")
 
@@ -71,7 +73,8 @@ func format(var start:int = 0, var length:int = -1, var square = null) -> void:
 		w = w.strip_edges()
 		
 		for v in keys:
-			w = w.replace(v, String(table[v]))
+			var new_w := w.replace(v, String(t.get(v)))
+			w = new_w
 			
 		#send the formatted string back into wrds
 		wrds[i] = w
@@ -91,7 +94,7 @@ func vectorize(var start:int = 0) -> Array:
 	#reformat content to catch table updates
 	format()
 	
-	#slice from start
+	#slice wrds from start
 	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
 	#final return statements sent start back to s
@@ -108,7 +111,8 @@ func vectorize(var start:int = 0) -> Array:
 		last_start = start
 		return []
 		
-	#remove question mark from wrds[0] once it is confirmed of valid size and format
+		
+	#remove question mark from wrds[0] once it is confirmed of valid size and format for a conditional
 	w[0] = w[0].substr(1)
 	
 	#check for a shebang to invert the conditional
@@ -117,7 +121,8 @@ func vectorize(var start:int = 0) -> Array:
 		negate = true
 		w[0] = w[0].substr(1)
 	
-	#if next word is a conditional, the conditional consists of a simple comparison
+	#if there are enough words for a simple conditional, and the next word is a conditional, 
+	#the conditional consists of a simple comparison
 	if w.size() > 3 && SYMBL.find(w[1]) != -1:
 		#print(w,table)
 		var e:bool = evaluate(w)
@@ -126,52 +131,81 @@ func vectorize(var start:int = 0) -> Array:
 			return vectorize(start + 3)
 		#if the conditional fails, return nothing
 		return []
-	
-	#if the table does not indicate this instruction is for an object with position on the board, return nothing now
-	#otherwise, continue on to check if the conditional is asking for a square relative to this object's position
-	if !table.has("px") || !table.has("py"): return []
-	
-	#otherwise, see if the 4th word is a comparator
-	#no comparator means a square is being checked for presence
-	#4th meams another piece's table is being 
-	var length:int = 2
-	if SYMBL.find(w[3]) != -1: 
-		length = 5
-	
-	#if the statement is too short for the position, return an empty array
-	if w.size() <= length: return []
-	
-	#read the square being looked at by this instruction
+		
+	#if the board is not being read, do not try to evaluate any special conditional types
+	if !reads_board:
+		return []
+		
+	#read the first word into a number
 	var u = parse(w[0])
-	var v = parse(w[1])
+		
+	#if there are enough words for a team conditional, and the third word is a conditional,
+	#the conditional consists of a comparison on a team's value
+	if w.size() > 4 && SYMBL.find(w[2]) != -1:
+
+		#get the team from the first word as an offset from the current team
+		var team = board.teams[(board.get_team() + int(u)) % board.teams.size()]
+
+		#try and format it using the team... *as* a table? sure
+		format(1, 1, team)
+		w = wrds.slice(start, -1)
+		
+		#evaluate that shit
+		var e:bool = evaluate(w, 1)
+		if negate: e = !e
+		
+		if e:
+			return vectorize(start + 4)
+		else:
+			return []
+	
+	#read the second word to pair with u and make a square to do conditionals with
+	var v:float = parse(w[1])
 	
 	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
-	var x:Vector2 = Vector2(table["px"], table["py"])
-	var y:Vector2 = board.transform(Vector2(u, v), board.get_piece(x))
+	var y:Vector2 = Vector2(u, v)
 	
-	#check if the square is empty, if so treat as false when asking for a square or its pieces property
-	#this can still be negated
-	if !board.has(y):
-		if negate: return vectorize(start + length)
-		return []
+	#transform y into the right square through a transformation about the piece at this table's position
+	#only do so if this table has positional data, otherwise y will remain as read
+	if table.has("px") && table.has("py"):
+		var x:Vector2 = Vector2(table["px"], table["py"])
+		y = board.transform(y, board.get_piece(x))
 	
-	#if a square was being checked for presence, vectorize from the end of that square
-	#or.. yknow.. negate it
-	if length == 2:
-		if negate: return []
-		return vectorize(start + 2)
+	#check if the board has a piece at y
+	var has:bool = board.has(y)
+	
+	
+	#if there are enough words for a relative conditional, and the 4th word is a conditional,
+	#the conditional consists of a conditional based on another square's property
+	if w.size() > 5 && SYMBL.find(w[3]) != -1:
 		
-	#if a square was being checked for its piece's property, 
-	#evaluate it against the other end of the comparator
-	if length == 5:
-		#format the one term on the left of the comparator to use the table of the piece being checked against
-		format(start + 2, 1, y)#reinitialize w to use the reformatted wrds Array
+		#check if the square is empty, if so treat conditional as false when asking for a square or its pieces property
+		#this can still be negated
+		if !has:
+			if negate: return vectorize(start + 5)
+			return []
+
+		#reinitialize w to use the new table
+		format(start + 2, 1, board.get_piece(y).table)
 		w = wrds.slice(start, wrds.size() - 1)
+		
 		#evaluate the comparison
 		var e:bool = evaluate(w, 2)
 		if negate: e = !e
+		
 		if e:
+			#print(y,w)
 			return vectorize(start + 5)
+		else:
+			return []
+	
+	#if the conditional is long enough to check for a square's presence, there does not need to be a comparator
+	if wrds.size() > 2:
+		if has && !negate:
+			return vectorize(start + 2)
+		else:
+			return []
+		
 	
 	#if all else fails, return an empty Array
 	return []
@@ -219,9 +253,9 @@ func evaluate(var w:Array = [], var start:int = 0):
 				return true
 			elif a[0] == a[2]:
 				return true
-		elif (sgn == ">" && a[0] > a[2]):
+		elif (sgn.match(">") && a[0] > a[2]):
 			return true
-		elif (sgn == "<" && a[0] < a[2]):
+		elif (sgn.match("<") && a[0] < a[2]):
 			return true
 		
 	return false
@@ -256,7 +290,7 @@ func parse(var string=contents, var nullable:bool = false):
 func to_string_array(var c:String = contents, var start:int = 0) -> Array:
 
 	#cut spaces so that spaces between final whitespace is not counted
-	c = c.substr(0, c.find("#")).strip_edges()
+	if cut_comments: c = c.substr(0, c.find("#")).strip_edges()
 	
 	#keep array of invalid words and array of words to return
 	var r:PoolIntArray = []

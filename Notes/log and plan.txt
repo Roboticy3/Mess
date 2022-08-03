@@ -376,3 +376,19 @@
 	 - added win signal to Board and BoardMesh
 	NEXT
 	 - start adding w phase
+	 
+8/2/2022
+	 - refactored vectorize() again to allow for more flexible addition of different types of conditionals, making way for team conditionals to be used for win conditions
+	 - added a flag to SwitchMenu which allows it to not turn invisible if its target signal is detected while it is visible
+	 - added a flag to Instruction that makes it not try to format away comments when another script has already done so
+	 - added skeleton for team conditions
+	 - added ability for winning team to play infinite moves in the background of a finished game
+	NEXT
+	 - think about how teams should refer to each-other relative to themselves in team conditionals
+	 - finish implementing team conditionals
+	 - start thinking about making Board look ahead to make checkmate
+8/3/2022
+	 - did some quick work to set up team conditionals
+	 - teams can now be treated more or less like dictionaries
+	NEXT
+	 - integrate team conditionals into winning and losing

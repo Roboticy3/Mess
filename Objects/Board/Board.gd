@@ -39,6 +39,9 @@ var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1,
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
 
+#array of Instructions to vectorize to evaluate win conditions
+var win_conditions:Array = []
+
 #signal to emit when the game ends, winning team indicated by get_team()
 signal win
 
@@ -52,17 +55,26 @@ func _ready():
 		path += ".txt"
 		
 	
-	#tell Reader object which functions to call
+	#tell Reader object which functions to call, ignore w phase for now
 	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", 
-		"g":"g_phase", "w":"w_phase"}
+		"g":"g_phase", "w":""}
 	
 	#read the Instruction file
-	var r:Reader = Reader.new(self, funcs, path)
+	var r:Reader = Reader.new(self, funcs, path, 8, self)
 	#if Reader sees a bad file, do not continue any further
 	if r.badfile: 
-		print("Board not found at path \"" + path + "\"")
+		print("Board::_ready() says \"board at " + path + " not found\"")
 		return
 	r.read()
+	
+	#read the w_phase only, not bothering to vectorize them until they need to be evaluated
+	r.funcs = {"w":"w_phase"}
+	r.wait = true
+	r.vectorize = false
+	r.allow_empty = false
+	r.read()
+	
+	print(win_conditions)
 	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
@@ -174,11 +186,10 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 			make_piece(vec, persist[0] + 1)
 			
 #the w phase handles generating winning and losing conditions for different teams
-#uses persistent "sub-stage" for the team index win conditions are being assigned to 
+#these instructions only need to be stored, to be later evaluated when necessary
 func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
+	win_conditions.append(I)
 	
-	pass
-
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
 func make_piece(var i:Array, var team:int) -> Vector2:
@@ -201,7 +212,7 @@ func make_piece(var i:Array, var team:int) -> Vector2:
 			
 		#add the piece to the dictionary
 		pieces[v] = p
-		teams[team].pieces[v] = p
+		teams[team].add(p, v)
 	
 	return v
 
@@ -261,6 +272,7 @@ func mark(var v:Vector2):
 		m[i].table = p.table
 		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
+		#print(m[i],a)
 		
 		#get line type from the 3rd number and move type from 4th
 		#only do this if index 2 has not been formatted during vectorize(),
@@ -405,7 +417,7 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	#temporarily update the piece's table with its mark's updates
 	var old_tables:Dictionary = {get_selected():p.table.duplicate()}
 	
-	#increment moves
+	#increment moves and update the piece's table from the selected mark
 	m[move].update_table_line()
 	p.table["moves"] += 1
 	
@@ -429,12 +441,11 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	#print(p.table)
 	#print(old_tables)
 	
-	#revert the changes to the updated tables
-	for i in old_tables:
-		pieces[i].table = old_tables[i]
-		
-	#if compute_only is enabled, skip the rest of the method
-	if compute_only: return changes
+	#if compute_only is enabled revert the changes to the updated tables and return changes here
+	if compute_only: 
+		for i in old_tables:
+			pieces[i].table = old_tables[i]
+		return changes
 	
 	#move this piece as its primary assumed behavior
 	move_piece(get_selected(), v)
@@ -453,15 +464,18 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	marks.clear()
 	p.behaviors.clear()
 	
+	for I in win_conditions:
+		print(I,I.vectorize())
+	
 	#increment turn
 	turn += 1
 	
-	#check lose condition
-	if teams[get_team()].get_table("key") < 1:
-		#if true get the team from the last turn and emit them as the winner
-		turn -= 1
-		emit_signal("win")
-
+#	#check lose condition
+#	if teams[get_team()].get("key") < 1:
+#		turn -= 1
+#		#if true get the team from the last turn and emit them as the winner
+#		emit_signal("win")
+	
 	#return Board updates
 	return changes
 
@@ -493,10 +507,6 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		to = transform(to, piece)
 		from = transform(from, piece)
 		var c = PoolVector2Array([from, to])
-		
-		#if from is in old_tables, this piece has already been moved, so don't try to again
-		if old_tables.has(from):
-			continue
 		
 		#copy of from that can change to where the piece is located in pieces
 		var shadow_from:Vector2 = from
