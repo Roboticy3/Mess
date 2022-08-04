@@ -1,7 +1,7 @@
 class_name SelectBoard
 extends MenuButton
 
-#AddBoards Class by Pablo Ibarz
+#SelectBoard Class by Pablo Ibarz
 #created July 2022
 
 #Given a directory, find all the folders containing a board file (e.g. "b_name.txt") in that directory

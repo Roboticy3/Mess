@@ -392,3 +392,9 @@
 	 - teams can now be treated more or less like dictionaries
 	NEXT
 	 - integrate team conditionals into winning and losing
+8/4/2022
+	 - discovered 2 issues: raycast() and query() stop working when the resolution changes, and black king can't castle.
+	 - the first can be fixed by forcing the root viewport to be the same resolution as the window, which apparently doesn't happen normally
+	 - the second can be fixed by re-adding the empty check before reconstructing wrds in format() no idea why I got rid of this
+	 - also fixed negation with square checks by replacing the ANDNOT check with a XOR check
+	

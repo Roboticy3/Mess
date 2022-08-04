@@ -464,8 +464,8 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	marks.clear()
 	p.behaviors.clear()
 	
-	for I in win_conditions:
-		print(I,I.vectorize())
+#	for I in win_conditions:
+#		print(I,I.vectorize())
 	
 	#increment turn
 	turn += 1

@@ -238,7 +238,7 @@ static func raycast(var p:Vector2, var c:Camera,
 	var o:Vector3 = c.project_ray_origin(p)
 	var n:Vector3 = c.project_ray_normal(p)
 	#get ray intersection with that scene
-	var r = s.intersect_ray(o, n * v, [], mask)
+	var r = s.intersect_ray(o, o + n * v, [], mask)
 	#if the intersection lands, return r
 	if !r.empty():
 		return r

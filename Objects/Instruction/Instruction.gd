@@ -48,16 +48,20 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _board = null,
 	format()
 	
 #format a string into the wrds Array, optionally pull a table from another piece on the board
+#	it is not recommended to use first and then set start and length as well, as this will unformat parts of wrds without reformatting them
+#start and length can specify a slice of wrds to format, length of -1 will format until the end of wrds
+#t is the table variables will be formatted with, set to this Instruction's table by default, but can also take other tables and even Team objects
 func format(var start:int = 0, var length:int = -1, var t = table) -> void:
 	
-	#if wrds is empty, construct it from contents
-	wrds = to_string_array()
+	#if wrds is empty reconstruct wrds from contents
+	var s = to_string_array()
+	if wrds.empty(): wrds = s
 	
 	#if length is -1, set it to the length of the array - start
 	if length == -1: length = wrds.size() - start
 	#otherwise, fit length to wrds
 	else: length = min(wrds.size() - start, length)
-		
+	
 	#sort table by key size, helps string replacement prioritize larger words
 	var keys:Array = t.keys()
 	var sort:StringSort = StringSort.new()
@@ -65,6 +69,9 @@ func format(var start:int = 0, var length:int = -1, var t = table) -> void:
 
 	#replace terms in table key set with their value pairs
 	for i in range(start, start + length):
+		#unformat the current word
+		wrds[i] = s[i]
+		
 		#don't try to work outside of the range of wrds
 		if i > wrds.size(): break
 		
@@ -184,7 +191,7 @@ func vectorize(var start:int = 0) -> Array:
 		if !has:
 			if negate: return vectorize(start + 5)
 			return []
-
+		
 		#reinitialize w to use the new table
 		format(start + 2, 1, board.get_piece(y).table)
 		w = wrds.slice(start, wrds.size() - 1)
@@ -194,14 +201,13 @@ func vectorize(var start:int = 0) -> Array:
 		if negate: e = !e
 		
 		if e:
-			#print(y,w)
 			return vectorize(start + 5)
 		else:
 			return []
 	
 	#if the conditional is long enough to check for a square's presence, there does not need to be a comparator
 	if wrds.size() > 2:
-		if has && !negate:
+		if (has && !negate) || (!has && negate):
 			return vectorize(start + 2)
 		else:
 			return []

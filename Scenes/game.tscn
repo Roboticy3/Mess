@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=2]
+[gd_scene load_steps=18 format=2]
 
 [ext_resource path="res://Materials/viewport_debug.tres" type="Material" id=1]
 [ext_resource path="res://Instructions/torus/meshes/torus.obj" type="ArrayMesh" id=2]
@@ -12,7 +12,7 @@
 [ext_resource path="res://Objects/UI/SwitchMenu.gd" type="Script" id=10]
 [ext_resource path="res://UI/Themes/MenuTheme.tres" type="Theme" id=11]
 [ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=12]
-[ext_resource path="res://Objects/UI/ScaleToWindow.gd" type="Script" id=13]
+[ext_resource path="res://Objects/UI/ResizeViewports.gd" type="Script" id=13]
 [ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=14]
 
 [sub_resource type="SphereShape" id=2]
@@ -20,6 +20,37 @@ radius = 0.20507
 
 [sub_resource type="ViewportTexture" id=3]
 viewport_path = NodePath("Player/Viewport")
+
+[sub_resource type="GDScript" id=4]
+script/source = "class_name ScaleToWindow
+extends Node
+
+#ScaleToWindow class by Pablo Ibarz
+#created July 2022
+
+#Attach to the a Viewport to scale it to the current window size
+
+var last_window_size:Vector2
+
+export (NodePath) var viewport_path:NodePath
+var viewport:Viewport
+
+export (bool) var root := true
+
+func _ready():
+	if root:
+		viewport = get_tree().root.get_viewport()
+	else:
+		viewport = get_node(viewport_path)
+
+func _process(delta):
+	if OS.get_window_size() != last_window_size:
+		last_window_size = OS.get_window_size()
+		resize()
+	
+func resize():
+	viewport.set_size(OS.get_window_size())
+"
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 9 )
@@ -42,7 +73,6 @@ current = true
 
 [node name="CSGBox" type="CSGBox" parent="Player/Player Camera"]
 transform = Transform( 8.64581e-16, -4.37114e-08, -1, 1, 4.37114e-08, -1.0461e-15, -4.37114e-08, 1, -4.37114e-08, -0.928716, -0.466045, -1.67538 )
-visible = false
 width = 0.803534
 height = 0.002
 depth = 1.31484
@@ -93,7 +123,7 @@ visible = false
 modulate = Color( 1, 1, 1, 0.588235 )
 margin_right = 1920.0
 margin_bottom = 1080.0
-script = ExtResource( 13 )
+script = SubResource( 4 )
 
 [node name="ColorRect" type="ColorRect" parent="EscMenu"]
 margin_right = 1920.0
@@ -150,7 +180,7 @@ visible = false
 modulate = Color( 1, 1, 1, 0.588235 )
 margin_right = 1920.0
 margin_bottom = 1080.0
-script = ExtResource( 13 )
+script = SubResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -221,3 +251,11 @@ margin_bottom = 49.0
 theme = ExtResource( 11 )
 text = "    Quit To Desktop    "
 script = ExtResource( 14 )
+
+[node name="ResizeViewports" type="Node" parent="."]
+script = ExtResource( 13 )
+viewport_paths = [ NodePath("../Player/Viewport") ]
+
+[node name="Control" type="Control" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0

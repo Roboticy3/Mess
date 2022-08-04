@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://UI/Fonts/Title.tres" type="DynamicFont" id=1]
 [ext_resource path="res://UI/Themes/MenuTheme.tres" type="Theme" id=2]
@@ -6,7 +6,6 @@
 [ext_resource path="res://Objects/UI/SwitchMenu.gd" type="Script" id=4]
 [ext_resource path="res://Objects/UI/SelectBoard.gd" type="Script" id=5]
 [ext_resource path="res://Objects/UI/PropertyCopier.gd" type="Script" id=6]
-[ext_resource path="res://Objects/UI/ScaleToWindow.gd" type="Script" id=7]
 [ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=8]
 [ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=10]
 
@@ -19,9 +18,6 @@ shortcut = SubResource( 1 )
 [node name="Menu" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_right = 896.0
-margin_bottom = 480.0
-script = ExtResource( 7 )
 
 [node name="Background" type="ColorRect" parent="."]
 material = ExtResource( 3 )
@@ -30,27 +26,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color( 0.133333, 0.152941, 0.207843, 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="Title Screen" type="Control" parent="."]
-margin_right = 40.0
-margin_bottom = 40.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+anchor_left = 0.5
+anchor_right = 0.5
+rect_scale = Vector2( 0.8, 0.8 )
 
 [node name="Title Frame" type="VBoxContainer" parent="Title Screen"]
-anchor_left = 0.1
-anchor_right = 0.9
-anchor_bottom = 1.0
-margin_left = 245.0
-margin_right = 1596.0
-margin_bottom = 673.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+margin_left = -973.0
+margin_right = 110.0
+margin_bottom = 681.0
+rect_scale = Vector2( 1.4, 1.4 )
 
 [node name="Title" type="Label" parent="Title Screen/Title Frame"]
 margin_right = 1440.0
@@ -63,26 +49,24 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Buttons" type="VBoxContainer" parent="Title Screen/Title Frame"]
-margin_top = 685.0
-margin_right = 1440.0
-margin_bottom = 745.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+[node name="Buttons" type="VBoxContainer" parent="Title Screen"]
+margin_left = -740.0
+margin_top = 959.0
+margin_right = 740.0
+margin_bottom = 1019.0
 
-[node name="Load Board" type="Button" parent="Title Screen/Title Frame/Buttons"]
-margin_right = 1440.0
+[node name="Load Board" type="Button" parent="Title Screen/Buttons"]
+margin_right = 1480.0
 margin_bottom = 28.0
 theme = ExtResource( 2 )
 text = "Load Board"
 script = ExtResource( 4 )
-menu_path = NodePath("../../../../Load Board")
-focus_path = NodePath("../../../../Load Board/Center Frame/Input/Board Finder")
+menu_path = NodePath("../../../Load Board")
+focus_path = NodePath("../../../Load Board/Center Frame/Input/Board Finder")
 
-[node name="Quit" type="Button" parent="Title Screen/Title Frame/Buttons"]
+[node name="Quit" type="Button" parent="Title Screen/Buttons"]
 margin_top = 32.0
-margin_right = 1440.0
+margin_right = 1480.0
 margin_bottom = 60.0
 theme = ExtResource( 2 )
 text = "Quit"
@@ -90,26 +74,21 @@ script = ExtResource( 8 )
 
 [node name="Load Board" type="Control" parent="."]
 visible = false
-margin_right = 40.0
-margin_bottom = 40.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+anchor_left = 0.5
+anchor_right = 0.5
 
 [node name="Center Frame" type="AspectRatioContainer" parent="Load Board"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = -135.0
-margin_right = 1872.0
-margin_bottom = 1211.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -900.0
+margin_top = -121.0
+margin_right = 900.0
+margin_bottom = 1258.0
 
 [node name="Top Text" type="VBoxContainer" parent="Load Board/Center Frame"]
-margin_left = 236.0
-margin_right = 1676.0
-margin_bottom = 1386.0
+margin_left = 180.0
+margin_right = 1620.0
+margin_bottom = 1379.0
 
 [node name="Load" type="Label" parent="Load Board/Center Frame/Top Text"]
 margin_right = 1440.0
@@ -122,15 +101,14 @@ __meta__ = {
 }
 
 [node name="Bottom Text" type="VBoxContainer" parent="Load Board/Center Frame"]
-margin_left = 56.0
-margin_right = 1856.0
-margin_bottom = 1386.0
+margin_right = 1800.0
+margin_bottom = 1379.0
 alignment = 2
 
 [node name="Board" type="Label" parent="Load Board/Center Frame/Bottom Text"]
-margin_top = 705.0
+margin_top = 698.0
 margin_right = 1800.0
-margin_bottom = 1386.0
+margin_bottom = 1379.0
 theme = ExtResource( 2 )
 custom_fonts/font = ExtResource( 1 )
 text = "Board"
@@ -140,15 +118,15 @@ __meta__ = {
 }
 
 [node name="Input" type="VBoxContainer" parent="Load Board/Center Frame"]
-margin_left = 263.0
-margin_right = 1649.0
-margin_bottom = 1386.0
+margin_left = 210.5
+margin_right = 1589.5
+margin_bottom = 1379.0
 alignment = 1
 
 [node name="Board Path" type="LineEdit" parent="Load Board/Center Frame/Input"]
-margin_top = 663.0
-margin_right = 1386.0
-margin_bottom = 691.0
+margin_top = 659.0
+margin_right = 1379.0
+margin_bottom = 687.0
 theme = ExtResource( 2 )
 align = 1
 placeholder_text = "Enter Board Name"
@@ -163,25 +141,22 @@ destination_path = NodePath(".")
 destination_property_name = "text"
 
 [node name="Board Finder" type="MenuButton" parent="Load Board/Center Frame/Input"]
-margin_top = 695.0
-margin_right = 1386.0
-margin_bottom = 723.0
+margin_top = 691.0
+margin_right = 1379.0
+margin_bottom = 719.0
 theme = ExtResource( 2 )
 text = "or Select Board"
 switch_on_hover = true
 script = ExtResource( 5 )
 
 [node name="Buttons" type="VBoxContainer" parent="Load Board"]
-margin_left = 1289.0
-margin_top = 602.0
-margin_right = 1600.0
-margin_bottom = 694.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+margin_left = 400.0
+margin_top = 600.0
+margin_right = 596.0
+margin_bottom = 692.0
 
 [node name="Ready" type="Button" parent="Load Board/Buttons"]
-margin_right = 311.0
+margin_right = 196.0
 margin_bottom = 28.0
 theme = ExtResource( 2 )
 text = "Ready"
@@ -201,7 +176,7 @@ destination_property_name = "path"
 
 [node name="Refresh" type="Button" parent="Load Board/Buttons"]
 margin_top = 32.0
-margin_right = 311.0
+margin_right = 196.0
 margin_bottom = 60.0
 theme = ExtResource( 2 )
 text = "Refresh Boards"
@@ -209,14 +184,14 @@ align = 2
 
 [node name="Back" type="Button" parent="Load Board/Buttons"]
 margin_top = 64.0
-margin_right = 311.0
+margin_right = 196.0
 margin_bottom = 92.0
 theme = ExtResource( 2 )
 shortcut = SubResource( 2 )
 text = "Back"
 script = ExtResource( 4 )
 menu_path = NodePath("../../../Title Screen")
-focus_path = NodePath("../../../Title Screen/Title Frame/Buttons/Load Board")
+focus_path = NodePath("../../../Title Screen/Buttons/Load Board")
 
 [connection signal="text_changed" from="Load Board/Center Frame/Input/Board Path" to="Load Board/Center Frame/Input/Board Path" method="emit"]
 [connection signal="pressed" from="Load Board/Buttons/Refresh" to="Load Board/Center Frame/Input/Board Finder" method="refresh"]

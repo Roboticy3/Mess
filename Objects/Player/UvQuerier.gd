@@ -32,20 +32,27 @@ func set_mesh(var m:Mesh) -> void:
 #if no uv position is found, it returns Vector2(NaN, NaN)
 func query(var screen_position:Vector2) -> Vector2:
 	
+	#do not try to work with empty textures
 	if texture.get_size() == Vector2.ZERO: return Vector2(NAN, NAN)
 	
+	#build an image from the texture, which can be queried for colors
 	var image:Image = texture.get_data()
 	image.lock()
+
+	#lock the pixel coordinates to integers and get the pixel at those coordinates from the image
+	var spx := int(screen_position.x)
+	var spy := int(screen_position.y)
+	var color:Color = image.get_pixel(spx, spy)
 	
-	var color:Color = image.get_pixelv(screen_position)
 	#UVs.tres encodes the uv coordinates on a CSGMesh into the red and green channels
+	#and uses and alpha value of zero if its mesh does not occupy this pixel
 	if color.a != 0.0: 
 		var uv:Vector2 = Vector2(color.r, color.g)
 		return sRGBxy_to_linear(uv)
 	
 	return Vector2(NAN, NAN)
 
-#convert UV in shader from sRGB to linear
+#convert UV in shader from sRGB to linear space
 func sRGBxy_to_linear(var uv:Vector2):
 	var x := sRGBx_to_linear(uv.x)
 	var y := sRGBx_to_linear(uv.y)
@@ -71,4 +78,3 @@ func _process(var _delta:float) -> void:
 	camera.far = target.far
 	camera.size = target.size
 	
-	size = get_tree().root.get_viewport().size
