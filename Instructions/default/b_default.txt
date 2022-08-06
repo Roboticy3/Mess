@@ -37,10 +37,10 @@ default/p_king.txt
 
 #rooks, bishops, knights
 1 0 0 0
-#2 1 0
-#3 2 0
-#3 5 0
-#2 6 0
+2 1 0
+3 2 0
+3 5 0
+2 6 0
 1 7 0
 
 #kings and queens
@@ -50,5 +50,6 @@ default/p_king.txt
 4 3 7
 
 w
-?0 key < 1 -1
+?1 key < 1 1 1
+?0 key = 2 0 1
 

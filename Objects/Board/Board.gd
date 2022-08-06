@@ -41,6 +41,9 @@ var marks:Dictionary = {}
 
 #array of Instructions to vectorize to evaluate win conditions
 var win_conditions:Array = []
+#array of winning and losing teams to populate when the game ends
+var winners:PoolIntArray = []
+var losers:PoolIntArray = []
 
 #signal to emit when the game ends, winning team indicated by get_team()
 signal win
@@ -464,17 +467,20 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	marks.clear()
 	p.behaviors.clear()
 	
-#	for I in win_conditions:
-#		print(I,I.vectorize())
+	#compute win conditions for this turn
+	var results := evaluate_win_conditions()
 	
-	#increment turn
-	turn += 1
-	
-#	#check lose condition
-#	if teams[get_team()].get("key") < 1:
-#		turn -= 1
-#		#if true get the team from the last turn and emit them as the winner
-#		emit_signal("win")
+	#if any results came back, the game is ending this turn
+	#check the results to see who wins and looses and emit the signal to end the game
+	if !results.empty():
+		for r in results:
+			if r[1]: winners.append(r[0])
+			else: losers.append(r[0])
+		emit_signal("win")
+	#otherwise, just increment the turn on the board an move on
+	else:
+		#increment turn
+		turn += 1
 	
 	#return Board updates
 	return changes
@@ -568,6 +574,48 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		
 		changes.append(d)
 
+#vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
+#each element of the array contains at its end an index for its source Instruction in win conditions, and contains the following:
+# the team it affects, and whether it is a win or loss
+func evaluate_win_conditions() -> Array:
+	
+	#final array to return
+	var results:Array = []
+	
+	#vectorize all of the board's win conditions into data
+	for i in win_conditions.size():
+		var I:Instruction = win_conditions[i]
+		
+		#if vectorize() returns an empty array, skip this iteration
+		var vec:Array = I.vectorize()
+		if vec.empty(): continue
+		
+		#add this win condition in a default state, marked as non-applicable
+		var result:Array = [0, true, i]
+		
+		#the first element is the team relative to the current team's index that is being affected by this condition
+		result[0] = get_team(int(vec[0]))
+		
+		#the second element (optional) is whether this condition represents a win (0) or a loss (other)
+		var win:bool = true
+		if vec.size() > 1: win = int(vec[1]) == 0
+		result[1] = win
+		
+		#all subsequent elements are indices of teams whose turns on which these conditions can be executed
+		#if there are no extra elements, this condition can be used on any turn
+		var apply:bool = true
+		if vec.size() > 2: apply = false
+		#if any of the extra elements match the current team, this win condition is applicable, and can be added to the final results
+		for j in range(2, vec.size()):
+			if int(vec[j]) == get_team(): 
+				apply = true
+				break
+				
+		#add the result into the final Array
+		if apply: results.append(result)
+		
+	return results
+
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:
 	
@@ -578,7 +626,7 @@ func transform(var v:Vector2, var piece:Piece) -> Vector2:
 	
 	if pos.empty(): return Vector2.INF
 	return pos.keys()[0]
-
+	
 #move the piece on from onto to
 func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	#if no piece is in the from square, do not attempt to move from it
@@ -611,8 +659,8 @@ func destroy_piece(var at:Vector2) -> bool:
 #Various getters and setters
 
 #get the team of the current turn by taking turn % teams.size()
-func get_team() -> int:
-	return turn % teams.size()
+func get_team(var offset:int = 0) -> int:
+	return (turn + offset) % teams.size()
 	
 func get_name() -> String:
 	return table["name"]

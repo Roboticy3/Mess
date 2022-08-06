@@ -96,7 +96,7 @@ class StringSort:
 
 #WIP evaluate conditional statements, made up of a wrds Array of length 3 or more that can solve inequalities
 #returning [] is equivalent to returning false and anything else is equivalent to true
-func vectorize(var start:int = 0) -> Array:
+func vectorize(var start:int = 0, var allow_conditionals:bool = true) -> Array:
 	
 	#reformat content to catch table updates
 	format()
@@ -112,7 +112,10 @@ func vectorize(var start:int = 0) -> Array:
 	#if input is not a conditional, return parsed array
 	if !w[0].begins_with("?"):
 		last_start = start
-		return array_parse(start)
+		return array_parse(start, allow_conditionals)
+	#if conditionals are not allowed at this point, return an empty array
+	if !allow_conditionals:
+		return []
 	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
 	if w.size() < 3:
 		last_start = start
@@ -151,7 +154,7 @@ func vectorize(var start:int = 0) -> Array:
 	if w.size() > 4 && SYMBL.find(w[2]) != -1:
 
 		#get the team from the first word as an offset from the current team
-		var team = board.teams[(board.get_team() + int(u)) % board.teams.size()]
+		var team = board.teams[board.get_team(int(u))]
 
 		#try and format it using the team... *as* a table? sure
 		format(1, 1, team)
@@ -216,7 +219,7 @@ func vectorize(var start:int = 0) -> Array:
 	#if all else fails, return an empty Array
 	return []
 			
-func array_parse(var start:int = 0):
+func array_parse(var start:int = 0, var allow_conditionals:bool = true):
 	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
 	#create return object
@@ -226,7 +229,7 @@ func array_parse(var start:int = 0):
 	for i in w.size():
 		#if there is a conditional in a later index of wrds, 
 		#call vectorize starting at that point and append the result to nums, then break the loop
-		if w[i].begins_with("?"):
+		if w[i].begins_with("?") && allow_conditionals:
 			nums.append_array(vectorize(start + i))
 			break
 		var n = parse(w[i])

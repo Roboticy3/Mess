@@ -395,6 +395,14 @@
 8/4/2022
 	 - discovered 2 issues: raycast() and query() stop working when the resolution changes, and black king can't castle.
 	 - the first can be fixed by forcing the root viewport to be the same resolution as the window, which apparently doesn't happen normally
-	 - the second can be fixed by re-adding the empty check before reconstructing wrds in format() no idea why I got rid of this
+	 - the second can be fixed making format() only format the segment its being asked for
 	 - also fixed negation with square checks by replacing the ANDNOT check with a XOR check
-	
+	NEXT
+	>>8/3/2022
+8/6/2022
+	 - implemented win conditions!
+	 - boards now have arrays of winners and losers as team indices
+	 - get_team() now has an "offset" argument to make searching neighboring teams more concise
+	NEXT
+	 - make the Game Over screen display the winners and losers
+	 - make turn a table property for both boards and teams
