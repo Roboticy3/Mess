@@ -403,6 +403,10 @@
 	 - implemented win conditions!
 	 - boards now have arrays of winners and losers as team indices
 	 - get_team() now has an "offset" argument to make searching neighboring teams more concise
+	 - gave vectorize() an argument to ignore conditionals, which could occasionally be advantageous for efficiency
 	NEXT
 	 - make the Game Over screen display the winners and losers
 	 - make turn a table property for both boards and teams
+	 - make the t phase able to adjust team table properties after a team is initialized
+	 - test update_table_line() with conditionals
+	 
