@@ -14,6 +14,7 @@
 [ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=12]
 [ext_resource path="res://Objects/UI/ResizeViewports.gd" type="Script" id=13]
 [ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=14]
+[ext_resource path="res://Objects/UI/PropertyCopier.gd" type="Script" id=15]
 
 [sub_resource type="SphereShape" id=2]
 radius = 0.20507
@@ -21,40 +22,13 @@ radius = 0.20507
 [sub_resource type="ViewportTexture" id=3]
 viewport_path = NodePath("Player/Viewport")
 
-[sub_resource type="GDScript" id=4]
-script/source = "class_name ScaleToWindow
-extends Node
-
-#ScaleToWindow class by Pablo Ibarz
-#created July 2022
-
-#Attach to the a Viewport to scale it to the current window size
-
-var last_window_size:Vector2
-
-export (NodePath) var viewport_path:NodePath
-var viewport:Viewport
-
-export (bool) var root := true
-
-func _ready():
-	if root:
-		viewport = get_tree().root.get_viewport()
-	else:
-		viewport = get_node(viewport_path)
-
-func _process(delta):
-	if OS.get_window_size() != last_window_size:
-		last_window_size = OS.get_window_size()
-		resize()
-	
-func resize():
-	viewport.set_size(OS.get_window_size())
-"
-
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 9 )
 path = "Instructions/default/b_default.txt"
+
+[node name="ResizeViewports" type="Node" parent="."]
+script = ExtResource( 13 )
+viewport_paths = [ NodePath("../Player/Viewport") ]
 
 [node name="Player" type="KinematicBody" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )
@@ -98,6 +72,12 @@ current = true
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.38419e-07, 0 )
 mesh = ExtResource( 3 )
 material = ExtResource( 7 )
+script = ExtResource( 15 )
+target_path = NodePath("../../../Board")
+target_property_names = PoolStringArray( "translation", "rotation_degrees", "scale" )
+update_always = true
+destination_path = NodePath(".")
+destination_property_names = PoolStringArray( "translation", "rotation_degrees", "scale" )
 
 [node name="Board" type="StaticBody" parent="."]
 script = ExtResource( 4 )
@@ -111,6 +91,13 @@ material = ExtResource( 8 )
 
 [node name="Board Collision" type="CollisionShape" parent="Board"]
 
+[node name="ResizeControls" type="Node" parent="."]
+script = ExtResource( 13 )
+viewport_paths = [ NodePath("../EscMenu"), NodePath("../WinLoss") ]
+size = "rect_scale"
+multiplier = true
+force_to_window = false
+
 [node name="OpenMenu" type="Node" parent="."]
 script = ExtResource( 10 )
 menu_path = NodePath("../EscMenu")
@@ -121,20 +108,25 @@ is_overlay = true
 [node name="EscMenu" type="Control" parent="."]
 visible = false
 modulate = Color( 1, 1, 1, 0.588235 )
-margin_right = 1920.0
-margin_bottom = 1080.0
-script = SubResource( 4 )
-
-[node name="ColorRect" type="ColorRect" parent="EscMenu"]
-margin_right = 1920.0
-margin_bottom = 1080.0
-color = Color( 0.133333, 0.152941, 0.207843, 1 )
-
-[node name="MenuLabel" type="Label" parent="EscMenu"]
 anchor_left = 0.5
 anchor_right = 0.5
-margin_left = -718.0
-margin_right = 722.0
+theme = ExtResource( 11 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ColorRect" type="ColorRect" parent="EscMenu"]
+margin_left = -960.0
+margin_right = 960.0
+margin_bottom = 1080.0
+color = Color( 0.133333, 0.152941, 0.207843, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="MenuLabel" type="Label" parent="EscMenu"]
+margin_left = -719.511
+margin_right = 720.489
 margin_bottom = 681.0
 theme = ExtResource( 11 )
 custom_colors/font_color_shadow = Color( 0, 0, 0, 0 )
@@ -142,17 +134,15 @@ text = "Menu"
 align = 1
 
 [node name="HBoxContainer" type="HBoxContainer" parent="EscMenu"]
-anchor_left = 0.15
-anchor_top = 0.887
-anchor_right = 0.85
-anchor_bottom = 0.905
-margin_bottom = 30.0
+margin_left = -600.0
+margin_top = 784.0
+margin_right = 600.0
 alignment = 1
 
 [node name="Quit To Menu" type="Button" parent="EscMenu/HBoxContainer"]
-margin_left = 369.0
-margin_right = 649.0
-margin_bottom = 49.0
+margin_left = 297.0
+margin_right = 577.0
+margin_bottom = 28.0
 theme = ExtResource( 11 )
 text = "    Quit To Menu    "
 script = ExtResource( 12 )
@@ -160,9 +150,9 @@ scene_path = "res://Scenes/main_menu.tscn"
 require_data = false
 
 [node name="Quit To Desktop" type="Button" parent="EscMenu/HBoxContainer"]
-margin_left = 653.0
-margin_right = 975.0
-margin_bottom = 49.0
+margin_left = 581.0
+margin_right = 903.0
+margin_bottom = 28.0
 theme = ExtResource( 11 )
 text = "    Quit To Desktop    "
 script = ExtResource( 14 )
@@ -171,22 +161,22 @@ script = ExtResource( 14 )
 script = ExtResource( 10 )
 menu_path = NodePath("../WinLoss")
 signal_path = NodePath("../Board")
-signal_name = "win"
+signal_name = "end"
 is_overlay = true
 invert_on_unhidden = false
 
 [node name="WinLoss" type="Control" parent="."]
 visible = false
 modulate = Color( 1, 1, 1, 0.588235 )
-margin_right = 1920.0
-margin_bottom = 1080.0
-script = SubResource( 4 )
+anchor_left = 0.5
+anchor_right = 0.5
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="ColorRect" type="ColorRect" parent="WinLoss"]
-margin_right = 1920.0
+margin_left = -960.0
+margin_right = 960.0
 margin_bottom = 1080.0
 color = Color( 0.133333, 0.152941, 0.207843, 1 )
 
@@ -212,7 +202,7 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 margin_left = -720.0
-margin_top = -511.0
+margin_top = 571.0
 margin_right = 720.0
 rect_pivot_offset = Vector2( -1200, 771 )
 theme = ExtResource( 11 )
@@ -229,7 +219,7 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 margin_left = -672.0
-margin_top = -24.72
+margin_top = 540.0
 margin_right = 672.0
 margin_bottom = 24.72
 alignment = 1
@@ -237,7 +227,7 @@ alignment = 1
 [node name="Quit To Menu" type="Button" parent="WinLoss/HBoxContainer"]
 margin_left = 369.0
 margin_right = 649.0
-margin_bottom = 49.0
+margin_bottom = 28.0
 theme = ExtResource( 11 )
 text = "    Quit To Menu    "
 script = ExtResource( 12 )
@@ -247,15 +237,7 @@ require_data = false
 [node name="Quit To Desktop" type="Button" parent="WinLoss/HBoxContainer"]
 margin_left = 653.0
 margin_right = 975.0
-margin_bottom = 49.0
+margin_bottom = 28.0
 theme = ExtResource( 11 )
 text = "    Quit To Desktop    "
 script = ExtResource( 14 )
-
-[node name="ResizeViewports" type="Node" parent="."]
-script = ExtResource( 13 )
-viewport_paths = [ NodePath("../Player/Viewport") ]
-
-[node name="Control" type="Control" parent="."]
-margin_right = 40.0
-margin_bottom = 40.0

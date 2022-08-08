@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://UI/Fonts/Title.tres" type="DynamicFont" id=1]
 [ext_resource path="res://UI/Themes/MenuTheme.tres" type="Theme" id=2]
@@ -6,6 +6,7 @@
 [ext_resource path="res://Objects/UI/SwitchMenu.gd" type="Script" id=4]
 [ext_resource path="res://Objects/UI/SelectBoard.gd" type="Script" id=5]
 [ext_resource path="res://Objects/UI/PropertyCopier.gd" type="Script" id=6]
+[ext_resource path="res://Objects/UI/ResizeViewports.gd" type="Script" id=7]
 [ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=8]
 [ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=10]
 
@@ -18,6 +19,15 @@ shortcut = SubResource( 1 )
 [node name="Menu" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ResizeViewports" type="Node" parent="."]
+script = ExtResource( 7 )
+viewport_paths = [ NodePath("../Title Screen"), NodePath("../Load Board") ]
+size = "rect_scale"
+multiplier = true
 
 [node name="Background" type="ColorRect" parent="."]
 material = ExtResource( 3 )
@@ -26,17 +36,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color( 0.133333, 0.152941, 0.207843, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Title Screen" type="Control" parent="."]
 anchor_left = 0.5
 anchor_right = 0.5
-rect_scale = Vector2( 0.8, 0.8 )
+theme = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Title Frame" type="VBoxContainer" parent="Title Screen"]
-margin_left = -973.0
-margin_right = 110.0
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -834.0
+margin_right = 606.0
 margin_bottom = 681.0
-rect_scale = Vector2( 1.4, 1.4 )
+rect_scale = Vector2( 1.2, 1.2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Title" type="Label" parent="Title Screen/Title Frame"]
 margin_right = 1440.0
@@ -51,9 +72,9 @@ __meta__ = {
 
 [node name="Buttons" type="VBoxContainer" parent="Title Screen"]
 margin_left = -740.0
-margin_top = 959.0
+margin_top = 802.0
 margin_right = 740.0
-margin_bottom = 1019.0
+margin_bottom = 829.0
 
 [node name="Load Board" type="Button" parent="Title Screen/Buttons"]
 margin_right = 1480.0
@@ -135,10 +156,10 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 target_path = NodePath("../Board Finder")
-target_property_name = "path"
+target_property_names = PoolStringArray( "path" )
 target_signal_name = "new_selection"
 destination_path = NodePath(".")
-destination_property_name = "text"
+destination_property_names = PoolStringArray( "text" )
 
 [node name="Board Finder" type="MenuButton" parent="Load Board/Center Frame/Input"]
 margin_top = 691.0
@@ -169,10 +190,10 @@ margin_right = 40.0
 margin_bottom = 40.0
 script = ExtResource( 6 )
 target_path = NodePath("../../../Center Frame/Input/Board Path")
-target_property_name = "text"
+target_property_names = PoolStringArray( "text" )
 target_signal_name = "copy"
 destination_path = NodePath("..")
-destination_property_name = "path"
+destination_property_names = PoolStringArray( "path" )
 
 [node name="Refresh" type="Button" parent="Load Board/Buttons"]
 margin_top = 32.0

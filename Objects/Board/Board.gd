@@ -46,7 +46,7 @@ var winners:PoolIntArray = []
 var losers:PoolIntArray = []
 
 #signal to emit when the game ends, winning team indicated by get_team()
-signal win
+signal end
 
 func _init(var _path:String):
 	path = _path
@@ -87,6 +87,7 @@ func _ready():
 #all x_phase functions take in the same arguments I, vec, and file
 
 #_phase is the default phase and defines metadata for the board like mesh and name
+#warning-ignore:unused_argument
 #warning-ignore:unused_argument
 func _phase(var I, var vec:Array, var persist:Array) -> void:
 	var key:String = ""
@@ -190,6 +191,8 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 			
 #the w phase handles generating winning and losing conditions for different teams
 #these instructions only need to be stored, to be later evaluated when necessary
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
 func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
 	win_conditions.append(I)
 	
@@ -476,7 +479,6 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 		for r in results:
 			if r[1]: winners.append(r[0])
 			else: losers.append(r[0])
-		emit_signal("win")
 	#otherwise, just increment the turn on the board an move on
 	else:
 		#increment turn

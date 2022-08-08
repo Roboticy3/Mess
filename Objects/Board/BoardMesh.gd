@@ -48,9 +48,10 @@ var players := Array()
 var awake := false
 
 #signal to emit when the board emits its win signal
-signal win
+signal end
 	
 #construct the Board and the BoardMesh
+#distinguish from _ready() to better control the initialization of the board
 func begin(var _path:String = ""):
 	path = _path
 	print(path)
@@ -58,8 +59,8 @@ func begin(var _path:String = ""):
 	#retrieve board reference from spatial parent if possible
 	board = Board.new(path)
 	
-	#link the board's win signal to this BoardMesh win signal
-	board.connect("win", self, "win")
+	#link the board's end signal to this BoardMesh end signal
+	board.connect("end", self, "end")
 	
 	#the size is the maximum corner of the board minus the minimum
 	#"1" is added because the uv map considers 0, 0 as the bottom left corner and not the bottom left square
@@ -282,6 +283,7 @@ func handle(var v:Vector2, var team:int = 0):
 		#get updates to the board to apply to BoardMesh while updating the Board's data as well
 		#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
 		var changes:Array = board.execute_turn(v)
+		if !board.losers.empty(): end()
 		for i in changes.size():
 			var c = changes[i]
 			if c is PoolVector2Array:
@@ -303,9 +305,16 @@ func handle(var v:Vector2, var team:int = 0):
 		
 	return get_team() #get team from board in case there is one player which has to switch
 
+#get the team moving on the current turn from board
 func get_team() -> int:
 	return board.get_team()
 
-func win() -> void:
-	print(get_team())
-	emit_signal("win")
+#emit the end game signal into the node tree
+func end() -> void:
+	emit_signal("end")
+
+#get the arrays of winners and losers from the board
+func get_winners() -> PoolIntArray:
+	return board.winners
+func get_losers() -> PoolIntArray:
+	return board.losers

@@ -51,5 +51,4 @@ default/p_king.txt
 
 w
 ?1 key < 1 1 1
-?0 key = 2 0 1
 

@@ -9,7 +9,7 @@ p
 0 0 0 7 7 0 7 7 0 1
 
 g
-test/p_stage-test.txt
+default/p_pawn.txt
 default/p_rook.txt
 default/p_knight.txt
 default/p_bishop.txt
@@ -39,4 +39,7 @@ default/p_king.txt
 4 3 0
 5 4 7 1
 4 3 7
+
+w
+?1 key < 1 1 1
 
