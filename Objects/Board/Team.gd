@@ -8,25 +8,20 @@ var lost:Array = []
 #position of this team in a Board's Team array
 var i:int = 0
 
-var players:Array
-
-var turn:int = 0
-
 #aw shit here we go again
 var table:Dictionary = {"ff":0,"fx":0,"fy":1,"angle":0, #friendly fire, forward driection and angle
 	"sx":INF,"sy":INF, #selected position
-	"cr":1.0,"cg":1.0,"cb":1.0 #team color
-	}
+	"cr":1.0,"cg":1.0,"cb":1.0, #team color
+	"turn":0, "name":"team"}
 
 #store keys that table and pieces' tables have at the beginning of the game to keep track of their values even if they dissapear
 var start_keys:Array = []
 
-func _init(var _c:Color = Color.white, var _f:Vector2 = Vector2(0, 1), 
-	var _ff:int = 0, var _i:int = 0):
+func _init(var _c:Color = Color.white, var _f:Vector2 = Vector2(0, 1), var _i:int = 0):
 	set_color(_c)
-	set_ff(_ff)
 	set_forward(_f)
 	i = _i
+	set_name("team " + String(i))
 	
 	start_keys = table.keys()
 	
@@ -55,6 +50,18 @@ func set_selected(var s:Vector2) -> bool:
 	
 func get_selected() -> Vector2:
 	return Vector2(table["sx"],table["sy"])
+	
+func set_name(var name := "team") -> void:
+	table["name"] = name
+	
+func get_name() -> String:
+	return table["name"]
+	
+func get_turn() -> int:
+	return table["turn"]
+	
+func turn() -> void:
+	table["turn"] += 1
 
 #has, erase, and add act on pieces
 func has(var v:Vector2) -> bool:
@@ -110,4 +117,4 @@ func get_color() -> Color:
 	return Color(table["cr"],table["cg"],table["cb"])
 	
 func _to_string() -> String:
-	return "[Team(" + String(i) + ") : " + String(get_color()) + "]"
+	return "[" + get_name() + " : " + String(table) + "]"

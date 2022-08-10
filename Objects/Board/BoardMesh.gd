@@ -5,6 +5,7 @@ extends Node
 #created in January 2022 
 
 #a BoardMesh is set up after its Board, and handles how pieces will display on a mesh in-game
+#a BoardMesh also functions as a wrapper for the Board that is connected to the node tree in its stead
 
 #reference to a Board
 var board:Board
@@ -49,6 +50,10 @@ var awake := false
 
 #signal to emit when the board emits its win signal
 signal end
+
+#results of the game added onto as the game moves on
+#the values of results are meant to be displayed by UI, and so are always Strings
+var results:Dictionary = {"winners":"none","losers":"none"}
 	
 #construct the Board and the BoardMesh
 #distinguish from _ready() to better control the initialization of the board
@@ -61,6 +66,8 @@ func begin(var _path:String = ""):
 	
 	#link the board's end signal to this BoardMesh end signal
 	board.connect("end", self, "end")
+	#link the exiting of this node from the tree to the destruction of the board to avoid leaking resources
+	connect("tree_exiting", self, "destroy_board")
 	
 	#the size is the maximum corner of the board minus the minimum
 	#"1" is added because the uv map considers 0, 0 as the bottom left corner and not the bottom left square
@@ -237,6 +244,15 @@ func destroy_piece(var at:Vector2):
 	pieces[at].free()
 	pieces.erase(at)
 
+#clear the board, optionally freeing the cleared pieces
+func clear_board(var free:bool = true) -> void:
+	board.clear(free)
+	
+#clear the board and destroy it
+func destroy_board() -> void:
+	board.clear()
+	board.free()
+
 #highlight squares on the board by sending their positions to a texture which is rendered by mat_board
 #only works if mat_board is a ShaderMaterial
 #if mode is set to 1, hide all squares outside of the array
@@ -279,24 +295,7 @@ func handle(var v:Vector2, var team:int = 0):
 	#print(v)
 
 	#check if square is a square that can be moved to
-	if v in board.marks:
-		#get updates to the board to apply to BoardMesh while updating the Board's data as well
-		#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
-		var changes:Array = board.execute_turn(v)
-		if !board.losers.empty(): end()
-		for i in changes.size():
-			var c = changes[i]
-			if c is PoolVector2Array:
-				move_piece(c[0], c[1])
-			elif c is Array:
-				var square:Vector2 = Vector2(c[1],c[2])
-				create_piece(board.pieces[square],square)
-			elif c is Vector2:
-				destroy_piece(c)
-			
-		
-		#clear board marks
-		highlight_squares()
+	if v in board.marks: execute_turn(v)
 		
 	#check if square is a selectable piece
 	elif v in p && team == p[v].get_team():
@@ -305,16 +304,60 @@ func handle(var v:Vector2, var team:int = 0):
 		
 	return get_team() #get team from board in case there is one player which has to switch
 
+#get updates to the board to apply to BoardMesh while updating the Board's data as well
+func execute_turn(var v:Vector2) -> void:
+
+	#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
+	var changes:Array = board.execute_turn(v)
+	if !board.losers.empty(): end()
+	for i in changes.size():
+		var c = changes[i]
+		if c is PoolVector2Array:
+			move_piece(c[0], c[1])
+		elif c is Array:
+			var square:Vector2 = Vector2(c[1],c[2])
+			create_piece(board.pieces[square],square)
+		elif c is Vector2:
+			destroy_piece(c)
+	
+	#clear board marks
+	highlight_squares()
+
 #get the team moving on the current turn from board
 func get_team() -> int:
 	return board.get_team()
 
 #emit the end game signal into the node tree
 func end() -> void:
+	#update the winners/losers arrays for the Game Over UI to display
+	update_winners_losers()
 	emit_signal("end")
 
 #get the arrays of winners and losers from the board
-func get_winners() -> PoolIntArray:
+func get_winners() -> Array:
 	return board.winners
-func get_losers() -> PoolIntArray:
+func get_losers() -> Array:
 	return board.losers
+
+#update the results Dictionary with the winning and losing teams
+#return true if any changes were made, and false otherwise
+func update_winners_losers() -> bool:
+	var change:bool = false
+	
+	#check if the board.winners Array is populated
+	if !get_winners().empty():
+		#flag changes and convert the board.winners Array into a string
+		change = true
+		var winners := ""
+		for t in get_winners():
+			winners += t.get_name() + ", "
+		results["winners"] = winners
+	
+	#repeat the above process for the losers Array
+	if !get_losers().empty():
+		change = true
+		var losers := ""
+		for t in get_losers():
+			losers += t.get_name() + ", "
+		results["losers"] = losers
+	return change

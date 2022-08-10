@@ -35,7 +35,8 @@ func _ready():
 	destination = get_node(destination_path)
 	#connect the target signal to copy_property() (cant wait for gdscript 2.0 lmao)
 	var con_error:int = target.connect(target_signal_name, self, "copy_properties")
-	if con_error > 0: print(target.name + " has no signal \"" + target_signal_name + "\"")
+	#debug the connection only if the properties won't be getting copied every frame
+	if con_error > 0 && !update_always: print(target.name + " has no signal \"" + target_signal_name + "\"")
 	
 	if !update_always: set_process(false)
 

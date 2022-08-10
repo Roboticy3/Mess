@@ -4,6 +4,8 @@ extends Node
 #Board object made by Pablo Ibarz
 #created in November 2021
 
+#Board is the internal state of a game board. Should be an orphan Node interfaced by other Nodes through BoardMesh
+
 #store pairs of pieces and their location
 var pieces:Dictionary = {}
 #store the set of pieces on the board by their file paths
@@ -11,8 +13,6 @@ var piece_paths:Array = []
 
 #store a list of the teams on the board
 var teams:Array = []
-#turn increases by 1 each turn and selects the active team via teams[turn % teams.size()]
-var turn:int = 0
 
 #the instruction and mesh path of the board
 var path:String = ""
@@ -34,7 +34,7 @@ var div:String = ""
 var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1, 
 	"piece_scale":0.2, "piece_opacity":1, "piece_collision":1,
 	"name":"*name*","mesh":"Instructions/default/meshes/default.obj",
-	"sx":INF,"sy":INF}
+	"turn":0, "pi":PI}
 
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
@@ -42,8 +42,8 @@ var marks:Dictionary = {}
 #array of Instructions to vectorize to evaluate win conditions
 var win_conditions:Array = []
 #array of winning and losing teams to populate when the game ends
-var winners:PoolIntArray = []
-var losers:PoolIntArray = []
+var winners:Array = []
+var losers:Array = []
 
 #signal to emit when the game ends, winning team indicated by get_team()
 signal end
@@ -76,8 +76,6 @@ func _ready():
 	r.vectorize = false
 	r.allow_empty = false
 	r.read()
-	
-	print(win_conditions)
 	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
@@ -126,27 +124,17 @@ func b_phase(var I, var vec:Array, var persist:Array) -> void:
 #warning-ignore:unused_argument
 func t_phase(var I, var vec:Array, var persist:Array) -> void:
 	#team creation takes in a vector of length 6
-	if (vec.size() >= 6):
+	if (vec.size() >= 5):
 		#the first three indicate color
 		var i = Color(vec[0], vec[1], vec[2])
 		#the next two are the forward direction of the team
 		var j = Vector2(vec[3], vec[4])
-		#the last is a boolean indicating friendly fire
-		var k = vec[5] == 1
-		teams.append(Team.new(i, j, k))
-		vec = []
+		
+		teams.append(Team.new(i, j, teams.size()))
 		
 	#allow for updates to the team's table after their declaration
-	var key:String = ""
 	var t:Dictionary = teams.back().table
-	key = I.update_table(t)
-
-	if key.empty(): return
-
-	if key.match("mesh"):
-		if t[key].begins_with("@"):
-			t[key] = t[key].substr(1, -1)
-		else: t[key] = div + t[key]
+	I.update_table_line(t)
 
 #the g phase handles implicit team creation and places pieces on the board
 #uses persitant to create a "sub-stage" where pieces are placed on the board with symmetry
@@ -444,6 +432,9 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	changes_from_piece(changes, p, v, old_tables)
 	changes_from_piece(changes, p, v, old_tables, move)
 	
+	#compute win conditions for this turn
+	var results := evaluate_win_conditions()
+	
 	#print(p.table)
 	#print(old_tables)
 	
@@ -452,6 +443,21 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 		for i in old_tables:
 			pieces[i].table = old_tables[i]
 		return changes
+		
+	#if any results came back, the game is ending this turn
+	#check the results to see who wins and looses and emit the signal to end the game
+	if !results.empty():
+		for r in results:
+			var t = teams[r[0]]
+			if r[1] && !winners.has(t): 
+				winners.append(t)
+			elif !losers.has(t): 
+				losers.append(t)
+	#otherwise, just increment the turn on the board an move on
+	else:
+		turn()
+	
+	print(teams[get_team()])
 	
 	#move this piece as its primary assumed behavior
 	move_piece(get_selected(), v)
@@ -464,25 +470,11 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 		elif c is Array:
 			make_piece(c, p.get_team())
 		elif c is Vector2:
-			destroy_piece(c)
+			erase(c)
 	
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
 	p.behaviors.clear()
-	
-	#compute win conditions for this turn
-	var results := evaluate_win_conditions()
-	
-	#if any results came back, the game is ending this turn
-	#check the results to see who wins and looses and emit the signal to end the game
-	if !results.empty():
-		for r in results:
-			if r[1]: winners.append(r[0])
-			else: losers.append(r[0])
-	#otherwise, just increment the turn on the board an move on
-	else:
-		#increment turn
-		turn += 1
 	
 	#return Board updates
 	return changes
@@ -635,7 +627,7 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	if !pieces.has(from): return false
 	
 	#if the to square has a piece, destroy it
-	var _to_full := destroy_piece(to)
+	var _to_full := erase(to)
 	
 	#move the piece in both the board's pieces and the correct team's pieces
 	pieces[to] = pieces[from]
@@ -643,26 +635,18 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	teams[p.get_team()].pieces[to] = pieces[to]
 	
 	#erase handles this synchronization on its own
-	erase(from)
+	erase(from, false)
 	
 	#update the piece's local position and increment its move count, return a success
 	pieces[to].set_pos(to)
 	pieces[to].set_last_pos(from)
 	return true
 
-#erase a piece from the board, return true if the method succeeds
-func destroy_piece(var at:Vector2) -> bool:
-	#do not attempt to erase an already empty square
-	if !pieces.has(at): return false
-	#otherwise, go ahead
-	erase(at)
-	return true
-
 #Various getters and setters
 
 #get the team of the current turn by taking turn % teams.size()
 func get_team(var offset:int = 0) -> int:
-	return (turn + offset) % teams.size()
+	return (get_turn() + offset) % teams.size()
 	
 func get_name() -> String:
 	return table["name"]
@@ -683,27 +667,43 @@ func get_piece(var v):
 		print("Piece not found at key " + v)
 		return null
 	return pieces[v]
+	
+func get_turn() -> int:
+	return table["turn"]
 
-#pieces Dictionary interfaces and mutators, use these methods to ensure Board's pieces are synchronized with the Teams' pieces
+#increment turn for both the board and the current team
+#can also take a number of turns to increment
+func turn(var n:int = 1) -> void:
+	teams[get_team()].table["turn"] += n
+	table["turn"] += n
 
-func has(var v) -> bool:
+#pieces Dictionary interfaces and mutators has, erase, and clear
+func has(var v:Vector2) -> bool:
 	return pieces.has(v)
 
-func erase(var v) -> bool:
+#erase also serves the same purpose as an old destroy_piece method
+#free can be set to false to keep the piece at v in memory after the erasure
+#free needs to be called manually because pieces are not nodes in the node tree, and so will leak if not freed
+func erase(var v:Vector2, var free:bool = true) -> bool:
 	#if the piece is present, gain reference to it to reference its team
-	if pieces.has(v): 
-		var p:Piece = pieces[v]
-		
-		#then erase the piece in every correct dictionary
-		pieces.erase(v)
-		var b:bool = teams[p.get_team()].erase(v)
-		
-		#this can still fail if the piece is not present in the team's dictionary
-		#so return the result of the last erasure
-		return b
+	if !pieces.has(v): return false
 	
-	#otherwise, return false
-	return false
+	var p:Piece = pieces[v]
+	
+	#then erase the piece in every correct dictionary
+	pieces.erase(v)
+	var b:bool = teams[p.get_team()].erase(v)
+	
+	#free the piece from memory
+	if free: p.free()
+	
+	#this can still fail if the piece is not present in the team's dictionary
+	#so return the result of the last erasure
+	return b
+
+func clear(var free:bool = true) -> void:
+	if free: for v in pieces: pieces[v].free()
+	pieces.clear()
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
@@ -736,4 +736,6 @@ func _to_string():
 			s += " "
 		s += "\n"
 		i -= 1
+		
+	s += String(table)
 	return s

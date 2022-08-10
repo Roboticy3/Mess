@@ -396,7 +396,7 @@
 	 - discovered 2 issues: raycast() and query() stop working when the resolution changes, and black king can't castle.
 	 - the first can be fixed by forcing the root viewport to be the same resolution as the window, which apparently doesn't happen normally
 	 - the second can be fixed making format() only format the segment its being asked for
-	 - also fixed negation with square checks by replacing the ANDNOT check with a XOR check
+	 - also fixed negation with square checks by replacing the NAND check with a XOR check
 	NEXT
 	>>8/3/2022
 8/6/2022
@@ -409,4 +409,10 @@
 	 - make turn a table property for both boards and teams
 	 - make the t phase able to adjust team table properties after a team is initialized
 	 - test update_table_line() with conditionals
-	 
+8/10/2022
+	 - implemented option for update_table_line() to use vectorize() to check for conditionals, not sure how much use it will see
+	 - made DisplayDictionary class to transfer a results dictionary from BoardMesh to the Game Over UI, it's... working. It's not working great, but it's working.
+	 - discovered that t phase was already able to declare variables for the last defined team, thanks past me!
+	 - made turn a table property for both boards and teams
+	NEXT
+	 - start designing a system for looking ahead one turn for checkmate

@@ -5,6 +5,7 @@ name default_board
 mesh @Instructions/default/meshes/default.obj
 
 piece_scale 0.1
+oogabooga pi/2
 
 b
 #this phase sets boundries that define the shape of the board
@@ -13,8 +14,8 @@ b
 0 7 7 0 #set a boundary defining the board as a square from 0 to 7 places in both direction
 
 t
-1 1 1 0 1 0
-0 0 0 0 -1 0
+1 1 1 0 1
+0 0 0 0 -1
 
 g
 #this phase places pieces on the board, pieces are collected into an array via the paths below and called from 0 - n in the order they appear

@@ -96,7 +96,8 @@ class StringSort:
 
 #WIP evaluate conditional statements, made up of a wrds Array of length 3 or more that can solve inequalities
 #returning [] is equivalent to returning false and anything else is equivalent to true
-func vectorize(var start:int = 0, var allow_conditionals:bool = true) -> Array:
+func vectorize(var start:int = 0, 
+	var allow_conditionals:bool = true, var nullable:bool = false) -> Array:
 	
 	#reformat content to catch table updates
 	format()
@@ -112,7 +113,7 @@ func vectorize(var start:int = 0, var allow_conditionals:bool = true) -> Array:
 	#if input is not a conditional, return parsed array
 	if !w[0].begins_with("?"):
 		last_start = start
-		return array_parse(start, allow_conditionals)
+		return array_parse(start, allow_conditionals, nullable)
 	#if conditionals are not allowed at this point, return an empty array
 	if !allow_conditionals:
 		return []
@@ -219,7 +220,9 @@ func vectorize(var start:int = 0, var allow_conditionals:bool = true) -> Array:
 	#if all else fails, return an empty Array
 	return []
 			
-func array_parse(var start:int = 0, var allow_conditionals:bool = true):
+func array_parse(var start:int = 0, 
+	var allow_conditionals:bool = true, var nullable:bool = false):
+	
 	var w:Array = wrds.slice(start, wrds.size() - 1)
 	
 	#create return object
@@ -232,7 +235,7 @@ func array_parse(var start:int = 0, var allow_conditionals:bool = true):
 		if w[i].begins_with("?") && allow_conditionals:
 			nums.append_array(vectorize(start + i))
 			break
-		var n = parse(w[i])
+		var n = parse(w[i], nullable)
 		nums.append(n)
 		
 	#return the array
@@ -333,43 +336,48 @@ func is_unformatted(var i:int = 0, var start:int = last_start) -> bool:
 	return false
 
 #take in a table to update with self, returns true on success
-func update_table(var t:Dictionary=table, var start:int = 0,
-	var s:Array = []) -> String:
+func update_table(var t:Dictionary=table, var start:int = 0) -> String:
 	
 	#make sure there is a set of unformatted words to work with
-	if s.empty(): s = to_string_array(contents, start)
-	#duplicate the input array to not mutate the original
-	else: s = s.duplicate().slice(start, -1)
+	var s := to_string_array(contents, start)
+	
+	#if start is less than the difference in size of these two vectors, it is part of a conditional and should be used to update t
+	var dif:int = s.size()
+	if dif < 2:
+		return ""
 	
 	#check if last two terms in array make up a key pair
 	if s.size() > 1:
-		var i:int = s.size() - 2
-		var j:int = s.size() - 1
-		#try to parse values
-		var n = [parse(s[i], true), parse(s[j], true)]
+		var n := [parse(s[0], true), parse(s[1], true)]
 		#keys must be strings, but values can be floats or strings
 		if n[0] == null:
-			if n[1] == null: t[s[i]] = s[j]
-			else: t[s[i]] = n[1]
-			return s[i]
+			if n[1] == null: t[s[0]] = s[1]
+			else: t[s[0]] = n[1]
+			return s[0]
 	return ""
 
 #do all the table updates in a given line
-func update_table_line(var t:Dictionary = table) -> void:
+func update_table_line(var t:Dictionary = table, var start:int = 0, vectorize:bool = false) -> void:
 	
-	var s = to_string_array()
+	#if vectorize is enabled, ensure this line is not interrupted and failed by a conditional
+	if vectorize:
+		#get the vector of contents
+		var a := vectorize(start)
+		
+		#if a is empty, this line failed a conditional, and should not make any updates
+		if a.empty():
+			return
+	
+	#the string array of contents
+	var s = to_string_array(contents, start)
+	
+	#iterate through each pair in s from back to front
 	var i = s.size() - 2
-	
-	while i > 0:
-		var try:String = update_table(t, i, s)
+	while i > start:
+		var try:String = update_table(t, i)
 		if try.empty(): 
 			break
 		i -= 2
-
-#copy of Piece.transform that does not require a reference to a Piece object
-func piece_transform(var v:Vector2, var forward:Vector2, var angle:float) -> Vector2:
-	var d:Vector2 = v.rotated(angle) * forward.length()
-	return d.round()
 
 func _to_string():
 	return contents
