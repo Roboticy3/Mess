@@ -432,9 +432,6 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	changes_from_piece(changes, p, v, old_tables)
 	changes_from_piece(changes, p, v, old_tables, move)
 	
-	#compute win conditions for this turn
-	var results := evaluate_win_conditions()
-	
 	#print(p.table)
 	#print(old_tables)
 	
@@ -443,21 +440,6 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 		for i in old_tables:
 			pieces[i].table = old_tables[i]
 		return changes
-		
-	#if any results came back, the game is ending this turn
-	#check the results to see who wins and looses and emit the signal to end the game
-	if !results.empty():
-		for r in results:
-			var t = teams[r[0]]
-			if r[1] && !winners.has(t): 
-				winners.append(t)
-			elif !losers.has(t): 
-				losers.append(t)
-	#otherwise, just increment the turn on the board an move on
-	else:
-		turn()
-	
-	print(teams[get_team()])
 	
 	#move this piece as its primary assumed behavior
 	move_piece(get_selected(), v)
@@ -475,6 +457,22 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
 	p.behaviors.clear()
+	
+	#compute win conditions for this turn
+	var results := evaluate_win_conditions()
+		
+	#if any results came back, the game is ending this turn
+	#check the results to see who wins and looses and emit the signal to end the game
+	if !results.empty():
+		for r in results:
+			var t = teams[r[0]]
+			if r[1] && !winners.has(t): 
+				winners.append(t)
+			elif !losers.has(t): 
+				losers.append(t)
+	#otherwise, just increment the turn on the board an move on
+	else:
+		turn()
 	
 	#return Board updates
 	return changes

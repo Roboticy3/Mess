@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" load_steps=5 format=2]
+[gd_resource type="ShaderMaterial" load_steps=6 format=2]
 
 [ext_resource path="res://Textures/Checkerboard_tile.svg" type="Texture" id=1]
 
@@ -14,39 +14,35 @@ uniform vec4 front : hint_color;
 //the back color of highlighted squares
 uniform vec4 back : hint_color;
 
-//uv transformations to align checker texture with squares of the board
 uniform vec3 uv1_scale;
 uniform vec3 uv1_offset;
 
 //n by 1 texture of squares 0 - n that should be highlighted
 uniform sampler2D highlights;
-//number of squares to be highlighted, n
-uniform int highlight_count;
 
 void vertex() {
 
 }
 
 void fragment() {
-	//assume this pass has failed and hide this coord
-	ALPHA = 0.0f;
-	//transformed uv
-	vec2 base_uv = UV*uv1_scale.xy+uv1_offset.xy;
-	//loop through highlight texture to find if this fragment coordinate is insight a square that needs highlighting
-	vec2 s = floor(base_uv * 2.0f);
-	for (int i = 0; i < highlight_count; i++)
-	{
-		vec2 samp = vec2(float(i) / float(highlight_count) + 1.0f / (2.0f * float(highlight_count)), 0.0f);
-		vec2 sq = texture(highlights, samp).rg;
-		//unhide found squares
-		if (s == floor(sq))
-		{
-			ALPHA = 1.0f;
-		}
-	}
+	//convert the current uv to a square
+	vec2 base_uv = UV * uv1_scale.xy + uv1_offset.xy;
 	
+	vec2 s = base_uv * 2f;
+	
+	ALPHA = 1.0f;
+	vec2 new_uv = (floor(s)) / uv1_scale.xy / 2f;
+	//ALBEDO = vec3(new_uv,0f);
+	
+	ALPHA = texture(highlights, new_uv + (.5f / (uv1_scale.xy * 2f))).r;
 	ALBEDO = front.rgb * float(FRONT_FACING) + back.rgb * float(!FRONT_FACING);
 }"
+
+[sub_resource type="ImageTexture" id=4]
+flags = 0
+lossy_quality = 1.0
+flags = 0
+size = Vector2( 8, 8 )
 
 [sub_resource type="ShaderMaterial" id=2]
 render_priority = 1
@@ -55,7 +51,7 @@ shader_param/front = Color( 0.0862745, 0.792157, 0.0666667, 1 )
 shader_param/back = Color( 0.0588235, 0.72549, 0.776471, 1 )
 shader_param/uv1_scale = Vector3( 4, 4, 1 )
 shader_param/uv1_offset = null
-shader_param/highlight_count = null
+shader_param/highlights = SubResource( 4 )
 
 [sub_resource type="Shader" id=3]
 code = "

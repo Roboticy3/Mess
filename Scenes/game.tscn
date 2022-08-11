@@ -87,7 +87,7 @@ board_shape_path = NodePath("Board Shape")
 board_collider_path = NodePath("Board Collision")
 
 [node name="Board Shape" type="CSGMesh" parent="Board"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.38419e-07, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
 mesh = ExtResource( 2 )
 material = ExtResource( 8 )
 

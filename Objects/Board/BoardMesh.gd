@@ -24,6 +24,9 @@ export (Material) var mat_board = ResourceLoader.load("res://Materials/DwithHigh
 #material of the square highlight
 export (Material) var mat_highlight = ResourceLoader.load("res://Materials/highlight1.tres")
 
+#map of highlighted squares for mat_highlight to use
+var highlights:Image
+
 #paths to this BoardMesh's rendering and collision children, must be filled for either to work
 export (NodePath) var board_shape_path:NodePath
 export (NodePath) var board_collider_path:NodePath
@@ -42,8 +45,6 @@ var duplicates:DuplicateMap
 #store duplicates only by position, not considering uvs and normals, to avoid MeshGraph building large amounts of islands
 var dups_pos_only:DuplicateMap
 var graph:MeshGraph
-
-var players := Array()
 
 #set to true at the end of the begin() method, signifies that this BoardMesh and its Board are finished loading
 var awake := false
@@ -72,6 +73,11 @@ func begin(var _path:String = ""):
 	#the size is the maximum corner of the board minus the minimum
 	#"1" is added because the uv map considers 0, 0 as the bottom left corner and not the bottom left square
 	size = board.maximum-board.minimum + Vector2.ONE
+	
+	#create an 8-bit texture with the same size as the board
+	highlights = Image.new()
+	highlights.create(size.x, size.y, false, 4)
+	highlight_squares()
 	
 	#send mesh to visual objects
 	var m:Mesh = init_mesh()
@@ -124,7 +130,6 @@ func send_board():
 	var siblings = get_parent().get_children()
 	for s in siblings:
 		if s is KinematicBody:
-			players.append(s)
 			s.set("board_mesh", self)
 			s.set("material", mat_board)
 			s.set("board", board)
@@ -259,26 +264,30 @@ func destroy_board() -> void:
 #if mode is set to 2, hide all squares in the array
 func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
-	#"clear" previous squares by ignoring the last sent texture to the shader
+	highlights.lock()
+
+	#reset all pixels in the array
+	if mode == 2: 
+		for v in vs:
+			highlights.set_pixelv(v, Color(0,0,0,0))
+	
+	#reset the image, then set all the pixels in the array
 	if mode == 1:
-		mat_highlight.set_shader_param("highlight_count", 0)
+		highlights.unlock()
+		highlights.create(size.x, size.y, false, 0)
+		highlights.fill(Color(0,0,0,0))
+		highlights.lock()
+		
+		for v in vs:
+			highlights.set_pixelv(v, Color.white)
 	
-	#don't create a new image if no squares are being selected
-	if vs.empty(): return
-	
-	#shaders can't take in arrays, so use a texture with a height of 1 instead
-	var image:Image = Image.new()
-	#format 9 stores two values with floating point precision
-	image.create(vs.size(), 1, false, 15)
-	image.lock()
-	for i in vs.size():
-		var c:Color = Color(vs[i].x, vs[i].y, 0.0)
-		image.set_pixel(i, 0, c)
+	#send the updated texture to the shader
 	var tex:ImageTexture = ImageTexture.new()
-	tex.lossy_quality = 1.0
-	tex.create_from_image(image)
-	mat_highlight.set_shader_param("highlights", tex)
-	mat_highlight.set_shader_param("highlight_count", vs.size())
+	tex.create_from_image(highlights)
+	mat_highlight.set_shader_param("highlights",tex)
+	
+	highlights.unlock()
+	
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
