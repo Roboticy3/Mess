@@ -6,16 +6,20 @@ extends Node
 
 #Board is the internal state of a game board. Should be an orphan Node interfaced by other Nodes through BoardMesh
 
+#instruction path to the board
+var path:String = ""
+
 #store pairs of pieces and their location
 var pieces:Dictionary = {}
-#store the set of pieces on the board by their file paths
-var piece_paths:Array = []
 
+#properties piece_paths through div are constant from the start of the game to the end 
+#store the set of pieces on the board by their file paths
+var piece_types:Array = []
 #store a list of the teams on the board
 var teams:Array = []
 
-#the instruction and mesh path of the board
-var path:String = ""
+#array of Instructions to vectorize to evaluate win conditions
+var win_conditions:Array = []
 
 #the rectangular boundries and portals which define the shape of the board
 var bounds:Array = Array()
@@ -39,8 +43,6 @@ var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1,
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
 
-#array of Instructions to vectorize to evaluate win conditions
-var win_conditions:Array = []
 #array of winning and losing teams to populate when the game ends
 var winners:Array = []
 var losers:Array = []
@@ -155,12 +157,12 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 	if b.file_exists(c):
 	
 		#cache the paths of valid pieces
-		piece_paths.append(c)
+		piece_types.append(PieceType.new(self, c))
 		#when a piece is assigned, skip the rest of the g phase loop
 		return
 	
 	#if this line has not declared a path, check if it can create a piece
-	if vec.size() >= 3 && piece_paths.size() > 0:
+	if vec.size() >= 3 && piece_types.size() > 0:
 		#check for persistent settings of team and symmetry
 		if vec.size() >= 4:
 			persist[0] = vec[3]
@@ -195,18 +197,20 @@ func make_piece(var i:Array, var team:int) -> Vector2:
 	
 	#extract the position from the input vector
 	var v = Vector2(i[1], i[2])
+	
 	#i[0] indicates the Piece's team and i[1] indicates the type
-	#check if they are in range
-	if team < teams.size() && i[0] < piece_paths.size():
-		#if they are in range, grab the piece from piece_types and update its data accordingly
-		var p:Piece = Piece.new(self, piece_paths[i[0]], teams, team, v)
+	#also check if they are in range
+	if !(team < teams.size() && i[0] < piece_types.size()): return v
+	
+	#if they are in range, grab the piece from piece_types and update its data accordingly
+	var p:Piece = Piece.new(self, piece_types[i[0]], teams, team, v)
+	
+	#bounce the position back from the piece to accound for px or py overriding the Piece's original position
+	v = p.get_pos()
 		
-		#bounce the position back from the piece to accound for px or py overriding the Piece's original position
-		v = p.get_pos()
-			
-		#add the piece to the dictionary
-		pieces[v] = p
-		teams[team].add(p, v)
+	#add the piece to the dictionary
+	pieces[v] = p
+	teams[team].add(p, v)
 	
 	return v
 
@@ -238,7 +242,9 @@ func find_surrounding(var pos:Vector2, var inclusive:bool = true):
 	return surrounding
 
 #generate marks for a piece as a PoolVector2Array from its position on the board
-func mark(var v:Vector2):
+#if set is false, the resulting marks will not be sent to the marks Dictionary 
+#marks are set to a duplicate of the return Dictionary, so the return value can be motified without changing board.marks
+func mark(var v:Vector2, var set:bool = true) -> Dictionary:
 	
 	#do not consider empty positions
 	if !(v in pieces):
@@ -248,7 +254,7 @@ func mark(var v:Vector2):
 	var p:Piece = pieces[v]
 	
 	#gain a reference to that piece's marks
-	var m:Array = p.mark
+	var m:Array = p.get_mark()
 	
 	#store a set of positions to return so BoardMesh can display a set of selectable squares
 	#values of dictionary contain extra propterties of the move in an array
@@ -266,7 +272,6 @@ func mark(var v:Vector2):
 		m[i].table = p.table
 		#pull a vector of numbers from the instruction
 		var a:Array = m[i].vectorize()
-		#print(m[i],a)
 		
 		#get line type from the 3rd number and move type from 4th
 		#only do this if index 2 has not been formatted during vectorize(),
@@ -282,6 +287,8 @@ func mark(var v:Vector2):
 		
 		#append s to pos and add entry in debug dictionary
 		mark_step(p, Vector2(a[0], a[1]), l, t, pos, i)
+	
+	if set: marks = pos.duplicate()
 	
 	return pos
 
@@ -405,7 +412,7 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	var p:Piece = pieces[get_selected()]
 	
 	#the piece's mark instructions
-	var m:Array = p.mark
+	var m:Array = p.get_mark()
 	#the index of m that was used to move
 	var move:int = marks[v]
 	#temporarily update the piece's table with its mark's updates
@@ -419,7 +426,7 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	
 	#pair the m phase with nothing since marks are not being generated
 	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
-	var reader:Reader = Reader.new(p, funcs, p.path, 3, self)
+	var reader:Reader = Reader.new(p, funcs, p.get_p_path(), 3, self)
 	reader.wait = true
 	reader.read()
 	
@@ -553,7 +560,7 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		if pos == Vector2.INF: continue
 		
 		#if the piece type being created is outside of the board's paths, do not add any change
-		if p_type > piece_paths.size(): continue
+		if p_type > piece_types.size(): continue
 		
 		changes.append([p_type, pos.x, pos.y])
 	

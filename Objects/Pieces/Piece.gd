@@ -5,11 +5,9 @@ extends Node
 #created December 2021
 #Reads a piece file to generate the behaviors of a piece and represents a piece on the board
 
-# name of piece and file path from which it reads instructions
-var path:String = ""
+#data on the file this piece is being loaded from
+var type:PieceType
 
-#instructions for marking squares when selected
-var mark:Array = []
 #arrays of taking, creating, and relocating behaviors keyed by indexes of mark
 var behaviors:Dictionary = {}
 
@@ -23,79 +21,30 @@ var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/pieces/defaul
 			 "scale": 1.0/3.0, "px":0, "py":0, "angle":0, "opacity": 1,
 			 "team":0, "collision":0, "lx":0, "ly":0}
 
-#piece types considered by the creation phase, indicated by their string path
-var piece_types:Array = []
-
-#path with the final file location removed, 
-#used to construct file paths local to the project instead of the piece's pack
-var div:String = ""
-
 #reference to this Piece's parent Board
 #can't be statically typed because cyclic ref error ffs
 var board
 
 #initiate a piece with a path to its instruction behaviours, its team and its position
-func _init(var _b = null, var _p:String = "", 
+func _init(var _b = null, var _type = null, 
 	var _teams:Array = [], var _team_index:int = 0, var v = Vector2.ZERO):
 	
 	#if _b is null, skip the initiation
 	if _b == null: return
 	
 	board = _b
-	path = _p
+	
+	#get the piece's type and merge its starting table into table
+	type = _type
+	if type == null: return
+	merge(type.table)
+	
+	#set team, forward direction, and position from args
 	set_team(_team_index)
 	var _team = _teams[_team_index]
 	set_forward(_team.get_forward())
 	table["ff"]  = _team.get_ff()
 	set_pos(v)
-	
-	_ready()
-	
-func _ready():
-	#add .txt to the end of the file path if its not already present
-	if !path.ends_with(".txt"):
-		path += ".txt"
-		
-	#set div to only include the file path up to the location of the piece
-	div = path.substr(0, path.find_last("/") + 1)
-	
-	#create list of interperetation functions to send to a Reader
-	#Piece only needs to add the mark instructions at ready
-	var funcs:Dictionary = {"m":"m_phase","t":"","c":"","r":""}
-	#use Reader to interperet the instruction file into usable behavior 
-	var r:Reader = Reader.new(self, funcs, path, 3, board, true, false)
-	#if Reader sees a bad file, do not continue any further
-	if r.badfile: return
-	r.read()
-	
-#initialize variables in this Board's table
-#warning-ignore:unused_argument
-#warning-ignore:unused_argument
-func _phase(var I, var vec:Array = [], var persist:Array = []):
-	
-	#try to update table from metadata line, essentially initializing the table
-	#only do table updates if I vectorizes to a non-empty array, this will allow for primitive conditionals before piece vars
-	var key:String = ""
-	var s = I.to_string_array()
-	if !s.empty(): key = I.update_table(table)
-	#if no key was returned, update table has failed
-	if key.empty(): return
-	
-	#let meshes access folders outside of this piece's pack if they start with an @
-	if key.match("mesh"):
-		if table[key].begins_with("@"):
-			table[key] = table[key].substr(1, -1)
-		else: table[key] = div + table[key]
-
-#Piece behaviour phases are interpereted on the fly by a Board object,
-#and therefore only the instruction needs to be stored
-#warning-ignore:unused_argument
-#warning-ignore:unused_argument
-func m_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
-	var c:String = I.contents
-	#primitive comment parser and empty checking to avoid adding empty marks
-	c = c.substr(0, c.find("#"))
-	if !c.empty(): mark.append(I)
 
 #the take, create, and relocate phases reference indexes of the mark array throught the persist array
 #they are meant to be called when a piece moves, so they take care of vectorizing their instructions
@@ -157,6 +106,17 @@ func update_behaviors(var m:int, var stage:String, var behavior) -> void:
 	else:
 		behaviors[m] = {stage: [behavior] }
 
+#getters for this Piece's PieceType type
+func get_mark() -> Array:
+	return type.mark
+
+func get_p_path() -> String:
+	return type.path
+
+func get_div() -> String:
+	return type.div
+
+#getters and setters for the table
 func set_forward(var f:Vector2) -> void:
 	table["fx"] = f.x
 	table["fy"] = f.y
@@ -199,6 +159,13 @@ func get_mesh() -> String:
 func transform(var v:Vector2) -> Vector2:
 	var d:Vector2 = v.rotated(table["angle"]) * get_forward().length()
 	return d.round() + get_pos()
+
+#update table with an input new_table, updating existing keys and adding new ones
+func merge(var new_table:Dictionary, var replace:bool = true) -> void:
+	for k in new_table:
+		if replace || !table.has(k):
+			table[k] = new_table[k]
+		
 	
 func _to_string():
 	return get_name() + " " + String(get_team())

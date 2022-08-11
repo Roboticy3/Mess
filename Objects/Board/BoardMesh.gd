@@ -33,7 +33,7 @@ export (NodePath) var board_collider_path:NodePath
 
 #dictionary of a mesh and collision shape of a certain piece, keyed by its name
 #this collection stops each individual piece from having to load its mesh and collision individually
-var piece_types:Dictionary = {}
+var piece_paths:Dictionary = {}
 
 #Vector2 Dictionary of PieceMeshes, keeps track of piece models
 var pieces:Dictionary = {}
@@ -51,6 +51,9 @@ var awake := false
 
 #signal to emit when the board emits its win signal
 signal end
+
+#copy of the available marks on the board for players to click on
+var marks := {}
 
 #results of the game added onto as the game moves on
 #the values of results are meant to be displayed by UI, and so are always Strings
@@ -193,9 +196,9 @@ func create_piece(var p:Piece, var v:Vector2):
 	
 	var can_collide:bool = false
 	
-	#if the piece is not recorded in the piece_types dict, update dict with its data
+	#if the piece is not recorded in the piece_paths dict, update dict with its data
 	var pdata = {}
-	if !([p.get_name()] in piece_types):
+	if !([p.get_name()] in piece_paths):
 		pdata["mat"] = PieceMesh.pmat(p, board)
 		pdata["mesh"] = BoardConverter.path_to_mesh(p.get_mesh())
 		
@@ -207,10 +210,10 @@ func create_piece(var p:Piece, var v:Vector2):
 		
 		pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
 		pdata["transform"] = BoardConverter.square_to_transform(graph, duplicates, board, p)
-		piece_types[p._to_string()] = pdata
+		piece_paths[p._to_string()] = pdata
 	#otherwise, copy piece data out of current dict
 	else:
-		pdata = piece_types[p.get_name()]
+		pdata = piece_paths[p.get_name()]
 	
 	var coll = pdata["shape"]
 	if !can_collide: coll = CollisionShape.new()
@@ -256,6 +259,8 @@ func clear_board(var free:bool = true) -> void:
 #clear the board and destroy it
 func destroy_board() -> void:
 	board.clear()
+	for p in board.piece_types:
+		p.free()
 	board.free()
 
 #highlight squares on the board by sending their positions to a texture which is rendered by mat_board
@@ -291,10 +296,8 @@ func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
-	var pos = board.mark(v)
-	board.marks = pos
-	board.set_selected(v)
-	highlight_squares(pos.keys())
+	marks = board.mark(v)
+	highlight_squares(marks.keys())
 	
 #run this method whenever a player clicks on a square
 #generally handles all interactions a Player object could have with the main Board object
@@ -304,12 +307,14 @@ func handle(var v:Vector2, var team:int = 0):
 	#print(v)
 
 	#check if square is a square that can be moved to
-	if v in board.marks: execute_turn(v)
+	if v in board.marks: 
+		execute_turn(v)
 		
 	#check if square is a selectable piece
 	elif v in p && team == p[v].get_team():
 		#mark from selectable piece
 		mark(v)
+		set_selected(v)
 		
 	return get_team() #get team from board in case there is one player which has to switch
 
@@ -331,10 +336,14 @@ func execute_turn(var v:Vector2) -> void:
 	
 	#clear board marks
 	highlight_squares()
+	marks.clear()
 
 #get the team moving on the current turn from board
 func get_team() -> int:
 	return board.get_team()
+	
+func set_selected(var v:Vector2) -> void:
+	board.set_selected(v)
 
 #emit the end game signal into the node tree
 func end() -> void:
@@ -358,15 +367,21 @@ func update_winners_losers() -> bool:
 		#flag changes and convert the board.winners Array into a string
 		change = true
 		var winners := ""
-		for t in get_winners():
-			winners += t.get_name() + ", "
+		for i in get_winners().size():
+			var t = get_winners()[i]
+			winners += t.get_name()
+			if i + 1 < get_winners().size():
+				winners += ", "
 		results["winners"] = winners
 	
 	#repeat the above process for the losers Array
 	if !get_losers().empty():
 		change = true
 		var losers := ""
-		for t in get_losers():
-			losers += t.get_name() + ", "
+		for i in get_losers().size():
+			var t = get_losers()[i]
+			losers += t.get_name()
+			if i + 1 < get_losers().size():
+				losers += ", "
 		results["losers"] = losers
 	return change

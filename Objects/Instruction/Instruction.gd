@@ -121,8 +121,7 @@ func vectorize(var start:int = 0,
 	if w.size() < 3:
 		last_start = start
 		return []
-		
-		
+	
 	#remove question mark from wrds[0] once it is confirmed of valid size and format for a conditional
 	w[0] = w[0].substr(1)
 	
@@ -184,7 +183,6 @@ func vectorize(var start:int = 0,
 	
 	#check if the board has a piece at y
 	var has:bool = board.has(y)
-	
 	
 	#if there are enough words for a relative conditional, and the 4th word is a conditional,
 	#the conditional consists of a conditional based on another square's property
