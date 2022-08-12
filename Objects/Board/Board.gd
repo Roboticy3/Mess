@@ -11,6 +11,8 @@ var path:String = ""
 
 #store pairs of pieces and their location
 var pieces:Dictionary = {}
+#the current state of the board
+var state:BoardState 
 
 #properties piece_paths through div are constant from the start of the game to the end 
 #store the set of pieces on the board by their file paths
@@ -82,6 +84,9 @@ func _ready():
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
 	
+	#create a BoardState for the opening state of the board
+	state = BoardState.new(self)
+	print(state)
 
 #x_phase() functions are called by the Reader object in ready to initialize the board
 #all x_phase functions take in the same arguments I, vec, and file
@@ -406,7 +411,7 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 #the only argument taken is a mark to select from marks
 #assumes both v is in pieces and v is in bounds
 #returns an Array of changes to the board
-func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
+func execute_turn(var v:Vector2) -> Array:
 	
 	#reference the piece being moved
 	var p:Piece = pieces[get_selected()]
@@ -441,12 +446,6 @@ func execute_turn(var v:Vector2, var compute_only:bool = false) -> Array:
 	
 	#print(p.table)
 	#print(old_tables)
-	
-	#if compute_only is enabled revert the changes to the updated tables and return changes here
-	if compute_only: 
-		for i in old_tables:
-			pieces[i].table = old_tables[i]
-		return changes
 	
 	#move this piece as its primary assumed behavior
 	move_piece(get_selected(), v)
@@ -646,6 +645,21 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	pieces[to].set_pos(to)
 	pieces[to].set_last_pos(from)
 	return true
+
+#copy a piece into a new piece
+func duplicate_piece(var p:Piece) -> Piece:
+	var dup := Piece.new(self, p.type)
+	dup.table = p.table.duplicate()
+	
+	return dup
+
+#duplicate the pieces Dictionary and the Pieces inside
+func duplicate_all() -> Dictionary:
+	var dup := {}
+	for v in pieces:
+		dup[v] = duplicate_piece(pieces[v])
+	
+	return dup
 
 #Various getters and setters
 

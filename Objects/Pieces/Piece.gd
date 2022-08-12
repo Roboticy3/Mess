@@ -41,9 +41,11 @@ func _init(var _b = null, var _type = null,
 	
 	#set team, forward direction, and position from args
 	set_team(_team_index)
-	var _team = _teams[_team_index]
-	set_forward(_team.get_forward())
-	table["ff"]  = _team.get_ff()
+	#only set team properties if a team was provided
+	if _team_index < _teams.size():
+		var _team = _teams[_team_index]
+		set_forward(_team.get_forward())
+		table["ff"]  = _team.get_ff()
 	set_pos(v)
 
 #the take, create, and relocate phases reference indexes of the mark array throught the persist array

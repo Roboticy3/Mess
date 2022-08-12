@@ -416,3 +416,10 @@
 	 - made turn a table property for both boards and teams
 	NEXT
 	 - start designing a system for looking ahead one turn for checkmate
+8/12/2022
+	 - changed highlights shader to use a single texture with a size of the board, this causes some wierd bugs with outlines of wrong squares being highlighted
+	 - added PieceType class which allows Board to only load pieces of each type once for their initialized behaviors, and then place them in the correct places and with the correct states in Piece
+	 - added skeleton of BoardState class which will hold minimized states of the Board on each turn and be crucial to checkmates
+	 - data from PieceType is essentially removed from Piece, making Pieces their own minimized PieceState
+	NEXT
+	 - plan how to make execute_turn() create a new BoardState and then apply that to Board instead of modifying Board directly
