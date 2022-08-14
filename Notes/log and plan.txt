@@ -423,3 +423,8 @@
 	 - data from PieceType is essentially removed from Piece, making Pieces their own minimized PieceState
 	NEXT
 	 - plan how to make execute_turn() create a new BoardState and then apply that to Board instead of modifying Board directly
+8/14/2022
+	 - started looking at execute_turn() to see what needed changes before BoardState can be fully implemented
+	 - the rust left over from when compute_turn() was still a thing needs to be fully taken care of, so I moved the actual board updating into changes_from_piece()
+	NEXT
+	 - change behaviors into an array of arrays and changes_from_piece() to function with that. This will allow changes_from_piece() to only be called once over the whole array, checking maybe the first element to see the mark each behavior is attached to

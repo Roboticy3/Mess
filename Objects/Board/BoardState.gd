@@ -4,12 +4,7 @@ extends Node
 #BoardState class by Pablo Ibarz
 #created August 2022
 
-#store only the part of a Board that changes during the game
-#link to the last and next BoardStates from different turns and look forward into future turns to check for checkmate
-
-#BoardStates of the last and next turn
-var last
-var next
+#store only the part of a Board that changes during each turn
 
 #the turn this BoardState represents in the Board
 var turn:int
@@ -24,22 +19,19 @@ var pieces := {}
 #reference to the Board that this BoardState belongs to
 var board
 
-#a BoardState can be built from the owner board, the last and next BoardStates
-func _init(var _board = null, var _last = null, var _next = null):
+#a BoardState can be built from the owner board, and will interperet the current turn
+func _init(var _board = null, var copy_pieces:bool = true):
 	
 	#do not try to initialize from a null board
 	if _board == null: return
 	
 	#fill properties with the given arguments
 	board = _board
-	#allow last and next to be null in case this BoardState represents the final and/or first turn
-	last = _last
-	next = _next
 	
 	#fill the rest of the properties from the board
 	turn = board.get_turn()
 	#if there is no last BoardState, duplicate the table from Board
-	if last == null:
+	if turn == 0 && copy_pieces:
 		pieces = board.duplicate_all()
 	
 #print out all of the pieces in this BoardState

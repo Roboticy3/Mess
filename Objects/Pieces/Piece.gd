@@ -25,6 +25,9 @@ var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/pieces/defaul
 #can't be statically typed because cyclic ref error ffs
 var board
 
+#the last turn on which this piece underwent changes on the board
+var last_update := 0
+
 #initiate a piece with a path to its instruction behaviours, its team and its position
 func _init(var _b = null, var _type = null, 
 	var _teams:Array = [], var _team_index:int = 0, var v = Vector2.ZERO):

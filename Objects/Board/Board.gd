@@ -11,8 +11,8 @@ var path:String = ""
 
 #store pairs of pieces and their location
 var pieces:Dictionary = {}
-#the current state of the board
-var state:BoardState 
+#the states making up each turn of the board
+var states:Array 
 
 #properties piece_paths through div are constant from the start of the game to the end 
 #store the set of pieces on the board by their file paths
@@ -85,8 +85,7 @@ func _ready():
 	div = path.substr(0, path.find_last("/") + 1)
 	
 	#create a BoardState for the opening state of the board
-	state = BoardState.new(self)
-	print(state)
+	states = [BoardState.new(self)]
 
 #x_phase() functions are called by the Reader object in ready to initialize the board
 #all x_phase functions take in the same arguments I, vec, and file
@@ -413,6 +412,13 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 #returns an Array of changes to the board
 func execute_turn(var v:Vector2) -> Array:
 	
+	#reference the last BoardState
+	var last:BoardState = states[get_turn()]
+	#create a new BoardState, not allowing it to copy the pieces dictionary
+	var state := BoardState.new(self, false)
+	#add the new state to the states array
+	states.append(state)
+	
 	#reference the piece being moved
 	var p:Piece = pieces[get_selected()]
 	
@@ -420,8 +426,6 @@ func execute_turn(var v:Vector2) -> Array:
 	var m:Array = p.get_mark()
 	#the index of m that was used to move
 	var move:int = marks[v]
-	#temporarily update the piece's table with its mark's updates
-	var old_tables:Dictionary = {get_selected():p.table.duplicate()}
 	
 	#increment moves and update the piece's table from the selected mark
 	m[move].update_table_line()
@@ -440,25 +444,16 @@ func execute_turn(var v:Vector2) -> Array:
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
 	var changes:Array = [PoolVector2Array([get_selected(), v])]
+	move_piece(get_selected(), v)
 	#add changes from the piece
-	changes_from_piece(changes, p, v, old_tables)
-	changes_from_piece(changes, p, v, old_tables, move)
+	changes_from_piece(changes, p, v)
+	changes_from_piece(changes, p, v, move)
 	
 	#print(p.table)
 	#print(old_tables)
 	
-	#move this piece as its primary assumed behavior
-	move_piece(get_selected(), v)
-	
-	#execute the changes
-	for i in changes.size():
-		var c = changes[i]
-		if c is PoolVector2Array:
-			move_piece(c[0], c[1])
-		elif c is Array:
-			make_piece(c, p.get_team())
-		elif c is Vector2:
-			erase(c)
+	#table of pieces updated by this turn
+	var updated:Dictionary = {}
 	
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
@@ -487,7 +482,7 @@ func execute_turn(var v:Vector2) -> Array:
 func changes_from_piece(var changes:Array, var piece:Piece, 
 	#square containing this move's mark, stored state of pieces being temporarily updated
 	#and the index of the move being made in piece's instructions
-	var v:Vector2, var old_tables:Dictionary, var idx:int = -1) -> void:
+	var v:Vector2, var idx:int = -1) -> void:
 		
 	#gain reference to the piece's behaviors
 	var behaviors:Dictionary = piece.behaviors
@@ -495,8 +490,9 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 	#temporarily change the piece's position
 	piece.set_pos(v)
 	
+	var hasidx := behaviors.has(idx)
 	#do not try to execute this method if the index of behaviors is missing or empty
-	if !behaviors.has(idx) || behaviors[idx].empty(): 
+	if (!hasidx|| behaviors[idx].empty()): 
 		return
 	
 	#iterate through each section of behaviors and convert their data into the changes dictionary
@@ -510,43 +506,14 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
 		to = transform(to, piece)
 		from = transform(from, piece)
+		
 		var c = PoolVector2Array([from, to])
 		
-		#copy of from that can change to where the piece is located in pieces
-		var shadow_from:Vector2 = from
-		
-		#if the relocation beginning is empty, do not add any change
-		if !has(from): 
-			
-			#check if from is missing from pieces because of an unsynced update to the pieces tables
-			var found := false
-			for i in old_tables:
-				if pieces[i].get_pos() == from:
-					found = true
-					shadow_from = i
-					break
-			
-			#if nothing is found, do not add any change because the from square is empty
-			if !found: continue
-		
-		#same if its invalid
-		if from == Vector2.INF:
-			continue
-		
-		#if the relocation target is invalid, set the change as a deletion
-		if to == Vector2.INF: c = from
-		
-		#print(c)
-		
-		#store the current table of the piece being relocated, and update a duplicate of it
-		#make sure there is actually a piece here, if not, old_tables will already contain an entry for it because it must have been moved
-		if !old_tables.has(shadow_from): 
-			old_tables[shadow_from] = pieces[shadow_from].table.duplicate()
-		
-		#temporarily update the table of the piece being moved
-		pieces[shadow_from].set_pos(to)
+		if from == Vector2.INF || to == Vector2.INF: continue
 		
 		#add change to Array
+		move_piece(from,to)
+		print(c)
 		changes.append(c)
 	
 	if bm.has("c"): for c in bm["c"]:
@@ -561,7 +528,9 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		#if the piece type being created is outside of the board's paths, do not add any change
 		if p_type > piece_types.size(): continue
 		
-		changes.append([p_type, pos.x, pos.y])
+		var a := [p_type, pos.x, pos.y]
+		make_piece(a, get_team())
+		changes.append(a)
 	
 	if bm.has("t"): for d in bm["t"]:
 		#destructions are Vector2 and null pairs
@@ -570,6 +539,7 @@ func changes_from_piece(var changes:Array, var piece:Piece,
 		#if the destruction fails, do not add any change
 		if d == Vector2.INF: continue
 		
+		erase(d)
 		changes.append(d)
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
@@ -628,10 +598,17 @@ func transform(var v:Vector2, var piece:Piece) -> Vector2:
 #move the piece on from onto to
 func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	#if no piece is in the from square, do not attempt to move from it
-	if !pieces.has(from): return false
+	if !pieces.has(from): 
+		return false
 	
 	#if the to square has a piece, destroy it
 	var _to_full := erase(to)
+	
+	#check if to is out of bounds, if so, just destroy from
+	#count this as a failue
+	if !is_surrounding(to):
+		erase(from)
+		return false
 	
 	#move the piece in both the board's pieces and the correct team's pieces
 	pieces[to] = pieces[from]
