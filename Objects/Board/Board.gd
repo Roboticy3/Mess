@@ -443,17 +443,13 @@ func execute_turn(var v:Vector2) -> Array:
 	
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
-	var changes:Array = [PoolVector2Array([get_selected(), v])]
-	move_piece(get_selected(), v)
-	#add changes from the piece
-	changes_from_piece(changes, p, v)
-	changes_from_piece(changes, p, v, move)
+	var changes := []
+	p.behaviors.push_front([-1, 2, get_selected(), v])
+#	#add changes from the piece and make changes to the board
+	execute_behaviors(changes, p, v, move, [0])
 	
 	#print(p.table)
 	#print(old_tables)
-	
-	#table of pieces updated by this turn
-	var updated:Dictionary = {}
 	
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
@@ -479,68 +475,76 @@ func execute_turn(var v:Vector2) -> Array:
 	return changes
 
 #update an Array of changes to the board from an index of a behaviors dictionary
-func changes_from_piece(var changes:Array, var piece:Piece, 
+func execute_behaviors(var changes:Array, var piece:Piece, 
 	#square containing this move's mark, stored state of pieces being temporarily updated
 	#and the index of the move being made in piece's instructions
-	var v:Vector2, var idx:int = -1) -> void:
+	#transformed is an array of indices in piece.behaviors that have already been transformed
+	var v:Vector2, var idx:int = -1, var transformed:Array = []) -> void:
 		
 	#gain reference to the piece's behaviors
-	var behaviors:Dictionary = piece.behaviors
+	var behaviors := piece.behaviors
 	
 	#temporarily change the piece's position
 	piece.set_pos(v)
 	
-	var hasidx := behaviors.has(idx)
-	#do not try to execute this method if the index of behaviors is missing or empty
-	if (!hasidx|| behaviors[idx].empty()): 
-		return
-	
-	#iterate through each section of behaviors and convert their data into the changes dictionary
-	var bm:Dictionary = behaviors[idx]
-	
-	#check if one type of behavior is present
-	if bm.has("r"): for r in bm["r"].size():
-		var from:Vector2 = bm["r"][r][0]
-		var to:Vector2 = bm["r"][r][1]
+	#loop through each behavior
+	for i in behaviors.size():
+		var b:Array = behaviors[i]
+		var m:int = b[0]
 		
-		#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
-		to = transform(to, piece)
-		from = transform(from, piece)
+		#if the behavior doesn't apply to the input mark index or default mark index, skip it
+		if m != -1 && m != idx:
+			continue
 		
-		var c = PoolVector2Array([from, to])
+		var t:int = b[1]
+		#if this behavior has been marked as transformed, flag this iteration
+		var transform = !transformed.has(i)
 		
-		if from == Vector2.INF || to == Vector2.INF: continue
+		if t == 0:
+			var d:Vector2 = b[2]
+			if transform: d = transform(d, piece)
+			erase(d)
+			
+			#if the destruction fails, do not add any change
+			if d == Vector2.INF: continue
+			
+			changes.append(d)
 		
-		#add change to Array
-		move_piece(from,to)
-		print(c)
-		changes.append(c)
-	
-	if bm.has("c"): for c in bm["c"]:
-		#creations are Vector2 and int pairs
-		var p_type:int = c[0]
-		var pos:Vector2 = Vector2(c[1],c[2])
-		pos = transform(pos, piece)
+		elif t == 1:
+			#creations are Vector2 and int pairs
+			var a:Array = b[2]
+			var p_type:int = a[0]
+			var pos := Vector2(a[1],a[2])
+			if transform: pos = transform(pos, piece)
+			
+			#if the creation fails, do not add any change
+			if pos == Vector2.INF: continue
+			
+			a[1] = pos.x
+			a[2] = pos.y
+			
+			#if the piece type being created is outside of the board's paths, do not add any change
+			if p_type > piece_types.size(): continue
+			
+			make_piece(a, get_team())
+			changes.append(a)
+			
+		elif t == 2:
+			var from:Vector2 = b[2]
+			var to:Vector2 = b[3]
+			
+			#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
+			if transform:
+				to = transform(to, piece)
+				from = transform(from, piece)
+			
+			var c = PoolVector2Array([from, to])
+			
+			if from == Vector2.INF || to == Vector2.INF: continue
 		
-		#if the creation fails, do not add any change
-		if pos == Vector2.INF: continue
-		
-		#if the piece type being created is outside of the board's paths, do not add any change
-		if p_type > piece_types.size(): continue
-		
-		var a := [p_type, pos.x, pos.y]
-		make_piece(a, get_team())
-		changes.append(a)
-	
-	if bm.has("t"): for d in bm["t"]:
-		#destructions are Vector2 and null pairs
-		d = transform(d, piece)
-		
-		#if the destruction fails, do not add any change
-		if d == Vector2.INF: continue
-		
-		erase(d)
-		changes.append(d)
+			#add change to Array
+			move_piece(from,to)
+			changes.append(c)
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
 #each element of the array contains at its end an index for its source Instruction in win conditions, and contains the following:

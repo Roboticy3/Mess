@@ -9,7 +9,7 @@ extends Node
 var type:PieceType
 
 #arrays of taking, creating, and relocating behaviors keyed by indexes of mark
-var behaviors:Dictionary = {}
+var behaviors := []
 
 #table works like global instruction table, except data is tied to piece
 #table are updated when a phase containing a string followed by a number is called
@@ -54,9 +54,14 @@ func _init(var _b = null, var _type = null,
 #the take, create, and relocate phases reference indexes of the mark array throught the persist array
 #they are meant to be called when a piece moves, so they take care of vectorizing their instructions
 
+#each appends behaviors for each Instruction fed into them.
+#each element is an array like this [mark index attached to this behavior, behavior type, behavior data, more behavior data... ]
+
 #add Vector2 behaviors for squares to be cleared
 #warning-ignore:unused_argument
 func t_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
+	
+	if persist[0] == null: persist[0] = -1
 	
 	var size = vec.size()
 	if size > 2:
@@ -64,10 +69,9 @@ func t_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 		
 	if size > 1:
 		var v:Vector2 = Vector2(vec[0], vec[1])
-		if persist[0] == null: update_behaviors(-1, "t", v)
-		else: update_behaviors(persist[0], "t", v)
+		behaviors.append([persist[0], 0, v])
 
-#add Arrays of length 4 for piece type, creation position, and mark index
+#add piece creation Arrays
 #warning-ignore:unused_argument
 func c_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	
@@ -77,39 +81,20 @@ func c_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	var v:Vector2 = Vector2(vec[1], vec[2])
 	#update behaviors with the array [vec[0], v.x, v.y]
 	#this array can be used as the first argument for board.make_piece()
-	if persist[0] == null: update_behaviors(-1, "c", [vec[0], v.x, v.y])
-	else: update_behaviors(persist[0], "c", [vec[0], v.x, v.y])
+	if persist[0] == null: persist[0] = -1
+	behaviors.append([persist[0], 1, [vec[0], vec[1], vec[2]]])
 
 #add arrays of starting and ending positions in an orderded array so relocation can be executed in the order they were written
 #warning-ignore:unused_argument
 func r_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	if vec.size() < 4: return
 	if vec.size() > 4: persist[0] = vec[4]
-
+	
 	var v:Vector2 = Vector2(vec[0], vec[1])
 	var u:Vector2 = Vector2(vec[2], vec[3])
-
-	#slight rewrite of update_behaviors to create Dictionaries
-	var m:int = -1
-	if persist[0] != null: m = persist[0]
-	if behaviors.has(m):
-		if behaviors[m].has("r"):
-			behaviors[m]["r"].append(PoolVector2Array([v, u]))
-		else:
-			behaviors[m]["r"] = [PoolVector2Array([v, u])]
-	else:
-		behaviors[m] = {"r":[PoolVector2Array([v, u])]}
-	pass
-			
-#update the behaviors Dictionary with new behaviors, automatically filling out missing elements
-func update_behaviors(var m:int, var stage:String, var behavior) -> void:
-	if behaviors.has(m): 
-		if behaviors[m].has(stage):
-			behaviors[m][stage].append(behavior)
-		else:
-			behaviors[m][stage] = [behavior]
-	else:
-		behaviors[m] = {stage: [behavior] }
+	
+	if persist[0] == null: persist[0] = -1
+	behaviors.append([persist[0], 2, v, u])
 
 #getters for this Piece's PieceType type
 func get_mark() -> Array:
