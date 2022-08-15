@@ -261,6 +261,9 @@ func destroy_board() -> void:
 	board.clear()
 	for p in board.piece_types:
 		p.free()
+	for b in board.states:
+		b.clear()
+		b.free()
 	board.free()
 
 #highlight squares on the board by sending their positions to a texture which is rendered by mat_board

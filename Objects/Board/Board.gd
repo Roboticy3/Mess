@@ -174,14 +174,14 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 				persist[1] = vec[4]
 				
 		#make a piece with the updated persist settings
-		var pos = make_piece(vec, persist[0])
+		var pos = make_piece(vec, persist[0], false)
 			
 		#symmetrize piece if symmetry is enabled
 		if persist[1] != 0 && persist[1] != null:
 			pos = -pos + 2*(center)
 			vec[1] = pos.x
 			vec[2] = pos.y
-			make_piece(vec, persist[0] + 1)
+			make_piece(vec, persist[0] + 1, false)
 			
 #the w phase handles generating winning and losing conditions for different teams
 #these instructions only need to be stored, to be later evaluated when necessary
@@ -192,7 +192,8 @@ func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
 	
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
-func make_piece(var i:Array, var team:int) -> Vector2:
+#the part which updates states can refer to nonexistent state and crash, so it can be disabled with the update_state bool
+func make_piece(var i:Array, var team:int, var update_state:bool = true) -> Vector2:
 	
 	#ignore arrays that are too small
 	if i.size() < 3: 
@@ -215,6 +216,12 @@ func make_piece(var i:Array, var team:int) -> Vector2:
 	#add the piece to the dictionary
 	pieces[v] = p
 	teams[team].add(p, v)
+	
+	#update the last board state's piece and create the new one in the current state
+	if update_state:
+		states[states.size() - 1].pieces[v].last_update = get_turn()
+		states[get_turn() + 1].pieces[v] = pieces[v]
+		pieces[v].last_update = get_turn()
 	
 	return v
 
@@ -625,6 +632,11 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 	#update the piece's local position and increment its move count, return a success
 	pieces[to].set_pos(to)
 	pieces[to].set_last_pos(from)
+	
+	#update the piece and board state with this movement
+	states[get_turn() + 1].pieces[to] = pieces[to]
+	pieces[to].last_update = get_turn()
+	
 	return true
 
 #copy a piece into a new piece
@@ -663,8 +675,8 @@ func set_selected(var select:Vector2 = Vector2.INF, var team:int = get_team()) -
 	teams[team].set_selected(select)
 	
 func get_piece(var v):
-	if !pieces.has(v):
-		print("Piece not found at key " + v)
+	if !has(v):
+		print("Piece not found at key " + String(v))
 		return null
 	return pieces[v]
 	
@@ -679,7 +691,21 @@ func turn(var n:int = 1) -> void:
 
 #pieces Dictionary interfaces and mutators has, erase, and clear
 func has(var v:Vector2) -> bool:
-	return pieces.has(v)
+	
+	var i := get_turn()
+	while i > -1:
+		
+		var state:BoardState = states[i]
+		var ps:Dictionary = state.pieces
+		
+		if ps.has(v):
+			if ps[v].last_update >= i:
+				return false
+			return true
+		
+		i -= 1
+	
+	return false
 
 #erase also serves the same purpose as an old destroy_piece method
 #free can be set to false to keep the piece at v in memory after the erasure
@@ -694,8 +720,8 @@ func erase(var v:Vector2, var free:bool = true) -> bool:
 	pieces.erase(v)
 	var b:bool = teams[p.get_team()].erase(v)
 	
-	#free the piece from memory
-	if free: p.free()
+	#set this piece's last update past its last appearance in states to "delete" it
+	p.last_update = get_turn()
 	
 	#this can still fail if the piece is not present in the team's dictionary
 	#so return the result of the last erasure

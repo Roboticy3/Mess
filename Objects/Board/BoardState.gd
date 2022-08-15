@@ -32,7 +32,16 @@ func _init(var _board = null, var copy_pieces:bool = true):
 	turn = board.get_turn()
 	#if there is no last BoardState, duplicate the table from Board
 	if turn == 0 && copy_pieces:
-		pieces = board.duplicate_all()
+		pieces = board.pieces.duplicate()
+
+#copy of Board.clear(), with the addition of a check to see if another BoardState already freed each piece
+func clear(var free:bool = true) -> void:
+	if free: 
+		for v in pieces: 
+			var p = pieces[v]
+			if is_instance_valid(p):
+				pieces[v].free()
+	pieces.clear()
 	
 #print out all of the pieces in this BoardState
 func _to_string():

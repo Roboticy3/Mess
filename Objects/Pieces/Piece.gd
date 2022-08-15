@@ -26,7 +26,7 @@ var table:Dictionary = {"name":"*pieceName*", "mesh":"Instructions/pieces/defaul
 var board
 
 #the last turn on which this piece underwent changes on the board
-var last_update := 0
+var last_update := -1
 
 #initiate a piece with a path to its instruction behaviours, its team and its position
 func _init(var _b = null, var _type = null, 
@@ -158,4 +158,4 @@ func merge(var new_table:Dictionary, var replace:bool = true) -> void:
 		
 	
 func _to_string():
-	return get_name() + " " + String(get_team())
+	return get_name() + " " + String(last_update) + " : " + String(table)
