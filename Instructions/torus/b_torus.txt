@@ -8,6 +8,14 @@ b
 p
 0 0 0 7 7 0 7 7 0 1
 
+t
+1 1 1 0 1 0
+name bingus
+
+0 0 0 0 -1 0
+name burger-king
+
+
 g
 default/p_pawn.txt
 default/p_rook.txt

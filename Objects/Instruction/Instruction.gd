@@ -355,7 +355,7 @@ func update_table(var t:Dictionary=table, var start:int = 0) -> String:
 	return ""
 
 #do all the table updates in a given line
-func update_table_line(var t:Dictionary = table, var start:int = 0, vectorize:bool = false) -> void:
+func update_table_line(var t:Dictionary = table, var start:int = 0, vectorize:bool = false) -> PoolStringArray:
 	
 	#if vectorize is enabled, ensure this line is not interrupted and failed by a conditional
 	if vectorize:
@@ -364,18 +364,24 @@ func update_table_line(var t:Dictionary = table, var start:int = 0, vectorize:bo
 		
 		#if a is empty, this line failed a conditional, and should not make any updates
 		if a.empty():
-			return
+			return PoolStringArray()
 	
 	#the string array of contents
 	var s = to_string_array(contents, start)
 	
+	var keys:PoolStringArray = []
+	
 	#iterate through each pair in s from back to front
 	var i = s.size() - 2
-	while i > start:
+	while i >= start:
 		var try:String = update_table(t, i)
 		if try.empty(): 
 			break
+		keys.append(try)
 		i -= 2
+		
+	return keys
+	
 
 func _to_string():
 	return contents

@@ -9,9 +9,6 @@ extends Node
 #the turn this BoardState represents in the Board
 var turn:int
 
-#Array of possible BoardStates for the next turn
-var possible := []
-
 #dictionary of pieces representing the state of the board at the above turn
 #only holds pieces that are different from the pieces in the last state
 var pieces := {}
@@ -30,9 +27,6 @@ func _init(var _board = null, var copy_pieces:bool = true):
 	
 	#fill the rest of the properties from the board
 	turn = board.get_turn()
-	#if there is no last BoardState, duplicate the table from Board
-	if turn == 0 && copy_pieces:
-		pieces = board.pieces.duplicate()
 
 #copy of Board.clear(), with the addition of a check to see if another BoardState already freed each piece
 func clear(var free:bool = true) -> void:
@@ -62,7 +56,11 @@ func _to_string():
 		for c in range(minimum.x, maximum.x + 1):
 			var v:Vector2 = Vector2(c,r)
 			if pieces.has(v):
-				s += pieces[v].get_name().substr(0,1)
+				var p = pieces[v]
+				if p == null:
+					s += "."
+				else:
+					s += pieces[v].get_name().substr(0,1)
 			else:
 				s += "."
 			s += " "

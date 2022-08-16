@@ -9,8 +9,7 @@ extends Node
 #instruction path to the board
 var path:String = ""
 
-#store pairs of pieces and their location
-var pieces:Dictionary = {}
+#store pieces at their initial locations
 #the states making up each turn of the board
 var states:Array 
 
@@ -49,6 +48,9 @@ var marks:Dictionary = {}
 var winners:Array = []
 var losers:Array = []
 
+#overrides get_team()'s return value if set to a positive integer, locking the effective team
+var lock:int = -1
+
 #signal to emit when the game ends, winning team indicated by get_team()
 signal end
 
@@ -57,11 +59,13 @@ func _init(var _path:String):
 	_ready()
 
 func _ready():
+	#create a BoardState for the opening state of the board
+	states = [BoardState.new(self)]
+	
 	#add .txt to the end of the file path if its not already present
 	if !path.ends_with(".txt"):
 		path += ".txt"
 		
-	
 	#tell Reader object which functions to call, ignore w phase for now
 	var funcs:Dictionary = {"b":"b_phase", "t":"t_phase", 
 		"g":"g_phase", "w":""}
@@ -83,9 +87,6 @@ func _ready():
 	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
-	
-	#create a BoardState for the opening state of the board
-	states = [BoardState.new(self)]
 
 #x_phase() functions are called by the Reader object in ready to initialize the board
 #all x_phase functions take in the same arguments I, vec, and file
@@ -137,10 +138,11 @@ func t_phase(var I, var vec:Array, var persist:Array) -> void:
 		var j = Vector2(vec[3], vec[4])
 		
 		teams.append(Team.new(i, j, teams.size()))
-		
-	#allow for updates to the team's table after their declaration
-	var t:Dictionary = teams.back().table
-	I.update_table_line(t)
+	
+	else:
+		#allow for updates to the team's table after their declaration
+		var t:Dictionary = teams.back().table
+		I.update_table_line(t)
 
 #the g phase handles implicit team creation and places pieces on the board
 #uses persitant to create a "sub-stage" where pieces are placed on the board with symmetry
@@ -213,15 +215,16 @@ func make_piece(var i:Array, var team:int, var update_state:bool = true) -> Vect
 	#bounce the position back from the piece to accound for px or py overriding the Piece's original position
 	v = p.get_pos()
 		
-	#add the piece to the dictionary
-	pieces[v] = p
+	#add the piece to the correct team's dictionary
 	teams[team].add(p, v)
 	
 	#update the last board state's piece and create the new one in the current state
 	if update_state:
 		states[states.size() - 1].pieces[v].last_update = get_turn()
-		states[get_turn() + 1].pieces[v] = pieces[v]
-		pieces[v].last_update = get_turn()
+		states[get_turn() + 1].pieces[v] = p
+		p.last_update = get_turn()
+	else:
+		states[0].pieces[v] = p
 	
 	return v
 
@@ -257,12 +260,12 @@ func find_surrounding(var pos:Vector2, var inclusive:bool = true):
 #marks are set to a duplicate of the return Dictionary, so the return value can be motified without changing board.marks
 func mark(var v:Vector2, var set:bool = true) -> Dictionary:
 	
-	#do not consider empty positions
-	if !(v in pieces):
-		return {}
-	
 	#gain a reference to the piece at v
-	var p:Piece = pieces[v]
+	var p = get_piece(v)
+	
+	#do not consider missing pieces
+	if p == null:
+		return {}
 	
 	#gain a reference to that piece's marks
 	var m:Array = p.get_mark()
@@ -380,7 +383,7 @@ func mark_step(var from:Piece, var to:Vector2,
 		if !is_surrounding(square): break
 		
 		#if the square being checked is occupied, check if the piece can be taken
-		var occ:bool = pieces.has(square)
+		var occ:bool = has(square)
 		var take:bool = true
 		if occ: 
 			#check if the from piece can take the to square
@@ -404,13 +407,18 @@ func mark_step(var from:Piece, var to:Vector2,
 #given a from and to square, returns true if a piece in from can take the to square, and false otherwise
 func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 	var teamf:int = -1
-	if pieces.has(from): teamf = pieces[from].get_team()
+	var f = get_piece(from)
+	
+	#null pieces cannot take
+	if f == null: return false
+	
+	if has(from): teamf = f.get_team()
 	var teamt:int = -1
-	if pieces.has(to): teamt = pieces[to].get_team()
+	if has(to): teamt = get_piece(to).get_team()
 	
 	if teamf == -1: return false
 	#from BoardConverter.gd
-	if teamf != teamt || pieces[from].get_ff(): return true
+	if teamf != teamt || f.get_ff(): return true
 	return false
 
 #execute a turn by moving a piece, updating both the piece's table and the board's pieces
@@ -419,15 +427,21 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 #returns an Array of changes to the board
 func execute_turn(var v:Vector2) -> Array:
 	
+	#reference the piece being moved
+	var p = get_piece(get_selected())
+	
+	#if p is null, no piece can have behaviors or marks extracted
+	#this should never happen, but just to be safe, this case will return no changes and not add any board states or pass any turns
+	if p == null:
+		print("Board::execute_turn() says: \"null piece at square " + String(v) + "\"")
+		return Array()
+	
 	#reference the last BoardState
 	var last:BoardState = states[get_turn()]
 	#create a new BoardState, not allowing it to copy the pieces dictionary
 	var state := BoardState.new(self, false)
 	#add the new state to the states array
 	states.append(state)
-	
-	#reference the piece being moved
-	var p:Piece = pieces[get_selected()]
 	
 	#the piece's mark instructions
 	var m:Array = p.get_mark()
@@ -451,12 +465,14 @@ func execute_turn(var v:Vector2) -> Array:
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
 	var changes := []
+	#add the base move to the front of p's behaviors
 	p.behaviors.push_front([-1, 2, get_selected(), v])
-#	#add changes from the piece and make changes to the board
+	#add changes from the piece and make changes to the board
 	execute_behaviors(changes, p, v, move, [0])
 	
 	#print(p.table)
 	#print(old_tables)
+	#print(changes)
 	
 	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
 	marks.clear()
@@ -474,25 +490,27 @@ func execute_turn(var v:Vector2) -> Array:
 				winners.append(t)
 			elif !losers.has(t): 
 				losers.append(t)
-	#otherwise, just increment the turn on the board an move on
-	else:
-		turn()
+		lock = get_team()
+	
+	print(state)
+	#print(self)
+	print(teams[get_team()])
+	
+	#increment the turn on the board
+	turn()
 	
 	#return Board updates
 	return changes
 
-#update an Array of changes to the board from an index of a behaviors dictionary
+#update an Array of changes to the board from a piece using its behaviors Array
 func execute_behaviors(var changes:Array, var piece:Piece, 
 	#square containing this move's mark, stored state of pieces being temporarily updated
 	#and the index of the move being made in piece's instructions
 	#transformed is an array of indices in piece.behaviors that have already been transformed
 	var v:Vector2, var idx:int = -1, var transformed:Array = []) -> void:
-		
-	#gain reference to the piece's behaviors
-	var behaviors := piece.behaviors
 	
-	#temporarily change the piece's position
-	piece.set_pos(v)
+	var behaviors:Array = piece.behaviors
+	
 	
 	#loop through each behavior
 	for i in behaviors.size():
@@ -608,34 +626,33 @@ func transform(var v:Vector2, var piece:Piece) -> Vector2:
 	
 #move the piece on from onto to
 func move_piece(var from:Vector2, var to:Vector2) -> bool:
-	#if no piece is in the from square, do not attempt to move from it
-	if !pieces.has(from): 
-		return false
 	
-	#if the to square has a piece, destroy it
-	var _to_full := erase(to)
+	#if no piece is in the from square, do not attempt to move from it
+	var f = get_piece(from)
+	if f == null:
+		return false
 	
 	#check if to is out of bounds, if so, just destroy from
-	#count this as a failue
 	if !is_surrounding(to):
-		erase(from)
-		return false
-	
-	#move the piece in both the board's pieces and the correct team's pieces
-	pieces[to] = pieces[from]
-	var p:Piece = pieces[to]
-	teams[p.get_team()].pieces[to] = pieces[to]
-	
-	#erase handles this synchronization on its own
-	erase(from, false)
-	
-	#update the piece's local position and increment its move count, return a success
-	pieces[to].set_pos(to)
-	pieces[to].set_last_pos(from)
+		erase_piece(f)
+		return true
+		
+	#duplicate the piece to avoid changing earlier states
+	var p:Piece = duplicate_piece(f)
 	
 	#update the piece and board state with this movement
-	states[get_turn() + 1].pieces[to] = pieces[to]
-	pieces[to].last_update = get_turn()
+	states[get_turn() + 1].pieces[to] = p
+	#remove the old version of the piece
+	states[get_turn()].pieces[from] = null
+	
+	#update the piece's team's dictionary
+	var t = teams[p.get_team()]
+	t.pieces[to] = p
+	t.pieces.erase(from)
+	
+	#update the piece's local position and increment its move count, return a success
+	p.set_pos(to)
+	p.set_last_pos(from)
 	
 	return true
 
@@ -646,18 +663,11 @@ func duplicate_piece(var p:Piece) -> Piece:
 	
 	return dup
 
-#duplicate the pieces Dictionary and the Pieces inside
-func duplicate_all() -> Dictionary:
-	var dup := {}
-	for v in pieces:
-		dup[v] = duplicate_piece(pieces[v])
-	
-	return dup
-
 #Various getters and setters
 
 #get the team of the current turn by taking turn % teams.size()
 func get_team(var offset:int = 0) -> int:
+	if lock > -1: return (lock + offset) % teams.size()
 	return (get_turn() + offset) % teams.size()
 	
 func get_name() -> String:
@@ -675,10 +685,19 @@ func set_selected(var select:Vector2 = Vector2.INF, var team:int = get_team()) -
 	teams[team].set_selected(select)
 	
 func get_piece(var v):
-	if !has(v):
-		print("Piece not found at key " + String(v))
-		return null
-	return pieces[v]
+	
+	var i := get_turn()
+	while i > -1:
+		
+		var state:BoardState = states[i]
+		var ps:Dictionary = state.pieces
+		
+		if ps.has(v):
+			return ps[v]
+		
+		i -= 1
+	
+	return null
 	
 func get_turn() -> int:
 	return table["turn"]
@@ -699,7 +718,7 @@ func has(var v:Vector2) -> bool:
 		var ps:Dictionary = state.pieces
 		
 		if ps.has(v):
-			if ps[v].last_update >= i:
+			if ps[v] == null:
 				return false
 			return true
 		
@@ -710,26 +729,29 @@ func has(var v:Vector2) -> bool:
 #erase also serves the same purpose as an old destroy_piece method
 #free can be set to false to keep the piece at v in memory after the erasure
 #free needs to be called manually because pieces are not nodes in the node tree, and so will leak if not freed
-func erase(var v:Vector2, var free:bool = true) -> bool:
+func erase(var v:Vector2) -> bool:
 	#if the piece is present, gain reference to it to reference its team
-	if !pieces.has(v): return false
+	var p = get_piece(v)
+	if p == null:
+		return false
 	
-	var p:Piece = pieces[v]
-	
+	return erase_piece(p)
+
+#erase doesn't need to search for a piece if the calling method already has it
+func erase_piece(var p:Piece) -> bool:
 	#then erase the piece in every correct dictionary
-	pieces.erase(v)
-	var b:bool = teams[p.get_team()].erase(v)
+	var b:bool = teams[p.get_team()].erase(p.get_pos())
 	
-	#set this piece's last update past its last appearance in states to "delete" it
-	p.last_update = get_turn()
+	#set this piece to null to delete it
+	p = null
 	
 	#this can still fail if the piece is not present in the team's dictionary
 	#so return the result of the last erasure
 	return b
 
 func clear(var free:bool = true) -> void:
-	if free: for v in pieces: pieces[v].free()
-	pieces.clear()
+	for s in states:
+		s.clear(free)
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
@@ -743,13 +765,12 @@ func _to_string():
 	s += "]\n"
 	
 	#sent the starting letter of each piece name into their appropriate square
-	var i = maximum.y
-	while i >= minimum.y:
+	for i in range(minimum.y, maximum.y + 1):
 		for j in range(minimum.x, maximum.x + 1):
 			#check if square contains a piece
 			var v = Vector2(j, i)
-			if pieces.has(v):
-				var c = pieces[v].get_name()[0]
+			if has(v):
+				var c = get_piece(v).get_name()[0]
 				#add the letter to the string and the used letters array
 				s += c
 			else:
@@ -761,7 +782,6 @@ func _to_string():
 					s += "#"
 			s += " "
 		s += "\n"
-		i -= 1
 		
 	s += String(table)
 	return s

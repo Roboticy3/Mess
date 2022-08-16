@@ -117,4 +117,33 @@ func get_color() -> Color:
 	return Color(table["cr"],table["cg"],table["cb"])
 	
 func _to_string() -> String:
-	return "[" + get_name() + " : " + String(table) + "]"
+	
+	var s:String
+	
+	#find the smallest square that contains all of the pieces
+	var minimum:Vector2 = Vector2.INF
+	var maximum:Vector2 = -Vector2.INF
+	for v in pieces:
+		if v.x < minimum.x: minimum.x = v.x
+		if v.y < minimum.y: minimum.y = v.y
+		if v.x > maximum.x: maximum.x = v.x
+		if v.y > maximum.y: maximum.y = v.y
+	
+	#fill the tiles with pieces in them with the first char of their name, fill the others with dots
+	for r in range(minimum.y, maximum.y + 1):
+		for c in range(minimum.x, maximum.x + 1):
+			var v:Vector2 = Vector2(c,r)
+			if pieces.has(v):
+				var p = pieces[v]
+				if p == null:
+					s += "."
+				else:
+					s += pieces[v].get_name().substr(0,1)
+			else:
+				s += "."
+			s += " "
+		#add a new line at the end of each row
+		s += "\n"
+	
+	return s + String(table)
+	

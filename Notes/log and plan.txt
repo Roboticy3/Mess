@@ -428,3 +428,24 @@
 	 - the rust left over from when compute_turn() was still a thing needs to be fully taken care of, so I moved the actual board updating into changes_from_piece()
 	NEXT
 	 - change behaviors into an array of arrays and changes_from_piece() to function with that. This will allow changes_from_piece() to only be called once over the whole array, checking maybe the first element to see the mark each behavior is attached to
+8/15/2022
+	 - changed behaviors into an array
+	 - renamed changes_from_piece() to the now more appropriate execute_behaviors(), and added a "transformed" argument to mask out indices of behaviors that do not need to be transformed, allowing the original move to be executed as part of this method
+	 - made Board.has() the first guinea pig in using BoardStates as a functional depiction of the board, its buggy as shit
+	 - made move_piece(), make_piece(), and erase() properly interact with states and Piece.last_update
+	 - found that team table updates don't work
+	NEXT
+	 - fix has() to not stop working after the game ends
+	 - fix team table updates
+	 - expand BoardStates to the point that the pieces Dictionary is more or less vestigial, so that execute_turn and mark() now function entirely off of the states Array instead of the pieces Dictionary
+8/16/2022
+	 - completely removed pieces from Board, making the states Array, has(), and get_piece() do all the heavy lifting
+	 - fixed team table updates
+	 - replaced the halting of turns causing a victoy lap with a team "lock" index in Board that stops teams from changing while turns progress as normal
+	 - unflipped Board._to_string() and reworked Team._to_string() to work similarly to BoardState.to_string()
+	 - made new states use duplicated pieces in order to not modify old ones, depricating Piece.last_update in favor of filling null in a state's pieces Dictionary when a piece from the last state has been deleted
+
+	 - all in a days work :) -
+
+	NEXT
+	 - implement a way of locking the board to a particular state to check forward

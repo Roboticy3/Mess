@@ -90,7 +90,7 @@ func begin(var _path:String = ""):
 	print(board)
 	
 	#generate piece objects
-	var ps = board.pieces
+	var ps = board.states[0].pieces
 	for v in ps:
 		create_piece(ps[v], v)
 	
@@ -235,18 +235,28 @@ func move_piece(var from:Vector2, var to:Vector2):
 	#if to contains a PieceMesh, remove that object before continuing
 	if pieces.has(to): destroy_piece(to)
 	
+	if !pieces.has(from): return
+	
+	#check if the piece on the board corresponding to this PieceMesh is gone
+	#this should never be the case, but this check makes BoardMesh more crash-resistant
+	var piece = board.get_piece(to)
+	if piece == null: return
+	
 	#update the dictionary
 	pieces[to] = pieces[from]
 	pieces.erase(from)
 	
-	#move the PieceMesh object into the right spot
+	#move the PieceMesh object into the right spot, and update its piece
 	var p:PieceMesh = pieces[to]
+	p.piece = piece
 	p.transform = BoardConverter.square_to_transform(graph, duplicates, board, p.piece)
 
 #destroy the PieceMesh at the input Vector2 square
 #do not attempt to destroy at an empty square
 func destroy_piece(var at:Vector2):
 	if !pieces.has(at): return
+	
+	#remove the piece from the scene tree
 	remove_child(pieces[at])
 	#free the piece to avoid a memory leak
 	pieces[at].free()
@@ -306,15 +316,15 @@ func mark(var v:Vector2) -> void:
 #generally handles all interactions a Player object could have with the main Board object
 func handle(var v:Vector2, var team:int = 0):
 	
-	var p:Dictionary = board.pieces
 	#print(v)
+	#check if square is a selectable piece
+	var p = board.get_piece(v)
 
 	#check if square is a square that can be moved to
 	if v in board.marks: 
 		execute_turn(v)
 		
-	#check if square is a selectable piece
-	elif v in p && team == p[v].get_team():
+	elif p != null && team == p.get_team():
 		#mark from selectable piece
 		mark(v)
 		set_selected(v)
@@ -351,40 +361,4 @@ func set_selected(var v:Vector2) -> void:
 #emit the end game signal into the node tree
 func end() -> void:
 	#update the winners/losers arrays for the Game Over UI to display
-	update_winners_losers()
 	emit_signal("end")
-
-#get the arrays of winners and losers from the board
-func get_winners() -> Array:
-	return board.winners
-func get_losers() -> Array:
-	return board.losers
-
-#update the results Dictionary with the winning and losing teams
-#return true if any changes were made, and false otherwise
-func update_winners_losers() -> bool:
-	var change:bool = false
-	
-	#check if the board.winners Array is populated
-	if !get_winners().empty():
-		#flag changes and convert the board.winners Array into a string
-		change = true
-		var winners := ""
-		for i in get_winners().size():
-			var t = get_winners()[i]
-			winners += t.get_name()
-			if i + 1 < get_winners().size():
-				winners += ", "
-		results["winners"] = winners
-	
-	#repeat the above process for the losers Array
-	if !get_losers().empty():
-		change = true
-		var losers := ""
-		for i in get_losers().size():
-			var t = get_losers()[i]
-			losers += t.get_name()
-			if i + 1 < get_losers().size():
-				losers += ", "
-		results["losers"] = losers
-	return change
