@@ -448,4 +448,4 @@
 	 - all in a days work :) -
 
 	NEXT
-	 - implement a way of locking the board to a particular state to check forward
+	 - implement a way of locking the board to a particular state to check forward, and a way to store those forward turns

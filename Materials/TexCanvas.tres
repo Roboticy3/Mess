@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" load_steps=3 format=2]
 
-[ext_resource path="res://Textures/Checkerboard_tile.svg" type="Texture" id=1]
+[ext_resource path="res://Textures-Sprites/Checkerboard_tile.svg" type="Texture" id=1]
 
 [sub_resource type="Shader" id=1]
 code = "// NOTE: Shader automatically converted from Godot Engine 3.4.stable's CanvasItemMaterial.

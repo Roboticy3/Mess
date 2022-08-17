@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://UI/Fonts/Title.tres" type="DynamicFont" id=1]
 [ext_resource path="res://UI/Themes/MenuTheme.tres" type="Theme" id=2]
@@ -8,6 +8,7 @@
 [ext_resource path="res://Objects/UI/PropertyCopier.gd" type="Script" id=6]
 [ext_resource path="res://Objects/UI/ResizeViewports.gd" type="Script" id=7]
 [ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=8]
+[ext_resource path="res://Textures-Sprites/Arrow_left.svg" type="Texture" id=9]
 [ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=10]
 
 [sub_resource type="InputEventAction" id=1]
@@ -25,9 +26,17 @@ __meta__ = {
 
 [node name="ResizeViewports" type="Node" parent="."]
 script = ExtResource( 7 )
-viewport_paths = [ NodePath("../Title Screen"), NodePath("../Load Board") ]
+viewport_paths = [ NodePath("../Title Screen"), NodePath("../Load Board"), NodePath("../Settings") ]
 size = "rect_scale"
 multiplier = true
+
+[node name="EscToTitle" type="Node" parent="."]
+script = ExtResource( 4 )
+menu_path = NodePath("../Title Screen")
+focus_path = NodePath("../Title Screen/Buttons/Load Board")
+signal_name = "ui_cancel"
+is_signal_input = true
+invert_on_unhidden = false
 
 [node name="Background" type="ColorRect" parent="."]
 material = ExtResource( 3 )
@@ -41,6 +50,7 @@ __meta__ = {
 }
 
 [node name="Title Screen" type="Control" parent="."]
+visible = false
 anchor_left = 0.5
 anchor_right = 0.5
 theme = ExtResource( 2 )
@@ -84,14 +94,26 @@ text = "Load Board"
 script = ExtResource( 4 )
 menu_path = NodePath("../../../Load Board")
 focus_path = NodePath("../../../Load Board/Center Frame/Input/Board Finder")
+signal_name = "button_up"
 
-[node name="Quit" type="Button" parent="Title Screen/Buttons"]
+[node name="Settings" type="Button" parent="Title Screen/Buttons"]
 margin_top = 32.0
 margin_right = 1480.0
 margin_bottom = 60.0
+text = "Settings"
+script = ExtResource( 4 )
+menu_path = NodePath("../../../Settings")
+focus_path = NodePath("../../../Settings/Back")
+signal_name = "button_up"
+
+[node name="Quit" type="Button" parent="Title Screen/Buttons"]
+margin_top = 64.0
+margin_right = 1480.0
+margin_bottom = 92.0
 theme = ExtResource( 2 )
 text = "Quit"
 script = ExtResource( 8 )
+quit_signal = "button_up"
 
 [node name="Load Board" type="Control" parent="."]
 visible = false
@@ -213,6 +235,79 @@ text = "Back"
 script = ExtResource( 4 )
 menu_path = NodePath("../../../Title Screen")
 focus_path = NodePath("../../../Title Screen/Buttons/Load Board")
+
+[node name="Settings" type="Control" parent="."]
+margin_right = 1920.0
+margin_bottom = 1080.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Inputs" type="Control" parent="Settings"]
+margin_right = 1920.0
+margin_bottom = 1080.0
+
+[node name="Button" type="Button" parent="Settings/Inputs"]
+margin_right = 12.0
+margin_bottom = 20.0
+
+[node name="Label" type="Label" parent="Settings/Inputs"]
+margin_right = 2160.0
+margin_bottom = 681.0
+rect_scale = Vector2( 0.888, 0.888 )
+theme = ExtResource( 2 )
+text = "Inputs"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SettingsPageRight" type="Button" parent="Settings/Inputs"]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_right = 48.0
+margin_bottom = 1080.0
+rect_scale = Vector2( -1, 1 )
+theme = ExtResource( 2 )
+icon = ExtResource( 9 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SettingsPageLeft" type="Button" parent="Settings/Inputs"]
+margin_right = 48.0
+margin_bottom = 1080.0
+theme = ExtResource( 2 )
+icon = ExtResource( 9 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Settings" type="Label" parent="Settings"]
+margin_left = 816.0
+margin_right = 3661.0
+margin_bottom = 681.0
+rect_scale = Vector2( 0.1, 0.1 )
+theme = ExtResource( 2 )
+text = "Settings"
+
+[node name="Back" type="Button" parent="Settings"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -28.0
+margin_top = -61.0
+margin_right = 28.0
+margin_bottom = -33.0
+theme = ExtResource( 2 )
+text = "Back"
+script = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+menu_path = NodePath("../../Title Screen")
+focus_path = NodePath("../../Title Screen/Buttons/Load Board")
+signal_name = "button_up"
 
 [connection signal="text_changed" from="Load Board/Center Frame/Input/Board Path" to="Load Board/Center Frame/Input/Board Path" method="emit"]
 [connection signal="pressed" from="Load Board/Buttons/Refresh" to="Load Board/Center Frame/Input/Board Finder" method="refresh"]
