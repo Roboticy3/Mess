@@ -262,13 +262,30 @@ func destroy_piece(var at:Vector2):
 	pieces[at].free()
 	pieces.erase(at)
 
+#update BoardMesh to match its Board if they get desynchronized
+func synchronize() -> void:
+	
+	var p:Dictionary = board.get_pieces()
+	
+	#iterate through pieces.keys() to not modify a dictionary while iterating through it
+	var vs := pieces.keys()
+	for v in vs:
+		if !p.has(v):
+			destroy_piece(v)
+	for v in p:
+		if !pieces.has(v): 
+			create_piece(p[v], v)
+		
+func revert(var offset:int = board.get_turn() - 1) -> void:
+	board.revert(offset)
+	synchronize()
+
 #clear the board, optionally freeing the cleared pieces
 func clear_board(var free:bool = true) -> void:
 	board.clear(free)
 	
 #clear the board and destroy it
 func destroy_board() -> void:
-	board.clear()
 	for p in board.piece_types:
 		p.free()
 	for b in board.states:
@@ -328,7 +345,7 @@ func handle(var v:Vector2, var team:int = 0):
 		#mark from selectable piece
 		mark(v)
 		set_selected(v)
-		
+	
 	return get_team() #get team from board in case there is one player which has to switch
 
 #get updates to the board to apply to BoardMesh while updating the Board's data as well
@@ -343,7 +360,7 @@ func execute_turn(var v:Vector2) -> void:
 			move_piece(c[0], c[1])
 		elif c is Array:
 			var square:Vector2 = Vector2(c[1],c[2])
-			create_piece(board.pieces[square],square)
+			create_piece(board.get_piece(square),square)
 		elif c is Vector2:
 			destroy_piece(c)
 	
