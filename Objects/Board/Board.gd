@@ -422,12 +422,12 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 func execute_turn(var v:Vector2) -> Array:
 	
 	#reference the piece being moved
-	var p = get_piece(get_selected())
+	var f = get_piece(get_selected())
 	
 	#if p is null, no piece can have behaviors or marks extracted
 	#this should never happen, but just to be safe, this case will return no changes and not add any board states or pass any turns
-	if p == null:
-		print("Board::execute_turn() says: \"null piece at square " + String(v) + "\"")
+	if f == null:
+		print("Board::execute_turn() says: \"no piece at square " + String(v) + "\"")
 		return Array()
 	
 	#reference the last BoardState
@@ -437,6 +437,7 @@ func execute_turn(var v:Vector2) -> Array:
 	#add the new state to the states array
 	states.append(state)
 	
+	var p:Piece = duplicate_piece(f)
 	#the piece's mark instructions
 	var m:Array = p.get_mark()
 	#the index of m that was used to move
@@ -450,7 +451,7 @@ func execute_turn(var v:Vector2) -> Array:
 	
 	#pair the m phase with nothing since marks are not being generated
 	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
-	var reader:Reader = Reader.new(p, funcs, p.get_p_path(), 3, self)
+	var reader:Reader = Reader.new(p, funcs, f.get_p_path(), 3, self)
 	reader.wait = true
 	reader.read()
 	
@@ -562,7 +563,7 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 			if from == Vector2.INF || to == Vector2.INF: continue
 		
 			#add change to Array
-			move_piece(from,to)
+			move_piece(from,to,piece)
 			changes.append(c)
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
@@ -619,7 +620,8 @@ func transform(var v:Vector2, var piece:Piece) -> Vector2:
 	return pos.keys()[0]
 	
 #move the piece on from onto to
-func move_piece(var from:Vector2, var to:Vector2) -> bool:
+#optionally provide duplicate piece p in advance
+func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null) -> bool:
 	
 	#if no piece is in the from square, do not attempt to move from it
 	var f = get_piece(from)
@@ -632,7 +634,7 @@ func move_piece(var from:Vector2, var to:Vector2) -> bool:
 		return true
 		
 	#duplicate the piece to avoid changing earlier states
-	var p:Piece = duplicate_piece(f)
+	if p == null: p = duplicate_piece(f)
 	
 	#update the piece and board state with this movement
 	states[get_turn() + 1].pieces[to] = p
@@ -804,7 +806,7 @@ func _to_string():
 			#check if square contains a piece
 			var p = get_piece(v)
 			if p != null:
-				var c = String(p.updates)[0]
+				var c = p.get_name()[0]
 				#add the letter to the string and the used letters array
 				s += c
 			else:

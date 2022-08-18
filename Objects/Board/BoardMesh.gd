@@ -274,6 +274,7 @@ func synchronize() -> void:
 			destroy_piece(v)
 	for v in p:
 		if !pieces.has(v): 
+			print(p[v])
 			create_piece(p[v], v)
 		
 func revert(var offset:int = board.get_turn() - 1) -> void:
@@ -345,6 +346,10 @@ func handle(var v:Vector2, var team:int = 0):
 		#mark from selectable piece
 		mark(v)
 		set_selected(v)
+	
+	if board.get_turn() > 6:
+		revert(1)
+		print(board)
 	
 	return get_team() #get team from board in case there is one player which has to switch
 
