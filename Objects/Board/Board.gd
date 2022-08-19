@@ -44,15 +44,8 @@ var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1,
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
 
-#array of winning and losing teams to populate when the game ends
-var winners:Array = []
-var losers:Array = []
-
 #overrides get_team()'s return value if set to a positive integer, locking the effective team
 var lock:int = -1
-
-#signal to emit when the game ends, winning team indicated by get_team()
-signal end
 
 func _init(var _path:String):
 	path = _path
@@ -415,33 +408,39 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 	if teamf != teamt || f.get_ff(): return true
 	return false
 
-#execute a turn by moving a piece, updating both the piece's table and the board's pieces
-#the only argument taken is a mark to select from marks
-#assumes both v is in pieces and v is in bounds
+#execute a turn by creating a new BoardState and adding it to the states Array
 #returns an Array of changes to the board
-func execute_turn(var v:Vector2) -> Array:
+#set append to false to create a new state without updating the board
+#set turn to false to not increment the turn counter
+func execute_turn(var v:Vector2, var changes:Array = [],
+	var append := true, var turn := true) -> BoardState:
 	
 	#reference the piece being moved
 	var f = get_piece(get_selected())
+	
+	#create a new BoardState, not allowing it to copy the pieces dictionary
+	var state := BoardState.new(self)
 	
 	#if p is null, no piece can have behaviors or marks extracted
 	#this should never happen, but just to be safe, this case will return no changes and not add any board states or pass any turns
 	if f == null:
 		print("Board::execute_turn() says: \"no piece at square " + String(v) + "\"")
-		return Array()
-	
-	#reference the last BoardState
-	var last:BoardState = states[get_turn()]
-	#create a new BoardState, not allowing it to copy the pieces dictionary
-	var state := BoardState.new(self, false)
-	#add the new state to the states array
-	states.append(state)
+		return state
 	
 	var p:Piece = duplicate_piece(f)
 	#the piece's mark instructions
 	var m:Array = p.get_mark()
-	#the index of m that was used to move
+	
+	#the index of m that was used to move, assert that it exists before continuing
+	if !marks.has(v):
+		print("Board::execute_turn() says: \"no mark at square " + String(v) + "\"")
+		return state
 	var move:int = marks[v]
+	
+	#reference the last BoardState
+	#var last:BoardState = states[get_turn()]
+	#add the new state to the states array
+	states.append(state)
 	
 	#increment moves and update the piece's table from the selected mark
 	m[move].update_table_line()
@@ -459,11 +458,10 @@ func execute_turn(var v:Vector2) -> Array:
 	
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
-	var changes := []
 	#add the base move to the front of p's behaviors
 	p.behaviors.push_front([-1, 2, get_selected(), v])
 	#add changes from the piece and make changes to the board
-	execute_behaviors(changes, p, v, move, [0])
+	execute_behaviors(changes, p, move, [0])
 	
 	#print(p.table)
 	#print(old_tables)
@@ -474,17 +472,17 @@ func execute_turn(var v:Vector2) -> Array:
 	p.behaviors.clear()
 	
 	#compute win conditions for this turn
-	var results := evaluate_win_conditions()
+	var results := evaluate_win_conditions(state)
+	
+	#if this turn is not being applied, do not increment turn or check the results
+	if !append:
+		#also remove this state from the states array
+		states.remove(get_turn() + 1)
+		return state
 		
 	#if any results came back, the game is ending this turn
 	#check the results to see who wins and looses and emit the signal to end the game
 	if !results.empty():
-		for r in results:
-			var t = teams[r[0]]
-			if r[1] && !winners.has(t): 
-				winners.append(t)
-			elif !losers.has(t): 
-				losers.append(t)
 		lock = get_team()
 	
 	#print(state)
@@ -492,17 +490,16 @@ func execute_turn(var v:Vector2) -> Array:
 	#print(teams[get_team()])
 	
 	#increment the turn on the board
-	turn()
+	if turn: turn()
 	
 	#return Board updates
-	return changes
+	return state
 
 #update an Array of changes to the board from a piece using its behaviors Array
 func execute_behaviors(var changes:Array, var piece:Piece, 
-	#square containing this move's mark, stored state of pieces being temporarily updated
 	#and the index of the move being made in piece's instructions
 	#transformed is an array of indices in piece.behaviors that have already been transformed
-	var v:Vector2, var idx:int = -1, var transformed:Array = []) -> void:
+	var idx:int = -1, var transformed:Array = []) -> void:
 	
 	var behaviors:Array = piece.behaviors
 	
@@ -558,18 +555,22 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 				to = transform(to, piece)
 				from = transform(from, piece)
 			
-			var c = PoolVector2Array([from, to])
+			#check if the piece being relocated needs to be refetched
+			var p:Piece = piece
+			if from != piece.get_pos():
+				p = get_piece(from)
 			
 			if from == Vector2.INF || to == Vector2.INF: continue
 		
 			#add change to Array
-			move_piece(from,to,piece)
-			changes.append(c)
+			move_piece(from,to,p)
+			changes.append(PoolVector2Array([from, to]))
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
 #each element of the array contains at its end an index for its source Instruction in win conditions, and contains the following:
 # the team it affects, and whether it is a win or loss
-func evaluate_win_conditions() -> Array:
+#also updates the winners and losers of an input BoardState
+func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	#final array to return
 	var results:Array = []
@@ -605,7 +606,15 @@ func evaluate_win_conditions() -> Array:
 				
 		#add the result into the final Array
 		if apply: results.append(result)
-		
+	
+	#apply the win conditions to the winners and losers of the input state
+	for r in results:
+		var t = teams[r[0]]
+		if r[1] && !state.winners.has(t): 
+			state.winners.append(t)
+		elif !state.losers.has(t): 
+			state.losers.append(t)
+	
 	return results
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
@@ -681,6 +690,15 @@ func set_selected(var select:Vector2 = Vector2.INF, var team:int = get_team()) -
 	
 func get_turn() -> int:
 	return table["turn"]
+	
+func get_winners() -> Array:
+	return states[get_turn()].winners
+
+func get_losers() -> Array:
+	return states[get_turn()].losers
+
+func get_lock() -> int:
+	return lock
 
 #increment turn for both the board and the current team
 #can also take a number of turns to increment
@@ -705,7 +723,7 @@ func has(var v:Vector2) -> bool:
 
 #find a piece and return its index in states
 func find(var v:Vector2) -> int:
-	var i := get_turn()
+	var i:int = get_turn()
 	while i > -1:
 		
 		var s:BoardState = states[i]
@@ -723,7 +741,7 @@ func find(var v:Vector2) -> int:
 func get_pieces(var offset:int = 1) -> Dictionary:
 	
 	#find all pieces, deleted or not, in states
-	var pieces:Dictionary
+	var pieces:Dictionary = {}
 	for i in get_turn() + offset:
 		
 		#for all the pieces in this state

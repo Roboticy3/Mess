@@ -16,8 +16,12 @@ var pieces := {}
 #reference to the Board that this BoardState belongs to
 var board
 
+#arrays of winning and losing teams in this state
+var winners:Array = []
+var losers:Array = []
+
 #a BoardState can be built from the owner board, and will interperet the current turn
-func _init(var _board = null, var copy_pieces:bool = true):
+func _init(var _board = null):
 	
 	#do not try to initialize from a null board
 	if _board == null: return
@@ -40,7 +44,7 @@ func clear(var free:bool = true) -> void:
 #print out all of the pieces in this BoardState
 func _to_string():
 	
-	var s:String
+	var s:String = ""
 	
 	#find the smallest square that contains all of the pieces
 	var minimum:Vector2 = Vector2.INF
@@ -60,7 +64,7 @@ func _to_string():
 				if p == null:
 					s += "."
 				else:
-					s += pieces[v].get_name().substr(0,1)
+					s += String(pieces[v].updates)[0]
 			else:
 				s += "."
 			s += " "

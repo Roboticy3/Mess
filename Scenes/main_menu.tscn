@@ -50,7 +50,6 @@ __meta__ = {
 }
 
 [node name="Title Screen" type="Control" parent="."]
-visible = false
 anchor_left = 0.5
 anchor_right = 0.5
 theme = ExtResource( 2 )
@@ -237,6 +236,7 @@ menu_path = NodePath("../../../Title Screen")
 focus_path = NodePath("../../../Title Screen/Buttons/Load Board")
 
 [node name="Settings" type="Control" parent="."]
+visible = false
 margin_right = 1920.0
 margin_bottom = 1080.0
 __meta__ = {

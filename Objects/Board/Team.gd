@@ -118,7 +118,7 @@ func get_color() -> Color:
 	
 func _to_string() -> String:
 	
-	var s:String
+	var s:String = ""
 	
 	#find the smallest square that contains all of the pieces
 	var minimum:Vector2 = Vector2.INF

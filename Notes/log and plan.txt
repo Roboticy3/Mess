@@ -449,3 +449,16 @@
 
 	NEXT
 	 - implement a way of locking the board to a particular state to check forward, and a way to store those forward turns
+8/18/2022
+	 - implemented Board.revert() and BoardMesh.revert() along with some complementary methods, these methods allow any previous turn on the Board to be loaded at any time (with a lot of lag)
+	 - the most important of these complementary methods is BoardMesh.synchronize(), which can force BoardMesh to visually match the contents of its Board if they get separated
+	 - made execute_turn() act on a duplicate of a piece instead of the original to avoid changing states when it isn't supposed to
+	NEXT
+	 - move execute_behaviors() and execute_turn() into BoardState, and have Board.execute_turn() wrap BoardState.execute_turn()
+	 - allow BoardState to store future versions of itself
+8/19/2022
+	 - deemed execute_turn() being moved to BoardState as unnessecary. I'd prefer if Board acts on BoardStates instead of BoardStates mutating themselves
+	 - reworked args of execute_turn() to have flags for if it appends its state or increments turn, and so changes is an input and the new state is the return value, this allows for "simulated turns." The main issue with this system is that the turn manipulation required to simulate a turn is very finnicky
+	NEXT
+	 - make method in Board to find all possible moves and store them into a tree of States
+	 - try to make turns less finnicky with unapplied states

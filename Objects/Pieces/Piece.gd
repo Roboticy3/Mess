@@ -78,7 +78,6 @@ func c_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	if vec.size() < 3: return
 	if vec.size() > 3: persist[0] = vec[3]
 	
-	var v:Vector2 = Vector2(vec[1], vec[2])
 	#update behaviors with the array [vec[0], v.x, v.y]
 	#this array can be used as the first argument for board.make_piece()
 	if persist[0] == null: persist[0] = -1

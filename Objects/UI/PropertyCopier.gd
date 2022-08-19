@@ -65,7 +65,7 @@ func copy_properties(var property_names := target_property_names,
 	return can_succeed
 
 #if _process is enabled, copy_property will run every frame
-func _process(delta): copy_properties()
+func _process(_delta): copy_properties()
 
 #emit the copy signal, optional arguments for connecting to anonymous functions
 func emit(var _args = null):
