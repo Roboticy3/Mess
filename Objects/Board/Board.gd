@@ -169,14 +169,14 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 				persist[1] = vec[4]
 				
 		#make a piece with the updated persist settings
-		var pos = make_piece(vec, persist[0])
+		var pos = make_piece(vec, persist[0], true)
 			
 		#symmetrize piece if symmetry is enabled
 		if persist[1] != 0 && persist[1] != null:
 			pos = -pos + 2*(center)
 			vec[1] = pos.x
 			vec[2] = pos.y
-			make_piece(vec, persist[0] + 1)
+			make_piece(vec, persist[0] + 1, true)
 			
 #the w phase handles generating winning and losing conditions for different teams
 #these instructions only need to be stored, to be later evaluated when necessary
@@ -188,7 +188,7 @@ func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
 #set piece and return set position from array of length 4
 #returns the position interpereted from the input vector
 #the part which updates states can refer to nonexistent state and crash, so it can be disabled with the update_state bool
-func make_piece(var i:Array, var team:int) -> Vector2:
+func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
 	
 	#ignore arrays that are too small
 	if i.size() < 3: 
@@ -211,7 +211,10 @@ func make_piece(var i:Array, var team:int) -> Vector2:
 	#add the piece to the correct team's dictionary
 	teams[team].add(p, v)
 	
-	states[0].pieces[v] = p
+	if init:
+		states[0].pieces[v] = p
+	else:
+		states[get_turn() + 1].pieces[v] = p
 	
 	return v
 
@@ -414,22 +417,8 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 #set turn to false to not increment the turn counter
 func execute_turn(var v:Vector2, var changes:Array = [],
 	var append := true, var turn := true) -> BoardState:
-	
-	#reference the piece being moved
-	var f = get_piece(get_selected())
-	
-	#create a new BoardState, not allowing it to copy the pieces dictionary
-	var state := BoardState.new(self)
-	
-	#if p is null, no piece can have behaviors or marks extracted
-	#this should never happen, but just to be safe, this case will return no changes and not add any board states or pass any turns
-	if f == null:
-		print("Board::execute_turn() says: \"no piece at square " + String(v) + "\"")
-		return state
-	
-	var p:Piece = duplicate_piece(f)
-	#the piece's mark instructions
-	var m:Array = p.get_mark()
+		
+	var state = BoardState.new(self)
 	
 	#the index of m that was used to move, assert that it exists before continuing
 	if !marks.has(v):
@@ -437,12 +426,28 @@ func execute_turn(var v:Vector2, var changes:Array = [],
 		return state
 	var move:int = marks[v]
 	
-	#reference the last BoardState
-	#var last:BoardState = states[get_turn()]
+	#reference the piece being moved
+	var f = get_piece(get_selected())
+	
+	#if p is null, no piece can have behaviors or marks extracted
+	#this should never happen, but just to be safe, this case will return no changes and not add any board states or pass any turns
+	if f == null:
+		print("Board::execute_turn() says: \"no piece at square " + String(v) + "\"")
+		return state
+		
 	#add the new state to the states array
 	states.append(state)
 	
+	#duplicate the target piece to avoid mofidying and older version of it
+	var p:Piece = duplicate_piece(f)
+	#the piece's mark instructions
+	var m:Array = p.get_mark()
+	
+	#reference the last BoardState
+	#var last:BoardState = states[get_turn()]
+	
 	#increment moves and update the piece's table from the selected mark
+	m[move].table = p.table
 	m[move].update_table_line()
 	p.table["moves"] += 1
 	
@@ -463,12 +468,11 @@ func execute_turn(var v:Vector2, var changes:Array = [],
 	#add changes from the piece and make changes to the board
 	execute_behaviors(changes, p, move, [0])
 	
+	
 	#print(p.table)
-	#print(old_tables)
 	#print(changes)
 	
-	#clear the marks dictionary and the piece's temporary behaviors so they don't effect future turns
-	marks.clear()
+	#piece's temporary behaviors so they don't effect future turns
 	p.behaviors.clear()
 	
 	#compute win conditions for this turn
@@ -478,19 +482,21 @@ func execute_turn(var v:Vector2, var changes:Array = [],
 	if !append:
 		#also remove this state from the states array
 		states.remove(get_turn() + 1)
-		return state
 		
 	#if any results came back, the game is ending this turn
 	#check the results to see who wins and looses and emit the signal to end the game
-	if !results.empty():
+	#only do this if state is being appended as the current state
+	elif !results.empty():
 		lock = get_team()
 	
 	#print(state)
 	#print(self)
 	#print(teams[get_team()])
 	
-	#increment the turn on the board
-	if turn: turn()
+	#increment the turn on the board and clear last turn's marks
+	if turn: 
+		marks.clear()
+		turn()
 	
 	#return Board updates
 	return state
@@ -557,13 +563,14 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 			
 			#check if the piece being relocated needs to be refetched
 			var p:Piece = piece
+			var f:Piece = get_piece(from)
 			if from != piece.get_pos():
-				p = get_piece(from)
+				p = duplicate_piece(f)
 			
 			if from == Vector2.INF || to == Vector2.INF: continue
 		
 			#add change to Array
-			move_piece(from,to,p)
+			move_piece(from,to,p,f,false)
 			changes.append(PoolVector2Array([from, to]))
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
@@ -617,6 +624,34 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	return results
 
+#super mark
+#build all possible BoardStates for this turn
+func smark() -> Array:
+	
+	#get all the pieces from the last turn in the current team
+	var pieces:Dictionary = get_pieces(0, get_team())
+	
+	var s := []
+	
+	#loop through all pieces on the team
+	for v in pieces:
+		#mark their moves without setting the marks to board.marks
+		var t := OS.get_ticks_usec()
+		var m := mark(v)
+		set_selected(v)
+		print("mark ", String(v), ": ", OS.get_ticks_usec() - t)
+		
+		for i in m:
+			var _t := OS.get_ticks_usec()
+			var state := execute_turn(i, [], false, false)
+			s.append(state)
+			print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
+	
+	marks.clear()
+	set_selected()
+	
+	return s
+
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:
 	
@@ -630,15 +665,18 @@ func transform(var v:Vector2, var piece:Piece) -> Vector2:
 	
 #move the piece on from onto to
 #optionally provide duplicate piece p in advance
-func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null) -> bool:
+#set safe to false to skip checks
+func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
+	var f:Piece = null, var safe:bool = true) -> bool:
 	
 	#if no piece is in the from square, do not attempt to move from it
-	var f = get_piece(from)
+	if f == null:
+		f = get_piece(from)
 	if f == null:
 		return false
 	
 	#check if to is out of bounds, if so, just destroy from
-	if !is_surrounding(to):
+	if safe && !is_surrounding(to):
 		erase_piece(f)
 		return true
 		
@@ -684,9 +722,11 @@ func get_selected(var team:int = get_team()) -> Vector2:
 	if team > teams.size(): return Vector2.INF
 	return teams[team].get_selected()
 	
-func set_selected(var select:Vector2 = Vector2.INF, var team:int = get_team()) -> void:
-	if team > teams.size(): return
-	teams[team].set_selected(select)
+func set_selected(var select := Vector2.INF, var team := get_team(), 
+	var force := true) -> bool:
+	
+	if team > teams.size(): return false
+	return teams[team].set_selected(select, force)
 	
 func get_turn() -> int:
 	return table["turn"]
@@ -707,7 +747,7 @@ func turn(var n:int = 1) -> void:
 	table["turn"] += n
 
 #pieces Dictionary interfaces and mutators has, erase, and clear
-func get_piece(var v):
+func get_piece(var v:Vector2):
 	
 	var i := find(v)
 	if i == -1 || states[i].pieces[v].updates:
@@ -723,7 +763,7 @@ func has(var v:Vector2) -> bool:
 
 #find a piece and return its index in states
 func find(var v:Vector2) -> int:
-	var i:int = get_turn()
+	var i:int = states.size() - 1
 	while i > -1:
 		
 		var s:BoardState = states[i]
@@ -738,17 +778,22 @@ func find(var v:Vector2) -> int:
 	
 #return every square that has a piece
 #offset controls how many states away from the state at get_turn() will be considered
-func get_pieces(var offset:int = 1) -> Dictionary:
+#team can be set higher than -1 to filter pieces from a specific team
+func get_pieces(var offset:int = 0, var team = -1) -> Dictionary:
 	
 	#find all pieces, deleted or not, in states
 	var pieces:Dictionary = {}
-	for i in get_turn() + offset:
+	for i in get_turn() + offset + 1:
 		
 		#for all the pieces in this state
 		var ps:Dictionary = states[i].pieces
 		for v in ps:
 			
-			pieces[v] = ps[v]
+			if team > -1:
+				if ps[v].get_team() == team:
+					pieces[v] = ps[v]
+			else:
+				pieces[v] = ps[v]
 			
 			#filter out deleted pieces
 			if ps[v].updates:

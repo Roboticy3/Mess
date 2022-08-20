@@ -157,4 +157,4 @@ func merge(var new_table:Dictionary, var replace:bool = true) -> void:
 		
 	
 func _to_string():
-	return get_name() + " " + String(get_team()) + " : " + String(table)
+	return get_name() + " " + String(get_team())# + " : " + String(table)

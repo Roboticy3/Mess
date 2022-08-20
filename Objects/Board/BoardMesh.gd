@@ -346,6 +346,7 @@ func handle(var v:Vector2, var team:int = 0):
 		#mark from selectable piece
 		mark(v)
 		set_selected(v)
+		
 	
 	return get_team() #get team from board in case there is one player which has to switch
 
@@ -373,6 +374,8 @@ func execute_turn(var v:Vector2) -> void:
 	#clear board marks
 	highlight_squares()
 	marks.clear()
+	
+	board.smark()
 
 #get the team moving on the current turn from board
 func get_team() -> int:

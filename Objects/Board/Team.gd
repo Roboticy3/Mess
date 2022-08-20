@@ -41,8 +41,9 @@ func get_forward() -> Vector2:
 	
 #set selected if the team has a piece in the input square
 #returns false if there is no piece here
-func set_selected(var s:Vector2) -> bool:
-	if has(s): 
+#set false to true to ignore this check
+func set_selected(var s:Vector2, var force := false) -> bool:
+	if force || has(s): 
 		table["sx"] = s.x
 		table["sy"] = s.y
 		return true
