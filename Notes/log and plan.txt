@@ -477,3 +477,8 @@
 	 - add debug ui for measuring the execution time of different functions
 	 - think of small optimizations for project_states() (maybe optimizations are in vectorize()?)
 	 - add an option for execute_turn() to reread behaviors like it used to
+8/22/2022
+	 - took a break from all the math to rework Player.gd and the movement system
+	 - found a bug where square selections can persist through different boards
+	NEXT
+	 - finish up with reworking player then >>8/20/2022
