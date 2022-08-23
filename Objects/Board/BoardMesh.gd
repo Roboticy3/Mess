@@ -375,7 +375,7 @@ func execute_turn(var v:Vector2) -> void:
 	highlight_squares()
 	marks.clear()
 	
-	board.project_states()
+	#board.project_states()
 	print(board.teams)
 
 #get the team moving on the current turn from board

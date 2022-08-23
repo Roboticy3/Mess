@@ -314,6 +314,9 @@ func mark(var v:Vector2, var set:bool = true) -> Dictionary:
 func mark_step(var from:Piece, var to:Vector2,
 	var line:int = 0, var type:int = 0, var s:Dictionary = {}, var i:int = 0) -> Dictionary:
 	
+	#keep track of the time this function takes to execute
+	var t := OS.get_ticks_usec()
+	
 	#create a Vector2 object from the first two entries in a
 	to = from.transform(to)
 	
@@ -394,6 +397,9 @@ func mark_step(var from:Piece, var to:Vector2,
 		#if square is occupied by a takeable piece, break after adding the square
 		if occ && take: 
 			break
+			
+	#send the execution time to debugger
+	Accessor.debug_mark_step_exec_times.append(OS.get_ticks_usec() - t)
 		
 	return s
 
@@ -463,6 +469,8 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	
 	#add the base move to the front of p's behaviors
 	p.behaviors = [[-1, 2, get_selected(), v]]
+	var funcs:Dictionary = {"m":"m_phase","t":"t_phase","c":"c_phase","r":"r_phase"}
+	var r := Reader.new(p.type, funcs, p.type.path, 3, self, true)
 	p.fill_behaviors()
 	
 	#print(p.behaviors)

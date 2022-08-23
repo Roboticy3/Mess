@@ -36,12 +36,7 @@ func _init(var _board = null):
 	turn = board.get_turn()
 
 #copy of Board.clear(), with the addition of a check to see if another BoardState already freed each piece
-func clear(var free:bool = true) -> void:
-	if free: 
-		for v in pieces: 
-			var p = pieces[v]
-			if is_instance_valid(p):
-				pieces[v].free()
+func clear() -> void:
 	pieces.clear()
 	
 #print out all of the pieces in this BoardState

@@ -482,3 +482,10 @@
 	 - found a bug where square selections can persist through different boards
 	NEXT
 	 - finish up with reworking player then >>8/20/2022
+8/23/2022
+	 - added debug ui and way for non-nodes to access and give the debugger data with the new Accessor singleton (i finally figured them out!), Instruction and the like are no longer limited by the fact that they aren't nodes
+	 - made Piece not a Node, which relieves a lot of memory-freeing issues
+	 - found that vectorize() and mark_step() are about as fast as they will ever be, the only way to make project_states() faster is to break out early at special conditions
+	 - made a filter for the mouse to have a custom graphic
+	NEXT
+	 - think of how to make check work with project_states()

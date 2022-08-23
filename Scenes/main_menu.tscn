@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://UI/Fonts/Title.tres" type="DynamicFont" id=1]
 [ext_resource path="res://UI/Themes/MenuTheme.tres" type="Theme" id=2]
@@ -10,6 +10,7 @@
 [ext_resource path="res://Objects/UI/Quit.gd" type="Script" id=8]
 [ext_resource path="res://Textures-Sprites/Arrow_left.svg" type="Texture" id=9]
 [ext_resource path="res://Objects/Loading/LoadScene.gd" type="Script" id=10]
+[ext_resource path="res://Objects/UI/CopyMouse.gd" type="Script" id=11]
 
 [sub_resource type="InputEventAction" id=1]
 action = "ui_cancel"
@@ -308,6 +309,32 @@ __meta__ = {
 menu_path = NodePath("../../Title Screen")
 focus_path = NodePath("../../Title Screen/Buttons/Load Board")
 signal_name = "button_up"
+
+[node name="UI" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Reticle" type="Label" parent="UI"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -13.0
+margin_top = -35.0
+margin_right = 347.0
+margin_bottom = 646.0
+rect_scale = Vector2( 0.07, 0.075 )
+theme = ExtResource( 2 )
+text = "."
+align = 1
+script = ExtResource( 11 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [connection signal="text_changed" from="Load Board/Center Frame/Input/Board Path" to="Load Board/Center Frame/Input/Board Path" method="emit"]
 [connection signal="pressed" from="Load Board/Buttons/Refresh" to="Load Board/Center Frame/Input/Board Finder" method="refresh"]

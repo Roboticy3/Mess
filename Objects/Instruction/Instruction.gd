@@ -31,6 +31,9 @@ var cut_comments := true
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=!="
 
+#graph to send execution times to
+var debug_graph:Node
+
 #initialize this Instruction object with proper formatting regardless of inputs
 func _init(var _contents:String="", var _table:Dictionary={}, var _board = null,
 	var _cut_comments:bool = true):
@@ -46,6 +49,10 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _board = null,
 	
 	#format contents into wrds
 	format()
+	
+	#get access to the debug graph through Accessor singleton
+	debug_graph = Accessor.debug_vectorize_exec_times
+	
 	
 #format a string into the wrds Array, optionally pull a table from another piece on the board
 #	it is not recommended to use first and then set start and length as well, as this will unformat parts of wrds without reformatting them
@@ -98,125 +105,142 @@ class StringSort:
 #returning [] is equivalent to returning false and anything else is equivalent to true
 func vectorize(var start:int = 0, 
 	var allow_conditionals:bool = true, var nullable:bool = false) -> Array:
+		
+	var vec := []
 	
-	#reformat content to catch table updates
-	format()
+	#if this is an initial vectorize call, keep track of the time it takes to execute
+	var t := 0
+	if start == 0:
+		t = OS.get_ticks_usec()
 	
-	#slice wrds from start
-	var w:Array = wrds.slice(start, wrds.size() - 1)
-	
-	#final return statements sent start back to s
-	#only try to work with non-empty arrays
-	if w.empty():
-		last_start = start
-		return []
-	#if input is not a conditional, return parsed array
-	if !w[0].begins_with("?"):
-		last_start = start
-		return array_parse(start, allow_conditionals, nullable)
-	#if conditionals are not allowed at this point, return an empty array
-	if !allow_conditionals:
-		return []
-	#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
-	if w.size() < 3:
-		last_start = start
-		return []
-	
-	#remove question mark from wrds[0] once it is confirmed of valid size and format for a conditional
-	w[0] = w[0].substr(1)
-	
-	#check for a shebang to invert the conditional
-	var negate:bool = false
-	if w[0].begins_with("!"):
-		negate = true
+	#one-iteration loop with a break statement at the end
+	#locks return pattern to only the return value at the end
+	while true:
+
+		#reformat content to catch table updates
+		format()
+		
+		#slice wrds from start
+		var w:Array = wrds.slice(start, wrds.size() - 1)
+		
+		#final return statements sent start back to s
+		#only try to work with non-empty arrays
+		if w.empty():
+			last_start = start
+			break
+		#if input is not a conditional, return parsed array
+		if !w[0].begins_with("?"):
+			last_start = start
+			vec = array_parse(start, allow_conditionals, nullable)
+			break
+		#if conditionals are not allowed at this point, return an empty array
+		if !allow_conditionals:
+			break
+		#the minimum conditional size is 2, and then something after that to actually return if the conditional evaluates to true
+		if w.size() < 3:
+			last_start = start
+			break
+		
+		#remove question mark from wrds[0] once it is confirmed of valid size and format for a conditional
 		w[0] = w[0].substr(1)
-	
-	#if there are enough words for a simple conditional, and the next word is a conditional, 
-	#the conditional consists of a simple comparison
-	if w.size() > 3 && SYMBL.find(w[1]) != -1:
-		#print(w,table)
-		var e:bool = evaluate(w)
-		if negate: e = !e
-		if e:
-			return vectorize(start + 3)
-		#if the conditional fails, return nothing
-		return []
 		
-	#if the board is not being read, do not try to evaluate any special conditional types
-	if !reads_board:
-		return []
+		#check for a shebang to invert the conditional
+		var negate:bool = false
+		if w[0].begins_with("!"):
+			negate = true
+			w[0] = w[0].substr(1)
 		
-	#read the first word into a number
-	var u = parse(w[0])
-		
-	#if there are enough words for a team conditional, and the third word is a conditional,
-	#the conditional consists of a comparison on a team's value
-	if w.size() > 4 && SYMBL.find(w[2]) != -1:
+		#if there are enough words for a simple conditional, and the next word is a conditional, 
+		#the conditional consists of a simple comparison
+		if w.size() > 3 && SYMBL.find(w[1]) != -1:
+			#print(w,table)
+			var e:bool = evaluate(w)
+			if negate: e = !e
+			#if the condition succeeds, update vec
+			if e:
+				vec = vectorize(start + 3)
+			#if the conditional fails, return nothing
+			break
+			
+		#if the board is not being read, do not try to evaluate any special conditional types
+		if !reads_board:
+			break
+			
+		#read the first word into a number
+		var u = parse(w[0])
+			
+		#if there are enough words for a team conditional, and the third word is a conditional,
+		#the conditional consists of a comparison on a team's value
+		if w.size() > 4 && SYMBL.find(w[2]) != -1:
 
-		#get the team from the first word as an offset from the current team
-		var team = board.teams[board.get_team(int(u))]
+			#get the team from the first word as an offset from the current team
+			var team = board.teams[board.get_team(int(u))]
 
-		#try and format it using the team... *as* a table? sure
-		format(1, 1, team)
-		w = wrds.slice(start, -1)
+			#try and format it using the team... *as* a table? sure
+			format(1, 1, team)
+			w = wrds.slice(start, -1)
+			
+			#evaluate that shit
+			var e:bool = evaluate(w, 1)
+			if negate: e = !e
+			
+			if e:
+				vec = vectorize(start + 4)
+			break
 		
-		#evaluate that shit
-		var e:bool = evaluate(w, 1)
-		if negate: e = !e
+		#read the second word to pair with u and make a square to do conditionals with
+		var v:float = parse(w[1])
 		
-		if e:
-			return vectorize(start + 4)
-		else:
-			return []
-	
-	#read the second word to pair with u and make a square to do conditionals with
-	var v:float = parse(w[1])
-	
-	#form square to check from this Instruction's Piece's position, direction, and vector from u and v
-	var y:Vector2 = Vector2(u, v)
-	
-	#transform y into the right square through a transformation about the piece at this table's position
-	#only do so if this table has positional data, otherwise y will remain as read
-	if table.has("px") && table.has("py"):
-		var x:Vector2 = Vector2(table["px"], table["py"])
-		y = board.transform(y, board.get_piece(x))
-	
-	#check if the board has a piece at y
-	var has:bool = board.has(y)
-	
-	#if there are enough words for a relative conditional, and the 4th word is a conditional,
-	#the conditional consists of a conditional based on another square's property
-	if w.size() > 5 && SYMBL.find(w[3]) != -1:
+		#form square to check from this Instruction's Piece's position, direction, and vector from u and v
+		var y:Vector2 = Vector2(u, v)
 		
-		#check if the square is empty, if so treat conditional as false when asking for a square or its pieces property
-		#this can still be negated
-		if !has:
-			if negate: return vectorize(start + 5)
-			return []
+		#transform y into the right square through a transformation about the piece at this table's position
+		#only do so if this table has positional data, otherwise y will remain as read
+		if table.has("px") && table.has("py"):
+			var x:Vector2 = Vector2(table["px"], table["py"])
+			y = board.transform(y, board.get_piece(x))
 		
-		#reinitialize w to use the new table
-		format(start + 2, 1, board.get_piece(y).table)
-		w = wrds.slice(start, wrds.size() - 1)
+		#check if the board has a piece at y
+		var has:bool = board.has(y)
 		
-		#evaluate the comparison
-		var e:bool = evaluate(w, 2)
-		if negate: e = !e
+		#if there are enough words for a relative conditional, and the 4th word is a conditional,
+		#the conditional consists of a conditional based on another square's property
+		if w.size() > 5 && SYMBL.find(w[3]) != -1:
+			
+			#check if the square is empty, if so treat conditional as false when asking for a square or its pieces property
+			#this can still be negated
+			if !has:
+				if negate: 
+					vec = vectorize(start + 5)
+				break
+			
+			#reinitialize w to use the new table
+			format(start + 2, 1, board.get_piece(y).table)
+			w = wrds.slice(start, wrds.size() - 1)
+			
+			#evaluate the comparison
+			var e:bool = evaluate(w, 2)
+			if negate: e = !e
+			
+			if e:
+				vec = vectorize(start + 5)
+			break
 		
-		if e:
-			return vectorize(start + 5)
-		else:
-			return []
+		#if the conditional is long enough to check for a square's presence, there does not need to be a comparator
+		if wrds.size() > 2:
+			if (has && !negate) || (!has && negate):
+				vec = vectorize(start + 2)
+			break
+		
+		break
+		
+	#if this is the end of an initial vectorize, send the execution time to the graph
+	if start == 0:
+		t = OS.get_ticks_usec() - t
+		debug_graph.append(t)
 	
-	#if the conditional is long enough to check for a square's presence, there does not need to be a comparator
-	if wrds.size() > 2:
-		if (has && !negate) || (!has && negate):
-			return vectorize(start + 2)
-		else:
-			return []
-		
-	
-	#if all else fails, return an empty Array
-	return []
+	#return the updated vec
+	return vec
 			
 func array_parse(var start:int = 0, 
 	var allow_conditionals:bool = true, var nullable:bool = false):

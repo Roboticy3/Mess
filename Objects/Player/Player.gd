@@ -80,6 +80,9 @@ onready var ui := get_node(ui_path)
 export (NodePath) var reticle_path := NodePath("../UI/Reticle")
 onready var reticle := get_node(ui_path)
 
+export (NodePath) var gameover_path := NodePath("../GameOver")
+onready var gameover := get_node(gameover_path)
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	#use NodePaths to find nodes
@@ -159,7 +162,7 @@ func _process(_delta):
 	target_motion["r"] = r
 	
 	#lock or unlock the mouse according to keypresses or visibility
-	if (ctrl != 0 || ck1 != 0) || menu.visible: 
+	if (ctrl != 0 || ck1 != 0) || menu.visible || gameover.visible: 
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)

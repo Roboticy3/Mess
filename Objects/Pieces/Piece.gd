@@ -1,5 +1,4 @@
 class_name Piece
-extends Node
 
 #Piece class by Pablo Ibarz
 #created December 2021
@@ -50,6 +49,7 @@ func _init(var _b = null, var _type = null,
 		set_forward(_team.get_forward())
 		table["ff"]  = _team.get_ff()
 	set_pos(v)
+	
 
 #the take, create, and relocate phases reference indexes of the mark array throught the persist array
 #they are meant to be called when a piece moves, so they take care of vectorizing their instructions
@@ -109,9 +109,12 @@ func fill_behaviors() -> void:
 func fill_behavior(var source:String, var filler:String, var persist := []) -> void:
 	var a:Array = type.get(source)
 	for i in a.size():
+		#reassign the instruction's table and vectorize
 		a[i].table = table
 		var vec:Array = a[i].vectorize()
+		#call the appropriate behavior function from the vector
 		call(filler, a[i], vec, persist)
+		
 	for i in persist.size(): persist[i] = null
 
 #getters for this Piece's PieceType type

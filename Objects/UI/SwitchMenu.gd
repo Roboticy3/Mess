@@ -24,6 +24,8 @@ export (bool) var is_overlay := false
 #if false, the target menu path will not be hidden if the signal with signal_name is emitted while the menu is still open
 export (bool) var invert_on_unhidden := true
 
+#node names to ignore in switch()
+const exceptions := ["UI"]
 
 
 #set of nodes to not hide
@@ -72,6 +74,10 @@ func switch(var vis := true):
 	
 	#iterate through siblings and hide all the ones that do not match the target node
 	for s in siblings:
+		#if target is in the exceptions list, skip the loop
+		if exceptions.find(s.name) != -1:
+			continue
+		
 		#if this is the target node unhide it and focus it, then skip to the next node
 		if s == node:
 			s.set("visible", vis)

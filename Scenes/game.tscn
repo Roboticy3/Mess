@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=2]
+[gd_scene load_steps=22 format=2]
 
 [ext_resource path="res://Materials/viewport_debug.tres" type="Material" id=1]
 [ext_resource path="res://Instructions/torus/meshes/torus.obj" type="ArrayMesh" id=2]
@@ -17,7 +17,8 @@
 [ext_resource path="res://Objects/UI/PropertyCopier.gd" type="Script" id=15]
 [ext_resource path="res://UI/Fonts/Text.tres" type="DynamicFont" id=16]
 [ext_resource path="res://Objects/UI/DisplayDictionary.gd" type="Script" id=17]
-[ext_resource path="res://Scenes/CopyMouse.gd" type="Script" id=18]
+[ext_resource path="res://Objects/UI/CopyMouse.gd" type="Script" id=18]
+[ext_resource path="res://Objects/UI/LineGraph.gd" type="Script" id=19]
 
 [sub_resource type="SphereShape" id=2]
 radius = 0.20507
@@ -93,7 +94,7 @@ material = ExtResource( 8 )
 
 [node name="ResizeControls" type="Node" parent="."]
 script = ExtResource( 13 )
-viewport_paths = [ NodePath("../Menu"), NodePath("../Game Over") ]
+viewport_paths = [ NodePath("../Menu"), NodePath("../GameOver"), NodePath("../Debug") ]
 size = "rect_scale"
 multiplier = true
 force_to_window = false
@@ -117,7 +118,74 @@ margin_bottom = 646.0
 rect_scale = Vector2( 0.07, 0.075 )
 theme = ExtResource( 11 )
 text = "."
+align = 1
 script = ExtResource( 18 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="OpenDebug" type="Node" parent="."]
+script = ExtResource( 10 )
+menu_path = NodePath("../Debug")
+signal_path = NodePath("../Board")
+signal_name = "ui_debug"
+is_signal_input = true
+is_overlay = true
+
+[node name="Debug" type="Control" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="DebugLabel" type="Label" parent="Debug"]
+margin_right = 154.0
+margin_bottom = 90.0
+custom_colors/font_color = Color( 0.388235, 0.388235, 0.388235, 1 )
+custom_fonts/font = ExtResource( 16 )
+text = "Debug
+Vectorize: 
+Mark Step: "
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GraphVectorize" type="Line2D" parent="Debug"]
+points = PoolVector2Array( 0, 0, 0, 0 )
+width = 5.0
+default_color = Color( 0.917647, 0.956863, 0.223529, 1 )
+script = ExtResource( 19 )
+flip_y = true
+corner_pos = Vector2( 960, 540 )
+corner_size = Vector2( 864, 486 )
+
+[node name="GraphMarkStep" type="Line2D" parent="Debug"]
+points = PoolVector2Array( 0, 0, 0, 0 )
+width = 5.0
+default_color = Color( 0.4, 0.501961, 1, 1 )
+script = ExtResource( 19 )
+flip_y = true
+corner_pos = Vector2( 960, 540 )
+corner_size = Vector2( 864, 486 )
+
+[node name="ColorVectorize" type="ColorRect" parent="Debug"]
+margin_left = 150.0
+margin_top = 30.0
+margin_right = 180.0
+margin_bottom = 60.0
+color = Color( 0.917647, 0.956863, 0.223529, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ColorMarkStep" type="ColorRect" parent="Debug"]
+margin_left = 150.0
+margin_top = 60.0
+margin_right = 180.0
+margin_bottom = 90.0
+color = Color( 0.4, 0.501961, 1, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -184,13 +252,13 @@ quit_signal = "button_up"
 
 [node name="OpenWinLoss" type="Node" parent="."]
 script = ExtResource( 10 )
-menu_path = NodePath("../Game Over")
+menu_path = NodePath("../GameOver")
 signal_path = NodePath("../Board")
 signal_name = "end"
 is_overlay = true
 invert_on_unhidden = false
 
-[node name="Game Over" type="Control" parent="."]
+[node name="GameOver" type="Control" parent="."]
 visible = false
 modulate = Color( 1, 1, 1, 0.588235 )
 anchor_left = 0.5
@@ -204,13 +272,13 @@ node_paths = [ NodePath("Info/Winners"), NodePath("Info/Losers") ]
 display_keys = [ "winners", "losers" ]
 display_char_indices = [ 9, 8 ]
 
-[node name="ColorRect" type="ColorRect" parent="Game Over"]
+[node name="ColorRect" type="ColorRect" parent="GameOver"]
 margin_left = -960.0
 margin_right = 960.0
 margin_bottom = 1080.0
 color = Color( 0.133333, 0.152941, 0.207843, 1 )
 
-[node name="WinLossLabelTop" type="Label" parent="Game Over"]
+[node name="WinLossLabelTop" type="Label" parent="GameOver"]
 anchor_left = 0.5
 anchor_right = 0.5
 margin_left = -720.0
@@ -226,7 +294,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="WinLossLabelBottom" type="Label" parent="Game Over"]
+[node name="WinLossLabelBottom" type="Label" parent="GameOver"]
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -243,7 +311,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Info" type="VBoxContainer" parent="Game Over"]
+[node name="Info" type="VBoxContainer" parent="GameOver"]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -256,20 +324,20 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Winners" type="Label" parent="Game Over/Info"]
+[node name="Winners" type="Label" parent="GameOver/Info"]
 margin_right = 1200.0
 margin_bottom = 28.0
 custom_colors/font_color = Color( 0.00784314, 1, 0, 1 )
 custom_fonts/font = ExtResource( 16 )
 text = "Winners: "
 
-[node name="Buttons" type="HBoxContainer" parent="Game Over/Info"]
+[node name="Buttons" type="HBoxContainer" parent="GameOver/Info"]
 margin_top = 32.0
 margin_right = 1200.0
 margin_bottom = 60.0
 alignment = 1
 
-[node name="Quit To Menu" type="Button" parent="Game Over/Info/Buttons"]
+[node name="Quit To Menu" type="Button" parent="GameOver/Info/Buttons"]
 margin_left = 297.0
 margin_right = 577.0
 margin_bottom = 28.0
@@ -279,7 +347,7 @@ script = ExtResource( 12 )
 scene_path = "res://Scenes/main_menu.tscn"
 require_data = false
 
-[node name="Quit To Desktop" type="Button" parent="Game Over/Info/Buttons"]
+[node name="Quit To Desktop" type="Button" parent="GameOver/Info/Buttons"]
 margin_left = 581.0
 margin_right = 903.0
 margin_bottom = 28.0
@@ -287,7 +355,7 @@ theme = ExtResource( 11 )
 text = "    Quit To Desktop    "
 script = ExtResource( 14 )
 
-[node name="Losers" type="Label" parent="Game Over/Info"]
+[node name="Losers" type="Label" parent="GameOver/Info"]
 margin_top = 64.0
 margin_right = 1200.0
 margin_bottom = 92.0
@@ -298,4 +366,6 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[connection signal="end" from="Board" to="Game Over" method="display"]
+[connection signal="end" from="Board" to="GameOver" method="display"]
+[connection signal="visibility_changed" from="Debug/GraphVectorize" to="Debug/GraphVectorize" method="apply"]
+[connection signal="visibility_changed" from="Debug/GraphMarkStep" to="Debug/GraphMarkStep" method="apply"]

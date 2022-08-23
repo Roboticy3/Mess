@@ -99,3 +99,9 @@ func r_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	var c:String = I.contents
 	c = c.substr(0, c.find("#"))
 	if !c.empty(): relocate.append(I)
+	
+func reset_instructions():
+	mark.clear()
+	destroy.clear()
+	create.clear()
+	relocate.clear()

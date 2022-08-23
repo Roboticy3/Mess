@@ -301,7 +301,7 @@ static func debug_vertices(var node:Node, var mdt:MeshDataTool, var positions:Po
 	
 ###THE TRASH
 #I hate my code but don't always want to throw it away
-#BoardConverter has a lot so it goes here :)
+#BoardConverter has a lot  of that so it goes here :)
 
 #run square to box and add mesh as a CSGMesh child of an input parent node
 static func square_to_child(var parent:Node, 
