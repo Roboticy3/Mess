@@ -462,3 +462,18 @@
 	NEXT
 	 - make method in Board to find all possible moves and store them into a tree of States
 	 - try to make turns less finnicky with unapplied states
+8/20/2022
+	 - made smark() method to generate potential board states
+	 - learned execute_turn() is slow as hell, but inconsistently so
+	NEXT
+	 - figure out what makes execute_turn() slow and optimize it
+8/20/2022
+	 - renamed smark() to project_states() and added submethod project_states_from_piece()
+	 - added depth argument for project_states() that allows for any number of turns to be generated
+	 - fixed all bugs pertaining to projected states interfereing with the pieces Dictionaries and tables of teams
+	 - greatly increased the speed of execute_turn() by amortizing its Reader section to PieceType and having Piece generate behaviors from its PieceType without rereading the file
+	 - realized the hard truth that project_states() will be really slow at a depth of 2 no matter what
+	NEXT
+	 - add debug ui for measuring the execution time of different functions
+	 - think of small optimizations for project_states() (maybe optimizations are in vectorize()?)
+	 - add an option for execute_turn() to reread behaviors like it used to

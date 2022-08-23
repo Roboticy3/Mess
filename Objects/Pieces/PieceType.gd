@@ -10,8 +10,11 @@ extends Node
 export (String, FILE, "p_*.txt") var path := ""
 var div := ""
 
-#the mark instructions from the above file path
+#the instructions
 var mark := []
+var destroy := []
+var create := []
+var relocate := []
 
 #reference to the board
 var board
@@ -39,7 +42,7 @@ func _ready():
 	
 	#create list of interperetation functions to send to a Reader
 	#Piece only needs to add the mark instructions at ready
-	var funcs:Dictionary = {"m":"m_phase","t":"","c":"","r":""}
+	var funcs:Dictionary = {"m":"m_phase","t":"t_phase","c":"c_phase","r":"r_phase"}
 	#use Reader to interperet the instruction file into usable behavior 
 	var r:Reader = Reader.new(self, funcs, path, 3, board, true, false)
 	#if Reader sees a bad file, do not continue any further
@@ -74,3 +77,25 @@ func m_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	#primitive comment parser and empty checking to avoid adding empty marks
 	c = c.substr(0, c.find("#"))
 	if !c.empty(): mark.append(I)
+
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
+func t_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
+	var c:String = I.contents
+	c = c.substr(0, c.find("#"))
+	if !c.empty(): destroy.append(I)
+
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
+func c_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
+	var c:String = I.contents
+	#primitive comment parser and empty checking to avoid adding empty marks
+	c = c.substr(0, c.find("#"))
+	if !c.empty(): create.append(I)
+
+#warning-ignore:unused_argument
+#warning-ignore:unused_argument
+func r_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
+	var c:String = I.contents
+	c = c.substr(0, c.find("#"))
+	if !c.empty(): relocate.append(I)

@@ -47,7 +47,7 @@ func clear(var free:bool = true) -> void:
 #print out all of the pieces in this BoardState
 func _to_string():
 	
-	var s:String = ""
+	var s:String = "\n"
 	
 	#find the smallest square that contains all of the pieces
 	var minimum:Vector2 = Vector2.INF
@@ -67,7 +67,7 @@ func _to_string():
 				if p == null:
 					s += "."
 				else:
-					s += String(pieces[v].updates)[0]
+					s += String(pieces[v].get_name())[0]
 			else:
 				s += "."
 			s += " "

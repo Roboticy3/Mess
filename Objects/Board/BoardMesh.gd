@@ -274,7 +274,6 @@ func synchronize() -> void:
 			destroy_piece(v)
 	for v in p:
 		if !pieces.has(v): 
-			print(p[v])
 			create_piece(p[v], v)
 		
 func revert(var offset:int = board.get_turn() - 1) -> void:
@@ -355,27 +354,29 @@ func execute_turn(var v:Vector2) -> void:
 	
 	#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
 	var changes := Array()
-	board.execute_turn(v, changes)
+	var state = board.execute_turn(v, changes)
 	
 	#temporary win checker
-	if !board.get_losers().empty(): end()
+	if !state.losers.empty(): end()
 	
 	#apply the changes from this turn
 	for i in changes.size():
 		var c = changes[i]
-		if c is PoolVector2Array:
-			move_piece(c[0], c[1])
-		elif c is Array:
-			var square:Vector2 = Vector2(c[1],c[2])
-			create_piece(board.get_piece(square),square)
-		elif c is Vector2:
-			destroy_piece(c)
+		match typeof(c):
+			TYPE_VECTOR2_ARRAY: 
+				move_piece(c[0], c[1])
+			TYPE_ARRAY: 
+				var square:Vector2 = Vector2(c[1],c[2])
+				create_piece(board.get_piece(square),square)
+			TYPE_VECTOR2:
+				destroy_piece(c)
 	
 	#clear board marks
 	highlight_squares()
 	marks.clear()
 	
-	board.smark()
+	board.project_states()
+	print(board.teams)
 
 #get the team moving on the current turn from board
 func get_team() -> int:

@@ -1,1 +1,0 @@
-table storing duplicate of its original and desyncing with it in vectorize()

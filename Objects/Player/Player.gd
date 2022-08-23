@@ -4,6 +4,8 @@ class_name Player
 #Player class created by Pablo Ibarz
 #created January 2022
 
+###BOARD REFERENCES
+
 #store a reference to the board in the scene
 var board:Board
 #store reference to BoardMesh object in the physical board
@@ -12,25 +14,33 @@ var board_mesh:BoardMesh
 #the team with which the player can interact with
 export (int) var team = 0
 
+###CAMERA PROPERTIES
+
 #distance a player can click to
 export (int) var vision = 2000000
 
 #Camera child of the Player
-export (NodePath) var camera_path:NodePath
+export (NodePath) var camera_path := NodePath("Player Camera")
 var camera:Camera
 
 #Viewport the Player can use to sample uv coordinates from the board
-export (NodePath) var viewport_path:NodePath
+export (NodePath) var viewport_path := NodePath("Viewport")
 var uv_query:Node
 
-#debug cube is an object than can be moved around to visualize test features
-var debug_cube:CSGBox
-				
+###MOVEMENT DATA
+
 #keep track of the player's target_motion and camera rotation
 #this way the global input map doesn't have to be used
-var target_motion:Dictionary = {"v":Vector3.ZERO, "r":Vector2.ZERO, "zoom":0}
+var target_motion:Dictionary = {"v":Vector3.ZERO, "r":Vector2.ZERO, "zoom":0,
+	"b":Vector2.ZERO}
 #momentum chases target_motion to smooth movement
-var momentum:Dictionary = {"v":Vector3.ZERO, "zoom":0}
+var momentum:Dictionary = {"v":Vector3.ZERO, "zoom":0,
+	"b":Vector2.ZERO}
+
+#last click the player made in uv_space
+export (Vector2) var uv_last = Vector2.ZERO
+
+###SENSITIVITY AND SPEED
 
 #the acceleration of momentum in u/s/s
 export (float) var accel = 50.0
@@ -47,11 +57,28 @@ export (PoolRealArray) var dead_zone = [0.05, 0.05]
 #controller look sensitivity
 export (int) var stick_sens = 500
 
-#last click the player made in uv_space
-export (Vector2) var uv_last = Vector2.ZERO
+###BUTTONS
 
-#whether or not the camera is rotating
-var looking:bool = false
+#lock the camera
+export (String) var cam_lock := "ctrl"
+export (bool) var inverted_cam_lock := false;
+
+#rotate the board and slow movement
+export (String) var rotate_board := "ck_1"
+export (String) var precision := "ctrl"
+
+#esc key
+export (String) var esc := "ui_cancel"
+
+###UI REFERENCES
+export (NodePath) var menu_path := NodePath("../Menu")
+onready var menu := get_node(menu_path)
+
+export (NodePath) var ui_path := NodePath("../UI")
+onready var ui := get_node(ui_path)
+
+export (NodePath) var reticle_path := NodePath("../UI/Reticle")
+onready var reticle := get_node(ui_path)
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -74,9 +101,15 @@ func _physics_process(delta):
 #handle non-button inputs with Events
 func _input(event):
 	#if the mouse is moving and the camera rotate button is being held, rotate the camera
-	if event is InputEventMouseMotion && Input.is_action_pressed("ck_1"):
-		var e:InputEventMouseMotion = event
-		target_motion["r"] = e.speed
+	if event is InputEventMouseMotion:
+		var ck1 := Input.get_action_raw_strength(rotate_board)
+		var ctrl := Input.get_action_raw_strength(cam_lock)
+		if (ctrl == 0 != inverted_cam_lock && ck1 == 0 && !menu.visible):
+			target_motion["r"] = event.relative
+		
+		if ck1 != 0:
+			target_motion["b"] = event.speed
+			
 		
 	#if the board_mesh has not been activated yet, do so on the first keystroke
 	if !board_mesh.awake && event is InputEventKey:
@@ -84,6 +117,11 @@ func _input(event):
 
 #handle button inputs each frame
 func _process(_delta):
+	
+	#camera buttons
+	var ctrl:float = Input.get_action_raw_strength(cam_lock)
+	var ck1:float = Input.get_action_raw_strength(rotate_board)
+	
 	#movement buttons sum to velocities along either axis
 	var xz:Vector2 = Input.get_vector("mv_left", "mv_right", "mv_forward", "mv_back")
 	var y:float = Input.get_axis("mv_down","mv_up")
@@ -95,7 +133,7 @@ func _process(_delta):
 	var h:Vector3 = (xz.x * bx.normalized() + xz.y * bz.normalized())
 	var v:Vector3 = Vector3(0, y, 0) + h
 	if v.length() < dead_zone[0]: v = Vector3.ZERO
-	else: v *= speed / (1 + 4 * Input.get_action_raw_strength("ctrl"))
+	else: v *= speed / (1 + 4 * Input.get_action_raw_strength(precision))
 	#apply movement to target motion
 	target_motion["v"] = v
 	
@@ -112,13 +150,25 @@ func _process(_delta):
 	else: 
 		#use r to move the mouse within the screen to select a piece
 		var mpos:Vector2 = uv_query.get_mouse_position()
-		var ck1:float = Input.get_action_raw_strength("ck_1")
-		if ck1 == 0: uv_query.warp_mouse(mpos + r / uv_query.size * stick_sens * 50)
+		if ((ctrl == 0) != inverted_cam_lock): 
+			uv_query.warp_mouse(mpos + Vector2(azimuth, zenith) * stick_sens / 100)
 		
 		#if r is not going to be zero, multiply r by the stick sensitivity and the state of the look button (0 or 1)
 		#this makes r not zero if and only if both the right stick is moving and the look button is being held
-		r *= ck1 * stick_sens
+		r *= ctrl * ck1 * stick_sens
 	target_motion["r"] = r
+	
+	#lock or unlock the mouse according to keypresses or visibility
+	if (ctrl != 0 || ck1 != 0) || menu.visible: 
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	
+	#reset the target motion and transform of board_mesh according to changes in ck1
+	if ck1 == 0:
+		target_motion["b"] = Vector2.ZERO
+		if ctrl == 0:
+			board_mesh.transform = board_mesh.transform.interpolate_with(Transform(), 0.5)
 	
 #make momentum move towards target motion
 func accelerate(var delta:float):
@@ -129,7 +179,7 @@ func accelerate(var delta:float):
 func look(delta):
 	#multiply rotation motions by delta and sens
 	var axes = transform.basis
-	var rots = target_motion["r"] * delta * -sens/100
+	var rots = target_motion["r"] * delta * -sens
 	
 	#use true y axis for horizontal rotation to make rotation more intuitive
 	transform = rotate(Vector3.UP, rots.x)
@@ -146,6 +196,12 @@ func look(delta):
 	
 	#reset mouse movement so user does not have to send another input to stop the camera
 	target_motion["r"] = Vector2.ZERO
+	
+	#rotate the board by its target rotations
+	rots = momentum["b"] * delta * sens / 100
+	board_mesh.global_rotate(Vector3.UP, rots.x)
+	board_mesh.global_rotate(transform.basis.x, rots.y)
+	
 
 #rotated around an axis around the origin
 func rotate(var axis:Vector3 = Vector3.UP, var phi:float = 0, var origin:Vector3 = Vector3.ZERO):

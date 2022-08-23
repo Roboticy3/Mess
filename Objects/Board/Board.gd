@@ -47,6 +47,9 @@ var marks:Dictionary = {}
 #overrides get_team()'s return value if set to a positive integer, locking the effective team
 var lock:int = -1
 
+#set to false to not update the pieces dictionaries of each team
+var synchronize_teams := true
+
 func _init(var _path:String):
 	path = _path
 	_ready()
@@ -209,7 +212,7 @@ func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
 	v = p.get_pos()
 		
 	#add the piece to the correct team's dictionary
-	teams[team].add(p, v)
+	if synchronize_teams: teams[team].add(p, v)
 	
 	if init:
 		states[0].pieces[v] = p
@@ -413,18 +416,23 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 
 #execute a turn by creating a new BoardState and adding it to the states Array
 #returns an Array of changes to the board
-#set append to false to create a new state without updating the board
-#set turn to false to not increment the turn counter
-func execute_turn(var v:Vector2, var changes:Array = [],
-	var append := true, var turn := true) -> BoardState:
-		
+#mode is a bitmask
+# bit 0 - append, set to 1 to append the state generated in this method to states
+# bit 1 - turn, set to 1 to pass to the next turn
+# bit 2 - clear, set to 1 to clear the marks dictionary after the end of the method
+func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
+	var mode := 7) -> BoardState:
+	
+	#if marks have not been inputted, use board.marks
+	if _marks.empty(): _marks = marks
+	
 	var state = BoardState.new(self)
 	
 	#the index of m that was used to move, assert that it exists before continuing
-	if !marks.has(v):
+	if !_marks.has(v):
 		print("Board::execute_turn() says: \"no mark at square " + String(v) + "\"")
 		return state
-	var move:int = marks[v]
+	var move:int = _marks[v]
 	
 	#reference the piece being moved
 	var f = get_piece(get_selected())
@@ -453,21 +461,16 @@ func execute_turn(var v:Vector2, var changes:Array = [],
 	
 	#print(p.table)
 	
-	#pair the m phase with nothing since marks are not being generated
-	var funcs:Dictionary = {"m":"", "t":"t_phase","c":"c_phase","r":"r_phase"}
-	var reader:Reader = Reader.new(p, funcs, f.get_p_path(), 3, self)
-	reader.wait = true
-	reader.read()
+	#add the base move to the front of p's behaviors
+	p.behaviors = [[-1, 2, get_selected(), v]]
+	p.fill_behaviors()
 	
 	#print(p.behaviors)
 	
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
-	#add the base move to the front of p's behaviors
-	p.behaviors.push_front([-1, 2, get_selected(), v])
 	#add changes from the piece and make changes to the board
 	execute_behaviors(changes, p, move, [0])
-	
 	
 	#print(p.table)
 	#print(changes)
@@ -478,8 +481,10 @@ func execute_turn(var v:Vector2, var changes:Array = [],
 	#compute win conditions for this turn
 	var results := evaluate_win_conditions(state)
 	
+	#unpack the mode bitmask into booleans
+	
 	#if this turn is not being applied, do not increment turn or check the results
-	if !append:
+	if !bool(mode % 2):
 		#also remove this state from the states array
 		states.remove(get_turn() + 1)
 		
@@ -493,10 +498,9 @@ func execute_turn(var v:Vector2, var changes:Array = [],
 	#print(self)
 	#print(teams[get_team()])
 	
-	#increment the turn on the board and clear last turn's marks
-	if turn: 
-		marks.clear()
-		turn()
+	#extract the clear and turn bits from mode and check them before clearing marks and incrementing turn
+	if bool((mode >> 2) % 2): marks.clear()
+	if bool((mode >> 1) % 2): turn()
 	
 	#return Board updates
 	return state
@@ -523,55 +527,56 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 		#if this behavior has been marked as transformed, flag this iteration
 		var transform = !transformed.has(i)
 		
-		if t == 0:
-			var d:Vector2 = b[2]
-			if transform: d = transform(d, piece)
-			erase(d)
+		match t:
+			0:
+				var d:Vector2 = b[2]
+				if transform: d = transform(d, piece)
+				erase(d)
+				
+				#if the destruction fails, do not add any change
+				if d == Vector2.INF: continue
+				
+				changes.append(d)
 			
-			#if the destruction fails, do not add any change
-			if d == Vector2.INF: continue
+			1:
+				#creations are Vector2 and int pairs
+				var a:Array = b[2]
+				var p_type:int = a[0]
+				var pos := Vector2(a[1],a[2])
+				if transform: pos = transform(pos, piece)
+				
+				#if the creation fails, do not add any change
+				if pos == Vector2.INF: continue
+				
+				a[1] = pos.x
+				a[2] = pos.y
+				
+				#if the piece type being created is outside of the board's paths, do not add any change
+				if p_type > piece_types.size(): continue
+				
+				make_piece(a, get_team())
+				changes.append(a)
 			
-			changes.append(d)
-		
-		elif t == 1:
-			#creations are Vector2 and int pairs
-			var a:Array = b[2]
-			var p_type:int = a[0]
-			var pos := Vector2(a[1],a[2])
-			if transform: pos = transform(pos, piece)
+			2:
+				var from:Vector2 = b[2]
+				var to:Vector2 = b[3]
+				
+				#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
+				if transform:
+					to = transform(to, piece)
+					from = transform(from, piece)
+				
+				#check if the piece being relocated needs to be refetched
+				var p:Piece = piece
+				var f:Piece = get_piece(from)
+				if from != piece.get_pos():
+					p = duplicate_piece(f)
+				
+				if from == Vector2.INF || to == Vector2.INF: continue
 			
-			#if the creation fails, do not add any change
-			if pos == Vector2.INF: continue
-			
-			a[1] = pos.x
-			a[2] = pos.y
-			
-			#if the piece type being created is outside of the board's paths, do not add any change
-			if p_type > piece_types.size(): continue
-			
-			make_piece(a, get_team())
-			changes.append(a)
-			
-		elif t == 2:
-			var from:Vector2 = b[2]
-			var to:Vector2 = b[3]
-			
-			#relocations are pairs of Vector2s, both of which need to be transformed through the piece taking its turn
-			if transform:
-				to = transform(to, piece)
-				from = transform(from, piece)
-			
-			#check if the piece being relocated needs to be refetched
-			var p:Piece = piece
-			var f:Piece = get_piece(from)
-			if from != piece.get_pos():
-				p = duplicate_piece(f)
-			
-			if from == Vector2.INF || to == Vector2.INF: continue
-		
-			#add change to Array
-			move_piece(from,to,p,f,false)
-			changes.append(PoolVector2Array([from, to]))
+				#add change to Array
+				move_piece(from,to,p,f,false)
+				changes.append(PoolVector2Array([from, to]))
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
 #each element of the array contains at its end an index for its source Instruction in win conditions, and contains the following:
@@ -624,33 +629,54 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	return results
 
-#super mark
 #build all possible BoardStates for this turn
-func smark() -> Array:
+#send these states to the array of possible states in the current turn
+func project_states(var depth := 1) -> Array:
+	
+	if depth <= 0: return []
 	
 	#get all the pieces from the last turn in the current team
 	var pieces:Dictionary = get_pieces(0, get_team())
 	
-	var s := []
-	
 	#loop through all pieces on the team
 	for v in pieces:
-		#mark their moves without setting the marks to board.marks
-		var t := OS.get_ticks_usec()
-		var m := mark(v)
-		set_selected(v)
-		print("mark ", String(v), ": ", OS.get_ticks_usec() - t)
-		
-		for i in m:
-			var _t := OS.get_ticks_usec()
-			var state := execute_turn(i, [], false, false)
-			s.append(state)
-			print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
+		project_states_from_piece(v, states[-1].possible, depth)
 	
 	marks.clear()
 	set_selected()
+
+	return states[-1].possible
+
+#build all possible BoardStates for the next turn from a single piece given from a position
+#use depth argument to call recursively with project_states()
+func project_states_from_piece(var v:Vector2, var s := [],
+	var depth := 1) -> void:
+		
+	#mark their moves without setting the marks to board.marks
+	#var t := OS.get_ticks_usec()
+	var m := mark(v, false)
+	set_selected(v)
+	#print("mark ", String(v), ": ", OS.get_ticks_usec() - t)
 	
-	return s
+	#remember the current turn to revert back to
+	var t:int = get_turn()
+	
+	synchronize_teams = false
+	
+	for i in m:
+		#var _t := OS.get_ticks_usec()
+		
+		#progress a turn to be reverted later
+		var state := execute_turn(i, [], m)
+		#if depth is high enough, call project states recursively from this point
+		project_states(depth - 1)
+		#revert the turn
+		revert(t)
+		
+		s.append(state)
+		#print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
+		
+	synchronize_teams = true
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:
@@ -689,9 +715,14 @@ func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
 	erase_piece(f)
 	
 	#update the piece's team's dictionary
-	var t = teams[p.get_team()]
-	t.pieces[to] = p
-	
+	if synchronize_teams: 
+		teams[p.get_team()].pieces[to] = p
+		#find if any other team has a piece in the square being moved to
+		for i in range(1, teams.size()):
+			var t = teams[(p.get_team() + i) % teams.size()]
+			if t.has(to): t.erase(to)
+			
+		
 	#update the piece's local position and increment its move count, return a success
 	p.set_pos(to)
 	p.set_last_pos(from)
@@ -742,9 +773,9 @@ func get_lock() -> int:
 
 #increment turn for both the board and the current team
 #can also take a number of turns to increment
-func turn(var n:int = 1) -> void:
-	teams[get_team()].table["turn"] += n
-	table["turn"] += n
+func turn() -> void:
+	if synchronize_teams: teams[get_team()].table["turn"] += 1
+	table["turn"] += 1
 
 #pieces Dictionary interfaces and mutators has, erase, and clear
 func get_piece(var v:Vector2):
@@ -815,7 +846,8 @@ func erase(var v:Vector2) -> bool:
 #erase doesn't need to search for a piece if the calling method already has it
 func erase_piece(var p:Piece, var duplicate:Piece = null) -> bool:
 	#then erase the piece in every correct dictionary
-	var b:bool = teams[p.get_team()].erase(p.get_pos())
+	var b:bool = false
+	if synchronize_teams: b = teams[p.get_team()].erase(p.get_pos())
 	
 	if duplicate == null:
 		duplicate = duplicate_piece(p)
@@ -840,8 +872,9 @@ func revert(var turn:int = get_turn() - 1) -> void:
 	if turn > get_turn() || turn < 0:
 		return
 	
-	#set the turn of the board
-	table["turn"] = turn
+	#set the turn of the board and team
+	if synchronize_teams: teams[get_team()].table["turn"] -= 1
+	table["turn"] -= 1
 	#trim states to the right size
 	states = states.slice(0, turn)
 

@@ -60,9 +60,6 @@ func get_name() -> String:
 	
 func get_turn() -> int:
 	return table["turn"]
-	
-func turn() -> void:
-	table["turn"] += 1
 
 #has, erase, and add act on pieces
 func has(var v:Vector2) -> bool:

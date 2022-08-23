@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=2]
+[gd_scene load_steps=21 format=2]
 
 [ext_resource path="res://Materials/viewport_debug.tres" type="Material" id=1]
 [ext_resource path="res://Instructions/torus/meshes/torus.obj" type="ArrayMesh" id=2]
@@ -17,6 +17,7 @@
 [ext_resource path="res://Objects/UI/PropertyCopier.gd" type="Script" id=15]
 [ext_resource path="res://UI/Fonts/Text.tres" type="DynamicFont" id=16]
 [ext_resource path="res://Objects/UI/DisplayDictionary.gd" type="Script" id=17]
+[ext_resource path="res://Scenes/CopyMouse.gd" type="Script" id=18]
 
 [sub_resource type="SphereShape" id=2]
 radius = 0.20507
@@ -36,8 +37,6 @@ viewport_paths = [ NodePath("../Player/Viewport") ]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )
 collision_layer = 2
 script = ExtResource( 5 )
-camera_path = NodePath("Player Camera")
-viewport_path = NodePath("Viewport")
 
 [node name="CollisionShape" type="CollisionShape" parent="Player"]
 transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0 )
@@ -98,6 +97,30 @@ viewport_paths = [ NodePath("../Menu"), NodePath("../Game Over") ]
 size = "rect_scale"
 multiplier = true
 force_to_window = false
+
+[node name="UI" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Reticle" type="Label" parent="UI"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -13.0
+margin_top = -35.0
+margin_right = 347.0
+margin_bottom = 646.0
+rect_scale = Vector2( 0.07, 0.075 )
+theme = ExtResource( 11 )
+text = "."
+script = ExtResource( 18 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="OpenMenu" type="Node" parent="."]
 script = ExtResource( 10 )

@@ -94,6 +94,25 @@ func r_phase(var I, var vec:Array = [], var persist:Array = []) -> void:
 	
 	if persist[0] == null: persist[0] = -1
 	behaviors.append([persist[0], 2, v, u])
+	
+#fill the behaviors array from the instructions in this Piece's type
+func fill_behaviors() -> void:
+	
+	var persist := Array()
+	persist.resize(3)
+	
+	fill_behavior("destroy", "t_phase", persist)
+	fill_behavior("create", "c_phase", persist)
+	fill_behavior("relocate", "r_phase", persist)
+
+#fill one type of behavior based off of an input function name
+func fill_behavior(var source:String, var filler:String, var persist := []) -> void:
+	var a:Array = type.get(source)
+	for i in a.size():
+		a[i].table = table
+		var vec:Array = a[i].vectorize()
+		call(filler, a[i], vec, persist)
+	for i in persist.size(): persist[i] = null
 
 #getters for this Piece's PieceType type
 func get_mark() -> Array:
