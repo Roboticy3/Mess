@@ -16,6 +16,7 @@ For editing boards and pieces, refer to wiki page "Creating and Editing Boards a
  - Add a main menu and level select
  - Make the game compatible with both couch and peer-to-peer multiplayer
  - Release beta branch of project
+ - Take the project off public Github to work on singleplayer/campaign levels with the mechanics.
 
 ## Mess probably-wont-get-to-it roadmap (not in order)
  - Visual board and piece editors in-game with tutorials on how to use them
@@ -27,5 +28,8 @@ But, little by little I'll chisel away at this thing and gain more experience an
 
 ### Immediate improvements down the line
 In the Notes folder there is a text file called log_and_plan.txt, it contains my session-to-session coding notes on what to do.
+
+### What to do with the game right now
+Make boards and pieces using the wiki and load them to test them out.
 
 by Pablo Ibarz
