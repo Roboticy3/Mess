@@ -15,4 +15,3 @@ export (String) var path:String
 func _ready():
 	var bm:BoardMesh = get_node(board_mesh)
 	bm.begin(path)
-		

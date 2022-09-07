@@ -29,8 +29,11 @@ signal failed_to_load
 func _ready():
 	scene = load(scene_path)
 	current = get_tree()
-	var con_error:int = connect(load_signal, self, "change_scene")
+	var con_error:int = connect(load_signal, self, "change_scene_deferred")
 	if con_error > 0: print(name + " has no signal \"" + load_signal + "\"")
+
+func change_scene_deferred():
+	call_deferred("change_scene")
 
 #change the scene
 func change_scene():

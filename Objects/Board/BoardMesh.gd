@@ -68,8 +68,6 @@ func begin(var _path:String = ""):
 	#retrieve board reference from spatial parent if possible
 	board = Board.new(path)
 	
-	#link the board's end signal to this BoardMesh end signal
-	board.connect("end", self, "end")
 	#link the exiting of this node from the tree to the destruction of the board to avoid leaking resources
 	connect("tree_exiting", self, "destroy_board")
 	

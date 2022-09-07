@@ -107,7 +107,7 @@ func _input(event):
 	if event is InputEventMouseMotion:
 		var ck1 := Input.get_action_raw_strength(rotate_board)
 		var ctrl := Input.get_action_raw_strength(cam_lock)
-		if (ctrl == 0 != inverted_cam_lock && ck1 == 0 && !menu.visible):
+		if (Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED):
 			target_motion["r"] = event.relative
 		
 		if ck1 != 0:
@@ -153,7 +153,7 @@ func _process(_delta):
 	else: 
 		#use r to move the mouse within the screen to select a piece
 		var mpos:Vector2 = uv_query.get_mouse_position()
-		if ((ctrl == 0) != inverted_cam_lock): 
+		if (Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED): 
 			uv_query.warp_mouse(mpos + Vector2(azimuth, zenith) * stick_sens / 100)
 		
 		#if r is not going to be zero, multiply r by the stick sensitivity and the state of the look button (0 or 1)
@@ -211,7 +211,7 @@ func rotate(var axis:Vector3 = Vector3.UP, var phi:float = 0, var origin:Vector3
 	var o = transform.origin
 	var t = transform
 	t.origin = origin
-	t = t.rotated(axis, phi)
+	t = t.rotated(axis.normalized(), phi)
 	t.origin = o
 	return t
 		

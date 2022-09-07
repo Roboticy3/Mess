@@ -229,9 +229,8 @@ func vectorize(var start:int = 0,
 		break
 		
 	#if this is the end of an initial vectorize, send the execution time to the graph
-	if start == 0 && is_instance_valid(Accessor):
-		t = OS.get_ticks_usec() - t
-		Accessor.debug_vectorize_exec_times.append(t)
+	if start == 0 && is_instance_valid(Accessor) && Accessor.debug_vectorize_exec_times != null:
+		Accessor.debug_vectorize_exec_times.append(OS.get_ticks_usec() - t)
 	
 	#return the updated vec
 	return vec

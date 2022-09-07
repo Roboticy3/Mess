@@ -44,3 +44,9 @@ func append(var y:float):
 func remove(var i:int):
 	data.remove(i)
 	apply()
+
+#replace data with new array
+func set_data(var a:Array):
+	for i in a.size():
+		data.append(Vector2(i,a[i]))
+	apply()
