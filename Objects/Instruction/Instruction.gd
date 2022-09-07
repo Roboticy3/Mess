@@ -31,9 +31,6 @@ var cut_comments := true
 #the set of valid comparison characters, contains <=, >=, <, >, and ==
 const SYMBL : String = ">=<=!="
 
-#graph to send execution times to
-var debug_graph:Node
-
 #initialize this Instruction object with proper formatting regardless of inputs
 func _init(var _contents:String="", var _table:Dictionary={}, var _board = null,
 	var _cut_comments:bool = true):
@@ -49,9 +46,6 @@ func _init(var _contents:String="", var _table:Dictionary={}, var _board = null,
 	
 	#format contents into wrds
 	format()
-	
-	#get access to the debug graph through Accessor singleton
-	debug_graph = Accessor.debug_vectorize_exec_times
 	
 	
 #format a string into the wrds Array, optionally pull a table from another piece on the board
@@ -235,9 +229,9 @@ func vectorize(var start:int = 0,
 		break
 		
 	#if this is the end of an initial vectorize, send the execution time to the graph
-	if start == 0:
+	if start == 0 && is_instance_valid(Accessor):
 		t = OS.get_ticks_usec() - t
-		debug_graph.append(t)
+		Accessor.debug_vectorize_exec_times.append(t)
 	
 	#return the updated vec
 	return vec
