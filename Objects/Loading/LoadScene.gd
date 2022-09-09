@@ -47,10 +47,7 @@ func change_scene():
 	var root:Viewport = tree.root
 	
 	#remove all children from the root node and free them later
-	var nodes:Array = root.get_children()
-	for n in nodes:
-		root.remove_child(n)
-		n.call_deferred("free")
+	root.remove_child(root.get_child(root.get_child_count() - 1))
 	
 	#load the new scene and give it the data it needs to instantiate correctly
 	var next_scene:Node = scene.instance()
@@ -58,5 +55,6 @@ func change_scene():
 	
 	#add the scene into the SceneTree to load it into the game
 	root.add_child(next_scene)
+	Accessor._ready()
 
 
