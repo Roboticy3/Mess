@@ -489,3 +489,12 @@
 	 - made a filter for the mouse to have a custom graphic
 	NEXT
 	 - think of how to make check work with project_states()
+	 
+ --college--
+	
+9/11/2022
+	 - realized Teams cannot properly check win conditions without being integrated into the BoardState system
+	 - made Board handle a current pieces array again for Team to reference, generally offloaded Team work onto Board
+	 - broke win conditions
+	NEXT
+	 - trace back why win conditions arent working and then fix them
