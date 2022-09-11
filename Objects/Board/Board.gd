@@ -44,6 +44,9 @@ var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1,
 #a Vector2 Dictionary of Arrays describing the selectable marks on the board.
 var marks:Dictionary = {}
 
+#Vector2 Dictionary of the pieces in the current turn
+var current:Dictionary = {}
+
 #overrides get_team()'s return value if set to a positive integer, locking the effective team
 var lock:int = -1
 
@@ -133,7 +136,7 @@ func t_phase(var I, var vec:Array, var persist:Array) -> void:
 		#the next two are the forward direction of the team
 		var j = Vector2(vec[3], vec[4])
 		
-		teams.append(Team.new(i, j, teams.size()))
+		teams.append(Team.new(self, i, j, teams.size()))
 	
 	else:
 		#allow for updates to the team's table after their declaration
@@ -145,8 +148,8 @@ func t_phase(var I, var vec:Array, var persist:Array) -> void:
 func g_phase(var I, var vec:Array, var persist:Array) -> void:
 	#if there are no teams from the t phase, implicitly create black and white teams
 	if teams.empty():
-		teams.append(Team.new())
-		teams.append(Team.new(Color.black, Vector2.UP))
+		teams.append(Team.new(self))
+		teams.append(Team.new(self, Color.black, Vector2.UP))
 	
 	var c = "Instructions/pieces/" + I.contents
 	
@@ -212,7 +215,11 @@ func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
 	v = p.get_pos()
 		
 	#add the piece to the correct team's dictionary
-	if synchronize_teams: teams[team].add(p, v)
+	if synchronize_teams: 
+		current[v] = p
+		var sk = teams[p.get_team()].start_keys
+		for k in p.table:
+			if !sk.has(k): sk.append(k)
 	
 	if init:
 		states[0].pieces[v] = p
@@ -630,6 +637,7 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	#apply the win conditions to the winners and losers of the input state
 	for r in results:
+		print(r)
 		var t = teams[r[0]]
 		if r[1] && !state.winners.has(t): 
 			state.winners.append(t)
@@ -722,15 +730,6 @@ func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
 	states[get_turn() + 1].pieces[to] = p
 	#remove the old version of the piece
 	erase_piece(f)
-	
-	#update the piece's team's dictionary
-	if synchronize_teams: 
-		teams[p.get_team()].pieces[to] = p
-		#find if any other team has a piece in the square being moved to
-		for i in range(1, teams.size()):
-			var t = teams[(p.get_team() + i) % teams.size()]
-			if t.has(to): t.erase(to)
-			
 		
 	#update the piece's local position and increment its move count, return a success
 	p.set_pos(to)
@@ -856,7 +855,7 @@ func erase(var v:Vector2) -> bool:
 func erase_piece(var p:Piece, var duplicate:Piece = null) -> bool:
 	#then erase the piece in every correct dictionary
 	var b:bool = false
-	if synchronize_teams: b = teams[p.get_team()].erase(p.get_pos())
+	if synchronize_teams: b = current.erase(p.get_pos())
 	
 	if duplicate == null:
 		duplicate = duplicate_piece(p)

@@ -1,12 +1,9 @@
 class_name Team
 
-#All of the piece which belong to this team
-var pieces:Dictionary = {}
-#Store lost pieces to display them in some row out of bounds
-var lost:Array = []
-
 #position of this team in a Board's Team array
 var i:int = 0
+
+var board
 
 #aw shit here we go again
 var table:Dictionary = {"ff":0,"fx":0,"fy":1,"angle":0, #friendly fire, forward driection and angle
@@ -17,7 +14,10 @@ var table:Dictionary = {"ff":0,"fx":0,"fy":1,"angle":0, #friendly fire, forward 
 #store keys that table and pieces' tables have at the beginning of the game to keep track of their values even if they dissapear
 var start_keys:Array = []
 
-func _init(var _c:Color = Color.white, var _f:Vector2 = Vector2(0, 1), var _i:int = 0):
+func _init(var _b = null, var _c:Color = Color.white, var _f:Vector2 = Vector2(0, 1), var _i:int = 0):
+	
+	board = _b
+	
 	set_color(_c)
 	set_forward(_f)
 	i = _i
@@ -43,7 +43,7 @@ func get_forward() -> Vector2:
 #returns false if there is no piece here
 #set false to true to ignore this check
 func set_selected(var s:Vector2, var force := false) -> bool:
-	if force || has(s): 
+	if force || board.get_piece(s) != null: 
 		table["sx"] = s.x
 		table["sy"] = s.y
 		return true
@@ -60,17 +60,6 @@ func get_name() -> String:
 	
 func get_turn() -> int:
 	return table["turn"]
-
-#has, erase, and add act on pieces
-func has(var v:Vector2) -> bool:
-	return pieces.has(v)
-	
-func erase(var v:Vector2) -> bool:
-	return pieces.erase(v)
-	
-func add(var p, var v:Vector2) -> void:
-	pieces[v] = p
-	for k in p.table: if !start_keys.has(k): start_keys.append(k)
 	
 #get and keys act on table
 	
@@ -84,7 +73,12 @@ func get(var key:String):
 	var in_pieces := false
 	
 	#loop through every piece
+	var pieces = board.current
 	for v in pieces:
+		
+		#skip pieces in other teams
+		if pieces[v].get_team() != i: continue
+		
 		#if the key is found in a piece's table, add its value to the total value
 		var t:Dictionary = pieces[v].table
 		if t.has(key):
@@ -121,7 +115,10 @@ func _to_string() -> String:
 	#find the smallest square that contains all of the pieces
 	var minimum:Vector2 = Vector2.INF
 	var maximum:Vector2 = -Vector2.INF
+	var pieces = board.current
 	for v in pieces:
+		#skip pieces from other teams
+		if pieces[v].get_team() != i: continue
 		if v.x < minimum.x: minimum.x = v.x
 		if v.y < minimum.y: minimum.y = v.y
 		if v.x > maximum.x: maximum.x = v.x

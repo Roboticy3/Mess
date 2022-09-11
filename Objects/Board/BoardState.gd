@@ -68,6 +68,8 @@ func _to_string():
 			s += " "
 		#add a new line at the end of each row
 		s += "\n"
-		
+	
+	s += String(winners) + "\n"
+	s += String(losers) + "\n"
 	return s
 	
