@@ -406,8 +406,8 @@ func mark_step(var from:Piece, var to:Vector2,
 			break
 			
 	#send the execution time to debugger
-	if is_instance_valid(Accessor) && Accessor.debug_mark_step_exec_times != null:
-		Accessor.debug_mark_step_exec_times.append(OS.get_ticks_usec() - t)
+	if Accessor.debug[1] != null:
+		Accessor.debug[1].append(OS.get_ticks_usec() - t)
 		
 	return s
 
