@@ -51,7 +51,7 @@ var current:Dictionary = {}
 var lock:int = -1
 
 #set to false to not update the pieces dictionaries of each team
-var synchronize_teams := true
+var synchronize := true
 
 func _init(var _path:String):
 	path = _path
@@ -215,7 +215,7 @@ func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
 	v = p.get_pos()
 		
 	#add the piece to the correct team's dictionary
-	if synchronize_teams: 
+	if synchronize: 
 		current[v] = p
 		var sk = teams[p.get_team()].start_keys
 		for k in p.table:
@@ -678,7 +678,7 @@ func project_states_from_piece(var v:Vector2, var s := [],
 	#remember the current turn to revert back to
 	var t:int = get_turn()
 	
-	synchronize_teams = false
+	synchronize = false
 	
 	for i in m:
 		#var _t := OS.get_ticks_usec()
@@ -687,13 +687,16 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		var state := execute_turn(i, [], m)
 		#if depth is high enough, call project states recursively from this point
 		project_states(depth - 1)
+		
+		#At this moment, the board is fully in the state of the projected turn
+		
 		#revert the turn
 		revert(t)
 		
 		s.append(state)
 		#print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
 		
-	synchronize_teams = true
+	synchronize = true
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:
@@ -782,7 +785,7 @@ func get_lock() -> int:
 #increment turn for both the board and the current team
 #can also take a number of turns to increment
 func turn() -> void:
-	if synchronize_teams: teams[get_team()].table["turn"] += 1
+	if synchronize: teams[get_team()].table["turn"] += 1
 	table["turn"] += 1
 
 #pieces Dictionary interfaces and mutators has, erase, and clear
@@ -855,7 +858,7 @@ func erase(var v:Vector2) -> bool:
 func erase_piece(var p:Piece, var duplicate:Piece = null) -> bool:
 	#then erase the piece in every correct dictionary
 	var b:bool = false
-	if synchronize_teams: b = current.erase(p.get_pos())
+	if synchronize: b = current.erase(p.get_pos())
 	
 	if duplicate == null:
 		duplicate = duplicate_piece(p)
@@ -881,10 +884,13 @@ func revert(var turn:int = get_turn() - 1) -> void:
 		return
 	
 	#set the turn of the board and team
-	if synchronize_teams: teams[get_team()].table["turn"] -= 1
+	if synchronize: teams[get_team()].table["turn"] -= 1
 	table["turn"] -= 1
 	#trim states to the right size
 	states = states.slice(0, turn)
+	
+	#reinitialize current if Board is reverting from a synchronized turn
+	if synchronize: current = get_pieces()
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():

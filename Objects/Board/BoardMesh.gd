@@ -371,6 +371,7 @@ func execute_turn(var v:Vector2) -> void:
 				destroy_piece(c)
 	
 	board.project_states()
+	print(board.teams[board.get_team()].get("double"))
 	
 	#clear board marks
 	highlight_squares()
