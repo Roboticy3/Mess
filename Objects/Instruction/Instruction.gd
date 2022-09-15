@@ -87,7 +87,7 @@ func format(var start:int = 0, var length:int = -1, var t = table) -> void:
 		#send the formatted string back into wrds
 		wrds[i] = w
 		
-#Object for sorting the table in format()
+#Class for custom sorting the table in format()
 class StringSort:
 	#sort elements by length
 	func sort(var a:String, var b:String) -> bool:
@@ -166,10 +166,10 @@ func vectorize(var start:int = 0,
 		#if there are enough words for a team conditional, and the third word is a conditional,
 		#the conditional consists of a comparison on a team's value
 		if w.size() > 4 && SYMBL.find(w[2]) != -1:
-
+			
 			#get the team from the first word as an offset from the current team
 			var team = board.teams[board.get_team(int(u))]
-
+			
 			#try and format it using the team... *as* a table? sure
 			format(1, 1, team)
 			w = wrds.slice(start, -1)

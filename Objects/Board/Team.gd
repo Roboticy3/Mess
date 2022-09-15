@@ -73,7 +73,7 @@ func get(var key:String):
 	var in_pieces := false
 	
 	#loop through every piece
-	var pieces = board.current
+	var pieces = board.get_pieces()
 	for v in pieces:
 		
 		#skip pieces in other teams
@@ -117,8 +117,6 @@ func _to_string() -> String:
 	var maximum:Vector2 = -Vector2.INF
 	var pieces = board.current
 	for v in pieces:
-		#skip pieces from other teams
-		if pieces[v].get_team() != i: continue
 		if v.x < minimum.x: minimum.x = v.x
 		if v.y < minimum.y: minimum.y = v.y
 		if v.x > maximum.x: maximum.x = v.x
@@ -129,8 +127,10 @@ func _to_string() -> String:
 		for c in range(minimum.x, maximum.x + 1):
 			var v:Vector2 = Vector2(c,r)
 			if pieces.has(v):
+				
 				var p = pieces[v]
-				if p == null:
+				
+				if p == null || p.get_team() != i:
 					s += "."
 				else:
 					s += pieces[v].get_name().substr(0,1)

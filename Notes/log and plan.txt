@@ -498,3 +498,9 @@
 	 - broke win conditions
 	NEXT
 	 - trace back why win conditions arent working and then fix them
+9/14/2022
+	 - integrated Team into the BoardState system
+	 - adjusted the win condition on b_default to check the current turn and not 1 turn into the past
+	NEXT
+	 - implement some sort of cache into the BoardState system using BoardState.possible and project_states() to further amortize Board computations
+	 - optimize get_piece() by integrating current into its design

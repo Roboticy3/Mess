@@ -494,21 +494,12 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	#piece's temporary behaviors so they don't effect future turns
 	p.behaviors.clear()
 	
-	#compute win conditions for this turn
-	var results := evaluate_win_conditions(state)
-	
 	#unpack the mode bitmask into booleans
 	
-	#if this turn is not being applied, do not increment turn or check the results
+	#if this turn is not being applied, do not increment turn
 	if !bool(mode % 2):
 		#also remove this state from the states array
 		states.remove(get_turn() + 1)
-		
-	#if any results came back, the game is ending this turn
-	#check the results to see who wins and looses and emit the signal to end the game
-	#only do this if state is being appended as the current state
-	elif !results.empty():
-		lock = get_team()
 	
 	#print(state)
 	#print(self)
@@ -611,6 +602,8 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 		var vec:Array = I.vectorize()
 		if vec.empty(): continue
 		
+		#print(vec)
+		
 		#add this win condition in a default state, marked as non-applicable
 		var result:Array = [0, true, i]
 		
@@ -637,7 +630,6 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	#apply the win conditions to the winners and losers of the input state
 	for r in results:
-		print(r)
 		var t = teams[r[0]]
 		if r[1] && !state.winners.has(t): 
 			state.winners.append(t)
@@ -650,6 +642,7 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 #send these states to the array of possible states in the current turn
 func project_states(var depth := 1) -> Array:
 	
+	#projecting with a depth of zero is the same as doing nothing
 	if depth <= 0: return []
 	
 	#get all the pieces from the last turn in the current team
@@ -685,8 +678,12 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		
 		#progress a turn to be reverted later
 		var state := execute_turn(i, [], m)
+		
+		print(evaluate_win_conditions(state))
+		
 		#if depth is high enough, call project states recursively from this point
 		project_states(depth - 1)
+		
 		#revert the turn
 		revert(t)
 		
@@ -723,8 +720,10 @@ func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
 		erase_piece(f)
 		return true
 		
-	#duplicate the piece to avoid changing earlier states
-	if p == null: p = duplicate_piece(f)
+	#duplicate the piece to avoid changing earlier states, flag the old piece as missing
+	if p == null: 
+		p.updates = true
+		p = duplicate_piece(f)
 	
 	#update the piece and board state with this movement
 	states[get_turn() + 1].pieces[to] = p
@@ -904,7 +903,7 @@ func _to_string():
 			var v = Vector2(j, i)
 			#"#" signifies an out-of-bounds spot
 			if !is_surrounding(v):
-				s += "#"
+				s += "# "
 				continue
 				
 			#check if square contains a piece
