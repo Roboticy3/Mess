@@ -73,19 +73,18 @@ func get(var key:String):
 	var in_pieces := false
 	
 	#loop through every piece
-	var pieces = board.get_pieces()
+	var pieces = board.current
 	for v in pieces:
 		
-		#skip flagged pieces
-		if pieces[v].updates: continue
-		
-		#skip pieces in other teams
 		if pieces[v].get_team() != i: continue
+		
+		if pieces[v].get_name().match("King"):
+			print(pieces[v])
 		
 		#if the key is found in a piece's table, add its value to the total value
 		var t:Dictionary = pieces[v].table
 		if t.has(key):
-			#print(key, ": ", t[key])
+			
 			#key is now in a piece
 			in_pieces = true
 			

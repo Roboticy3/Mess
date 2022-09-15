@@ -732,11 +732,17 @@ func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
 	#update the piece and board state with this movement
 	states[get_turn() + 1].pieces[to] = p
 	#remove the old version of the piece
-	erase_piece(f)
-		
+	f.updates = true
+	
 	#update the piece's local position and increment its move count, return a success
 	p.set_pos(to)
 	p.set_last_pos(from)
+	
+	#if synchronize is on, erase_piece() will have erased the old piece
+	#the new piece must then also be added to current
+	if synchronize: 
+		current.erase(from)
+		current[to] = p
 	
 	return true
 
@@ -837,7 +843,7 @@ func get_pieces(var offset:int = 0, var team = -1) -> Dictionary:
 			else:
 				pieces[v] = ps[v]
 			
-			#filter out deleted pieces
+			#remove flagged pieces when they are found
 			if ps[v].updates:
 				pieces.erase(v)
 			
@@ -849,7 +855,7 @@ func get_pieces(var offset:int = 0, var team = -1) -> Dictionary:
 func erase(var v:Vector2) -> bool:
 	#if the piece is present, gain reference to it to reference its team
 	var p = get_piece(v)
-	if p.updates:
+	if p == null:
 		return false
 	
 	return erase_piece(p)

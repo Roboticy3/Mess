@@ -504,3 +504,7 @@
 	NEXT
 	 - implement some sort of cache into the BoardState system using BoardState.possible and project_states() to further amortize Board computations
 	 - optimize get_piece() by integrating current into its design
+9/15/2022
+	 - realized Team's integration didn't work and got rid of it for now
+	NEXT
+	 - fix it

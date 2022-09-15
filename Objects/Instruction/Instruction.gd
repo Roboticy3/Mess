@@ -172,6 +172,7 @@ func vectorize(var start:int = 0,
 			
 			#try and format it using the team... *as* a table? sure
 			format(1, 1, team)
+			#print(wrds)
 			w = wrds.slice(start, -1)
 			
 			#evaluate that shit
