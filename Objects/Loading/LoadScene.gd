@@ -46,7 +46,8 @@ func change_scene():
 	var tree:SceneTree = get_tree()
 	var root:Viewport = tree.root
 	
-	#remove all children from the root node and free them later
+	#remove the last child from the scene tree (the scene parent)
+	#all earlier children are previously loaded scenes or singletons
 	root.remove_child(root.get_child(root.get_child_count() - 1))
 	
 	#load the new scene and give it the data it needs to instantiate correctly

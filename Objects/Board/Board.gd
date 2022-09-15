@@ -51,7 +51,7 @@ var current:Dictionary = {}
 var lock:int = -1
 
 #set to false to not update the pieces dictionaries of each team
-var synchronize_teams := true
+var synchronize := true
 
 func _init(var _path:String):
 	path = _path
@@ -215,7 +215,7 @@ func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
 	v = p.get_pos()
 		
 	#add the piece to the correct team's dictionary
-	if synchronize_teams: 
+	if synchronize: 
 		current[v] = p
 		var sk = teams[p.get_team()].start_keys
 		for k in p.table:
@@ -406,8 +406,8 @@ func mark_step(var from:Piece, var to:Vector2,
 			break
 			
 	#send the execution time to debugger
-	if is_instance_valid(Accessor) && Accessor.debug_mark_step_exec_times != null:
-		Accessor.debug_mark_step_exec_times.append(OS.get_ticks_usec() - t)
+	if Accessor.debug[1] != null:
+		Accessor.debug[1].append(OS.get_ticks_usec() - t)
 		
 	return s
 
@@ -494,12 +494,21 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	#piece's temporary behaviors so they don't effect future turns
 	p.behaviors.clear()
 	
+	#compute win conditions for this turn
+	var results := evaluate_win_conditions(state)
+	
 	#unpack the mode bitmask into booleans
 	
-	#if this turn is not being applied, do not increment turn
+	#if this turn is not being applied, do not increment turn or check the results
 	if !bool(mode % 2):
 		#also remove this state from the states array
 		states.remove(get_turn() + 1)
+		
+	#if any results came back, the game is ending this turn
+	#check the results to see who wins and looses and emit the signal to end the game
+	#only do this if state is being appended as the current state
+	elif !results.empty():
+		lock = get_team()
 	
 	#print(state)
 	#print(self)
@@ -602,8 +611,6 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 		var vec:Array = I.vectorize()
 		if vec.empty(): continue
 		
-		#print(vec)
-		
 		#add this win condition in a default state, marked as non-applicable
 		var result:Array = [0, true, i]
 		
@@ -630,6 +637,7 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	#apply the win conditions to the winners and losers of the input state
 	for r in results:
+		print(r)
 		var t = teams[r[0]]
 		if r[1] && !state.winners.has(t): 
 			state.winners.append(t)
@@ -642,7 +650,6 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 #send these states to the array of possible states in the current turn
 func project_states(var depth := 1) -> Array:
 	
-	#projecting with a depth of zero is the same as doing nothing
 	if depth <= 0: return []
 	
 	#get all the pieces from the last turn in the current team
@@ -671,18 +678,17 @@ func project_states_from_piece(var v:Vector2, var s := [],
 	#remember the current turn to revert back to
 	var t:int = get_turn()
 	
-	synchronize_teams = false
+	synchronize = false
 	
 	for i in m:
 		#var _t := OS.get_ticks_usec()
 		
 		#progress a turn to be reverted later
 		var state := execute_turn(i, [], m)
-		
-		print(evaluate_win_conditions(state))
-		
 		#if depth is high enough, call project states recursively from this point
 		project_states(depth - 1)
+		
+		#At this moment, the board is fully in the state of the projected turn
 		
 		#revert the turn
 		revert(t)
@@ -690,7 +696,7 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		s.append(state)
 		#print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
 		
-	synchronize_teams = true
+	synchronize = true
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
 func transform(var v:Vector2, var piece:Piece) -> Vector2:
@@ -720,10 +726,8 @@ func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
 		erase_piece(f)
 		return true
 		
-	#duplicate the piece to avoid changing earlier states, flag the old piece as missing
-	if p == null: 
-		p.updates = true
-		p = duplicate_piece(f)
+	#duplicate the piece to avoid changing earlier states
+	if p == null: p = duplicate_piece(f)
 	
 	#update the piece and board state with this movement
 	states[get_turn() + 1].pieces[to] = p
@@ -781,7 +785,7 @@ func get_lock() -> int:
 #increment turn for both the board and the current team
 #can also take a number of turns to increment
 func turn() -> void:
-	if synchronize_teams: teams[get_team()].table["turn"] += 1
+	if synchronize: teams[get_team()].table["turn"] += 1
 	table["turn"] += 1
 
 #pieces Dictionary interfaces and mutators has, erase, and clear
@@ -854,7 +858,7 @@ func erase(var v:Vector2) -> bool:
 func erase_piece(var p:Piece, var duplicate:Piece = null) -> bool:
 	#then erase the piece in every correct dictionary
 	var b:bool = false
-	if synchronize_teams: b = current.erase(p.get_pos())
+	if synchronize: b = current.erase(p.get_pos())
 	
 	if duplicate == null:
 		duplicate = duplicate_piece(p)
@@ -880,10 +884,13 @@ func revert(var turn:int = get_turn() - 1) -> void:
 		return
 	
 	#set the turn of the board and team
-	if synchronize_teams: teams[get_team()].table["turn"] -= 1
+	if synchronize: teams[get_team()].table["turn"] -= 1
 	table["turn"] -= 1
 	#trim states to the right size
 	states = states.slice(0, turn)
+	
+	#reinitialize current if Board is reverting from a synchronized turn
+	if synchronize: current = get_pieces()
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():
@@ -903,7 +910,7 @@ func _to_string():
 			var v = Vector2(j, i)
 			#"#" signifies an out-of-bounds spot
 			if !is_surrounding(v):
-				s += "# "
+				s += "#"
 				continue
 				
 			#check if square contains a piece
