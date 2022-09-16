@@ -506,5 +506,8 @@
 	 - optimize get_piece() by integrating current into its design
 9/15/2022
 	 - realized Team's integration didn't work and got rid of it for now
+	 - made Board update current correctly without BoardMesh's help
+	 - made generalized method for converting piece Dictionaries to strings in BoardConverter
+	 - narrowed down bug to the last moved piece not showing up in the get_pieces() Dictionary
 	NEXT
 	 - fix it
