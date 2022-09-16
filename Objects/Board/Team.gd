@@ -73,13 +73,20 @@ func get(var key:String):
 	var in_pieces := false
 	
 	#loop through every piece
-	var pieces = board.current
+	var pieces = board.get_pieces()
+	if key.match("key"): print(BoardConverter.pieces_to_string(pieces))
 	for v in pieces:
 		
 		if pieces[v].get_team() != i: continue
 		
+<<<<<<< Updated upstream
 #		if pieces[v].get_name().match("King"):
 #			print(pieces[v])
+=======
+		if pieces[v].get_name().match("King"):
+			#print(pieces[v])
+			pass
+>>>>>>> Stashed changes
 		
 		#if the key is found in a piece's table, add its value to the total value
 		var t:Dictionary = pieces[v].table
