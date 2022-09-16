@@ -495,7 +495,7 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	p.behaviors.clear()
 	
 	#compute win conditions for this turn
-	var results := evaluate_win_conditions(state)
+#	var results := evaluate_win_conditions(state)
 	
 	#unpack the mode bitmask into booleans
 	
@@ -507,8 +507,8 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	#if any results came back, the game is ending this turn
 	#check the results to see who wins and looses and emit the signal to end the game
 	#only do this if state is being appended as the current state
-	elif !results.empty():
-		lock = get_team()
+#	elif !results.empty():
+#		lock = get_team()
 	
 	#print(state)
 	#print(self)
@@ -637,7 +637,7 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 	
 	#apply the win conditions to the winners and losers of the input state
 	for r in results:
-		print(r)
+		#print(r)
 		var t = teams[r[0]]
 		if r[1] && !state.winners.has(t): 
 			state.winners.append(t)

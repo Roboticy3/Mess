@@ -352,7 +352,10 @@ func execute_turn(var v:Vector2) -> void:
 	
 	#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
 	var changes := Array()
+	
 	var state = board.execute_turn(v, changes)
+	print(BoardConverter.pieces_to_string(board.get_pieces()))
+	print(board.evaluate_win_conditions(state))
 	
 	#temporary win checker
 	if !state.losers.empty(): end()

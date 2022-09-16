@@ -78,8 +78,8 @@ func get(var key:String):
 		
 		if pieces[v].get_team() != i: continue
 		
-		if pieces[v].get_name().match("King"):
-			print(pieces[v])
+#		if pieces[v].get_name().match("King"):
+#			print(pieces[v])
 		
 		#if the key is found in a piece's table, add its value to the total value
 		var t:Dictionary = pieces[v].table
