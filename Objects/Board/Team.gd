@@ -79,15 +79,6 @@ func get(var key:String):
 		
 		if pieces[v].get_team() != i: continue
 		
-<<<<<<< Updated upstream
-#		if pieces[v].get_name().match("King"):
-#			print(pieces[v])
-=======
-		if pieces[v].get_name().match("King"):
-			#print(pieces[v])
-			pass
->>>>>>> Stashed changes
-		
 		#if the key is found in a piece's table, add its value to the total value
 		var t:Dictionary = pieces[v].table
 		if t.has(key):
