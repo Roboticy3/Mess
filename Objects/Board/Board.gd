@@ -495,7 +495,7 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	p.behaviors.clear()
 	
 	#compute win conditions for this turn
-#	var results := evaluate_win_conditions(state)
+	var results := evaluate_win_conditions(state)
 	
 	#unpack the mode bitmask into booleans
 	
@@ -653,7 +653,7 @@ func project_states(var depth := 1) -> Array:
 	if depth <= 0: return []
 	
 	#get all the pieces from the last turn in the current team
-	var pieces:Dictionary = get_pieces(0, get_team())
+	var pieces:Dictionary = get_pieces(get_team())
 	
 	#loop through all pieces on the team
 	for v in pieces:
@@ -728,11 +728,14 @@ func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
 		
 	#duplicate the piece to avoid changing earlier states
 	if p == null: p = duplicate_piece(f)
+	#second duplicate for erased piece
+	var f2 := duplicate_piece(f)
 	
 	#update the piece and board state with this movement
 	states[get_turn() + 1].pieces[to] = p
-	#remove the old version of the piece
-	f.updates = true
+	#remove the old version of the piece by flagging the duplicate in the new turn
+	f2.updates = true
+	states[get_turn() + 1].pieces[from] = f2
 	
 	#update the piece's local position and increment its move count, return a success
 	p.set_pos(to)
@@ -827,11 +830,11 @@ func find(var v:Vector2) -> int:
 #return every square that has a piece
 #offset controls how many states away from the state at get_turn() will be considered
 #team can be set higher than -1 to filter pieces from a specific team
-func get_pieces(var offset:int = 0, var team = -1) -> Dictionary:
+func get_pieces(var team:int = -1) -> Dictionary:
 	
 	#find all pieces, deleted or not, in states
 	var pieces:Dictionary = {}
-	for i in get_turn() + offset + 1:
+	for i in states.size():
 		
 		#for all the pieces in this state
 		var ps:Dictionary = states[i].pieces

@@ -83,6 +83,8 @@ func get(var key:String):
 		var t:Dictionary = pieces[v].table
 		if t.has(key):
 			
+			if key.match("key"): print(pieces[v], t[key])
+			
 			#key is now in a piece
 			in_pieces = true
 			

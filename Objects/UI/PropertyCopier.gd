@@ -33,6 +33,7 @@ func _ready():
 	#get the target and destination nodes
 	target = get_node(target_path)
 	destination = get_node(destination_path)
+	
 	#connect the target signal to copy_property() (cant wait for gdscript 2.0 lmao)
 	var con_error:int = target.connect(target_signal_name, self, "copy_properties")
 	#debug the connection only if the properties won't be getting copied every frame

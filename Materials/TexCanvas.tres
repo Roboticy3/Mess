@@ -23,8 +23,13 @@ uniform float blur : hint_range(0, 8);
 
 void fragment(){
 	vec4 col = tint * textureLod(tex, UV * scale, blur);
-	COLOR = base * base_amount + col * (1f - base_amount);
+	COLOR = base * base_amount + col * (1.0f - base_amount);
 }"
 
 [resource]
 shader = SubResource( 1 )
+shader_param/scale = null
+shader_param/tint = null
+shader_param/base = null
+shader_param/base_amount = null
+shader_param/blur = null
