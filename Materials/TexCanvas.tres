@@ -1,6 +1,4 @@
-[gd_resource type="ShaderMaterial" load_steps=3 format=2]
-
-[ext_resource path="res://Textures-Sprites/Checkerboard_tile.svg" type="Texture" id=1]
+[gd_resource type="ShaderMaterial" load_steps=2 format=2]
 
 [sub_resource type="Shader" id=1]
 code = "// NOTE: Shader automatically converted from Godot Engine 3.4.stable's CanvasItemMaterial.
@@ -30,9 +28,3 @@ void fragment(){
 
 [resource]
 shader = SubResource( 1 )
-shader_param/scale = Vector2( 0, 0 )
-shader_param/tint = Color( 0.14902, 0.172549, 0.231373, 1 )
-shader_param/base = Color( 0.3456, 0.40068, 0.54, 1 )
-shader_param/base_amount = 0.216
-shader_param/blur = 5.412
-shader_param/tex = ExtResource( 1 )

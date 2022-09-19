@@ -28,13 +28,13 @@ void fragment() {
 	//convert the current uv to a square
 	vec2 base_uv = UV * uv1_scale.xy + uv1_offset.xy;
 	
-	vec2 s = base_uv * 2f;
+	vec2 s = base_uv * 2.0f;
 	
 	ALPHA = 1.0f;
-	vec2 new_uv = (floor(s)) / uv1_scale.xy / 2f;
+	vec2 new_uv = (floor(s)) / uv1_scale.xy / 2.0f;
 	//ALBEDO = vec3(new_uv,0f);
 	
-	ALPHA = texture(highlights, new_uv + (.5f / (uv1_scale.xy * 2f))).r;
+	ALPHA = texture(highlights, new_uv + (.5f / (uv1_scale.xy * 2.0f))).r;
 	ALBEDO = front.rgb * float(FRONT_FACING) + back.rgb * float(!FRONT_FACING);
 }"
 

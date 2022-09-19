@@ -49,7 +49,7 @@ export (float) var accel = 50.0
 export (float) var speed = 4.0
 
 #sensitivity of the player in rad/100pix
-export (float) var sens = 1
+export (float) var sens = 0.1
 
 #dead zone on the controller axes
 #index 0 for left stick and 1 for right
