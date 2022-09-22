@@ -38,6 +38,7 @@ viewport_paths = [ NodePath("../Player/Viewport") ]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9031, 4.16525 )
 collision_layer = 2
 script = ExtResource( 5 )
+sens = 60.0
 
 [node name="CollisionShape" type="CollisionShape" parent="Player"]
 transform = Transform( 0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0 )

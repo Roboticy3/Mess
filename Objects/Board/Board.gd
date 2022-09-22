@@ -434,6 +434,7 @@ func can_take_from(var from:Vector2, var to:Vector2) -> bool:
 # bit 0 - append, set to 1 to append the state generated in this method to states
 # bit 1 - turn, set to 1 to pass to the next turn
 # bit 2 - clear, set to 1 to clear the marks dictionary after the end of the method
+# bit 3 - reread, set to 1 to reread the moved piece's instruction file
 func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	var mode := 7) -> BoardState:
 	
@@ -477,8 +478,12 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	
 	#add the base move to the front of p's behaviors
 	p.behaviors = [[-1, 2, get_selected(), v]]
-	var funcs:Dictionary = {"m":"m_phase","t":"t_phase","c":"c_phase","r":"r_phase"}
-	var r := Reader.new(p.type, funcs, p.type.path, 3, self, true)
+	#if reread is set to true, read out the piece instruction file to reload it's PieceType
+	if bool((mode >> 3) % 2): 
+		var funcs:Dictionary = {"m":"m_phase","t":"t_phase","c":"c_phase","r":"r_phase"}
+		var r := Reader.new(p.type, funcs, p.type.path, 3, self, true)
+		r.read()
+	#fill the piece's behaviors from its stored instructions
 	p.fill_behaviors()
 	
 	#print(p.behaviors)
@@ -507,8 +512,8 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	#if any results came back, the game is ending this turn
 	#check the results to see who wins and looses and emit the signal to end the game
 	#only do this if state is being appended as the current state
-#	elif !results.empty():
-#		lock = get_team()
+	elif !results.empty() && synchronize:
+		lock = get_team()
 	
 	#print(state)
 	#print(self)
@@ -648,9 +653,13 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 
 #build all possible BoardStates for this turn
 #send these states to the array of possible states in the current turn
-func project_states(var depth := 1) -> Array:
+#depth param can be set for any amount of turns to check, creating a tree of possible states
+#locked param for whether turns are locked during this period
+func project_states(var depth := 1, var locked := false) -> Array:
 	
 	if depth <= 0: return []
+	
+	if locked: lock = true
 	
 	#get all the pieces from the last turn in the current team
 	var pieces:Dictionary = get_pieces(get_team())
@@ -658,6 +667,8 @@ func project_states(var depth := 1) -> Array:
 	#loop through all pieces on the team
 	for v in pieces:
 		project_states_from_piece(v, states[-1].possible, depth)
+	
+	if locked: lock = false
 	
 	marks.clear()
 	set_selected()
@@ -689,6 +700,7 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		project_states(depth - 1)
 		
 		#At this moment, the board is fully in the state of the projected turn
+		if !state.losers.empty(): print(state.losers)
 		
 		#revert the turn
 		revert(t)

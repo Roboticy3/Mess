@@ -511,3 +511,8 @@
 	 - narrowed down bug to the last moved piece not showing up in the get_pieces() Dictionary
 	NEXT
 	 - fix it
+9/20/2022
+	 - fixed it
+	NEXT
+	 - make get_pieces() search up from the current piece array instead of the origin of time, same with get_piece()
+	 - rename Board.execute_turn() so the name can encapsulate running a turn and projecting states without freezing

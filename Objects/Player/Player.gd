@@ -182,7 +182,7 @@ func accelerate(var delta:float):
 func look(delta):
 	#multiply rotation motions by delta and sens
 	var axes = transform.basis
-	var rots = target_motion["r"] * delta * -sens
+	var rots = target_motion["r"] * delta * -sens / 100
 	
 	#use true y axis for horizontal rotation to make rotation more intuitive
 	transform = rotate(Vector3.UP, rots.x)
@@ -201,7 +201,7 @@ func look(delta):
 	target_motion["r"] = Vector2.ZERO
 	
 	#rotate the board by its target rotations
-	rots = momentum["b"] * delta * sens / 100
+	rots = momentum["b"] * delta * sens / 5000
 	board_mesh.global_rotate(Vector3.UP, rots.x)
 	board_mesh.global_rotate(transform.basis.x, rots.y)
 	

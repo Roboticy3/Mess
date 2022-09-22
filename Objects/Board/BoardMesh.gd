@@ -354,8 +354,7 @@ func execute_turn(var v:Vector2) -> void:
 	var changes := Array()
 	
 	var state = board.execute_turn(v, changes)
-	#print(BoardConverter.pieces_to_string(board.get_pieces()))
-	#print(board.evaluate_win_conditions(state))
+	board.project_states()
 	
 	#temporary win checker
 	if !state.losers.empty(): end()
@@ -371,8 +370,6 @@ func execute_turn(var v:Vector2) -> void:
 				create_piece(board.get_piece(square),square)
 			TYPE_VECTOR2:
 				destroy_piece(c)
-	
-	#board.project_states()
 	
 	#clear board marks
 	highlight_squares()
