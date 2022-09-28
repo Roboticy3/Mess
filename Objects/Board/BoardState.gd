@@ -20,9 +20,6 @@ var board
 var winners:Array = []
 var losers:Array = []
 
-#array of possible BoardStates for the turn after this one's
-var possible:Array = []
-
 #a BoardState can be built from the owner board, and will interperet the current turn
 func _init(var _board = null):
 	
@@ -68,8 +65,5 @@ func _to_string():
 			s += " "
 		#add a new line at the end of each row
 		s += "\n"
-	
-	s += String(winners) + "\n"
-	s += String(losers) + "\n"
 	return s
 	

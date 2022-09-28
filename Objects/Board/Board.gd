@@ -100,6 +100,9 @@ func _ready():
 	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
+	
+	#fill initial possibilities for piece objects
+	project_states()
 
 #_phase is the default phase and defines metadata for the board like mesh and name
 #warning-ignore:unused_argument
@@ -419,8 +422,23 @@ func mark_step(var from:Piece, var to:Vector2,
 		
 	return s
 
+#generate marks from a piece's possible BoardStates
+func super_mark(var v:Vector2, var set:bool = true) -> Dictionary:
+	var p = get_piece(v)
+	
+	if p == null:
+		return {}
+	
+	if set: marks = p.possible
+	return p.possible
+
 ### APPLY TURNS
 #Mutate the states array and possible state tree
+
+#handle both th execution of a turn and the projection of states
+func handle(var v:Vector2, var changes:Array = [], var _marks := {}):
+	execute_turn(v, changes, _marks)
+	project_states()
 
 #execute a turn by creating a new BoardState and adding it to the states Array
 #returns an Array of changes to the board
@@ -452,7 +470,7 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 		print("Board::execute_turn() says: \"no piece at square " + String(v) + "\"")
 		return state
 		
-	#add the new state to the states array and give it data on how it will have been constructed
+	#add the new state to the states array
 	states.append(state)
 	
 	#duplicate the target piece to avoid mofidying and older version of it
@@ -653,7 +671,7 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 #send these states to the array of possible states in the current turn
 #depth param can be set for any amount of turns to check, creating a tree of possible states
 #locked param for whether turns are locked during this period
-func project_states(var depth := 1, var locked := false) -> Array:
+func project_states(var depth := 1, var locked := false):
 	
 	if depth <= 0: return []
 	
@@ -664,18 +682,16 @@ func project_states(var depth := 1, var locked := false) -> Array:
 	
 	#loop through all pieces on the team
 	for v in pieces:
-		project_states_from_piece(v, states[-1].possible, depth)
+		project_states_from_piece(v, pieces[v].possible, depth)
 	
 	if locked: lock = false
 	
 	marks.clear()
 	set_selected()
 
-	return states[-1].possible
-
 #build all possible BoardStates for the next turn from a single piece given from a position
 #use depth argument to call recursively with project_states()
-func project_states_from_piece(var v:Vector2, var s := [],
+func project_states_from_piece(var v:Vector2, var s := {},
 	var depth := 1) -> void:
 		
 	#mark their moves without setting the marks to board.marks
@@ -700,7 +716,7 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		#revert the turn
 		revert(t)
 		
-		s.append(state)
+		s[i] = state
 		#print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
 		
 	synchronize = true
@@ -713,8 +729,8 @@ func revert(var turn:int = get_turn() - 1) -> void:
 		return
 	
 	#set the turn of the board and team
-	if synchronize: teams[get_team()].table["turn"] -= 1
-	table["turn"] -= 1
+	if synchronize: teams[get_team()].table["turn"] = turn
+	table["turn"] = turn
 	#trim states to the right size
 	states = states.slice(0, turn)
 	
@@ -809,8 +825,8 @@ func find(var v:Vector2) -> int:
 func get_pieces(var team:int = -1) -> Dictionary:
 	
 	#find all pieces, deleted or not, in states
-	var pieces:Dictionary = {}
-	for i in states.size():
+	var pieces:Dictionary = current.duplicate()
+	for i in range(current_turn, get_turn()):
 		
 		#for all the pieces in this state
 		var ps:Dictionary = states[i].pieces

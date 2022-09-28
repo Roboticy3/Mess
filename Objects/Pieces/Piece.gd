@@ -27,6 +27,9 @@ var board
 #set to true if this piece belongs to a state and has a different copy in a later state
 var updates:bool = false
 
+#Dictionary of possible moves in the form of BoardStates
+var possible := {}
+
 #initiate a piece with a path to its instruction behaviours, its team and its position
 func _init(var _b = null, var _type = null, 
 	var _teams:Array = [], var _team_index:int = 0, var v = Vector2.ZERO):

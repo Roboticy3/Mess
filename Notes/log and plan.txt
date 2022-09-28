@@ -516,3 +516,8 @@
 	NEXT
 	 - make get_pieces() search up from the current piece array instead of the origin of time, same with get_piece()
 	 - rename Board.execute_turn() so the name can encapsulate running a turn and projecting states without freezing
+9/28/2022
+	 - Optimized get_piece() and get_pieces() to be pretty damn quick
+	 - began implementing super_mark() and Board.handle(), but ran into a problem where execute turn needs a setting for how it handles the marks dictionary
+	NEXT
+	 - make opposite version of revert() method (maybe append()?) that adds a new state like execute_turn() without interpereting and instruction from marks
