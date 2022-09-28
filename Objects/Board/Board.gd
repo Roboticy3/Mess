@@ -6,6 +6,9 @@ extends Node
 
 #Board is the internal state of a game board. Should be an orphan Node interfaced by other Nodes through BoardMesh
 
+### SOLID DATA
+#These variables should not change after initialization
+
 #instruction path to the board
 var path:String = ""
 
@@ -30,6 +33,9 @@ var size = Vector2.ONE
 
 #the path to this piece, excluding its name
 var div:String = ""
+
+### LIQUID DATA
+#These variables will change all the time
 
 #store pieces at their initial locations
 #the states making up each turn of the board
