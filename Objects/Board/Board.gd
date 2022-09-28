@@ -9,10 +9,6 @@ extends Node
 #instruction path to the board
 var path:String = ""
 
-#store pieces at their initial locations
-#the states making up each turn of the board
-var states:Array 
-
 #properties piece_paths through div are constant from the start of the game to the end 
 #store the set of pieces on the board by their file paths
 var piece_types:Array = []
@@ -35,6 +31,10 @@ var size = Vector2.ONE
 #the path to this piece, excluding its name
 var div:String = ""
 
+#store pieces at their initial locations
+#the states making up each turn of the board
+var states:Array 
+
 #store a set of variables declared in metadata phase
 var table:Dictionary = {"scale":1, "opacity":0.6, "collision":1, 
 	"piece_scale":0.2, "piece_opacity":1, "piece_collision":1,
@@ -46,6 +46,7 @@ var marks:Dictionary = {}
 
 #Vector2 Dictionary of the pieces in the current turn
 var current:Dictionary = {}
+var current_turn := 0
 
 #overrides get_team()'s return value if set to a positive integer, locking the effective team
 var lock:int = -1
@@ -53,10 +54,17 @@ var lock:int = -1
 #set to false to not update the pieces dictionaries of each team
 var synchronize := true
 
+### GENERATORS
+#create a board from a b_*.txt file
+#x_phase() functions are called by the Reader object in ready to initialize the board
+#all x_phase functions take in the same arguments I, vec, and file
+
+#set the path and create the board
 func _init(var _path:String):
 	path = _path
 	_ready()
 
+#ready will rarely be called automatically since Boards are usually orphan Nodes
 func _ready():
 	#create a BoardState for the opening state of the board
 	states = [BoardState.new(self)]
@@ -86,9 +94,6 @@ func _ready():
 	
 	#set div to only include the file path up to the location of the piece
 	div = path.substr(0, path.find_last("/") + 1)
-
-#x_phase() functions are called by the Reader object in ready to initialize the board
-#all x_phase functions take in the same arguments I, vec, and file
 
 #_phase is the default phase and defines metadata for the board like mesh and name
 #warning-ignore:unused_argument
@@ -190,43 +195,6 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 #warning-ignore:unused_argument
 func w_phase(var I:Instruction, var vec:Array, var persist:Array) -> void:
 	win_conditions.append(I)
-	
-#set piece and return set position from array of length 4
-#returns the position interpereted from the input vector
-#the part which updates states can refer to nonexistent state and crash, so it can be disabled with the update_state bool
-func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
-	
-	#ignore arrays that are too small
-	if i.size() < 3: 
-		print("Board::make_piece() says \"cannot make piece from Array of size ", i.size(), "\"")
-		return Vector2.INF
-	
-	#extract the position from the input vector
-	var v = Vector2(i[1], i[2])
-	
-	#i[0] indicates the Piece's team and i[1] indicates the type
-	#also check if they are in range
-	if !(team < teams.size() && i[0] < piece_types.size()): return v
-	
-	#if they are in range, grab the piece from piece_types and update its data accordingly
-	var p:Piece = Piece.new(self, piece_types[i[0]], teams, team, v)
-	
-	#bounce the position back from the piece to accound for px or py overriding the Piece's original position
-	v = p.get_pos()
-		
-	#add the piece to the correct team's dictionary
-	if synchronize: 
-		current[v] = p
-		var sk = teams[p.get_team()].start_keys
-		for k in p.table:
-			if !sk.has(k): sk.append(k)
-	
-	if init:
-		states[0].pieces[v] = p
-	else:
-		states[get_turn() + 1].pieces[v] = p
-	
-	return v
 
 #create a boundary object from a vector of length 4
 func set_bound(var i:Array):
@@ -234,6 +202,9 @@ func set_bound(var i:Array):
 	var p = Vector2(i[0], i[1])
 	var q = Vector2(i[2], i[3])
 	return Bound.new(p, q)
+
+### TILE QUERIES
+#Produce data about the board as it pertains to a square in tile space
 
 #check if a square is inside of the board's bounds
 func is_surrounding(var pos:Vector2, var inclusive:bool = true):
@@ -254,6 +225,37 @@ func find_surrounding(var pos:Vector2, var inclusive:bool = true):
 		if b.is_surrounding(pos, inclusive):
 			surrounding.append(i)
 	return surrounding
+
+#given a from and to square, returns true if a piece in from can take the to square, and false otherwise
+func can_take_from(var from:Vector2, var to:Vector2) -> bool:
+	var teamf:int = -1
+	var f = get_piece(from)
+	
+	#null pieces cannot take
+	if f == null: return false
+	
+	if has(from): teamf = f.get_team()
+	var teamt:int = -1
+	if has(to): teamt = get_piece(to).get_team()
+	
+	if teamf == -1: return false
+	#from BoardConverter.gd
+	if teamf != teamt || f.get_ff(): return true
+	return false
+
+#transform a square using mark step in the jump mode, returning a singular transformed square
+func transform(var v:Vector2, var piece:Piece) -> Vector2:
+	
+	#squares on top of their piece do not need to be transformed
+	if v == Vector2.ZERO: return piece.get_pos()
+	
+	var pos:Dictionary = mark_step(piece, v, 1, 2)
+	
+	if pos.empty(): return Vector2.INF
+	return pos.keys()[0]
+
+### MARKS
+#Get squares that the player should know about
 
 #generate marks for a piece as a PoolVector2Array from its position on the board
 #if set is false, the resulting marks will not be sent to the marks Dictionary 
@@ -411,22 +413,8 @@ func mark_step(var from:Piece, var to:Vector2,
 		
 	return s
 
-#given a from and to square, returns true if a piece in from can take the to square, and false otherwise
-func can_take_from(var from:Vector2, var to:Vector2) -> bool:
-	var teamf:int = -1
-	var f = get_piece(from)
-	
-	#null pieces cannot take
-	if f == null: return false
-	
-	if has(from): teamf = f.get_team()
-	var teamt:int = -1
-	if has(to): teamt = get_piece(to).get_team()
-	
-	if teamf == -1: return false
-	#from BoardConverter.gd
-	if teamf != teamt || f.get_ff(): return true
-	return false
+### APPLY TURNS
+#Mutate the states array and possible state tree
 
 #execute a turn by creating a new BoardState and adding it to the states Array
 #returns an Array of changes to the board
@@ -458,7 +446,7 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 		print("Board::execute_turn() says: \"no piece at square " + String(v) + "\"")
 		return state
 		
-	#add the new state to the states array
+	#add the new state to the states array and give it data on how it will have been constructed
 	states.append(state)
 	
 	#duplicate the target piece to avoid mofidying and older version of it
@@ -521,7 +509,11 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	
 	#extract the clear and turn bits from mode and check them before clearing marks and incrementing turn
 	if bool((mode >> 2) % 2): marks.clear()
-	if bool((mode >> 1) % 2): turn()
+	if bool((mode >> 1) % 2): table["turn"] += 1
+	
+	#if synchronize is enabled, update current_turn
+	if synchronize:
+		current_turn = get_turn()
 	
 	#return Board updates
 	return state
@@ -699,9 +691,6 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		#if depth is high enough, call project states recursively from this point
 		project_states(depth - 1)
 		
-		#At this moment, the board is fully in the state of the projected turn
-		if !state.losers.empty(): print(state.losers)
-		
 		#revert the turn
 		revert(t)
 		
@@ -710,65 +699,24 @@ func project_states_from_piece(var v:Vector2, var s := [],
 		
 	synchronize = true
 
-#transform a square using mark step in the jump mode, returning a singular transformed square
-func transform(var v:Vector2, var piece:Piece) -> Vector2:
+#revert the board to a turn, reverse of execute_turn()
+func revert(var turn:int = get_turn() - 1) -> void:
 	
-	#squares on top of their piece do not need to be transformed
-	if v == Vector2.ZERO: return piece.get_pos()
+	#don't do anything if no info is had on the turn
+	if turn > get_turn() || turn < 0:
+		return
 	
-	var pos:Dictionary = mark_step(piece, v, 1, 2)
+	#set the turn of the board and team
+	if synchronize: teams[get_team()].table["turn"] -= 1
+	table["turn"] -= 1
+	#trim states to the right size
+	states = states.slice(0, turn)
 	
-	if pos.empty(): return Vector2.INF
-	return pos.keys()[0]
-	
-#move the piece on from onto to
-#optionally provide duplicate piece p in advance
-#set safe to false to skip checks
-func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
-	var f:Piece = null, var safe:bool = true) -> bool:
-	
-	#if no piece is in the from square, do not attempt to move from it
-	if f == null:
-		f = get_piece(from)
-	if f == null:
-		return false
-	
-	#check if to is out of bounds, if so, just destroy from
-	if safe && !is_surrounding(to):
-		erase_piece(f)
-		return true
-		
-	#duplicate the piece to avoid changing earlier states
-	if p == null: p = duplicate_piece(f)
-	#second duplicate for erased piece
-	var f2 := duplicate_piece(f)
-	
-	#update the piece and board state with this movement
-	states[get_turn() + 1].pieces[to] = p
-	#remove the old version of the piece by flagging the duplicate in the new turn
-	f2.updates = true
-	states[get_turn() + 1].pieces[from] = f2
-	
-	#update the piece's local position and increment its move count, return a success
-	p.set_pos(to)
-	p.set_last_pos(from)
-	
-	#if synchronize is on, erase_piece() will have erased the old piece
-	#the new piece must then also be added to current
-	if synchronize: 
-		current.erase(from)
-		current[to] = p
-	
-	return true
+	#reinitialize current if Board is reverting from a synchronized turn
+	if synchronize: current = get_pieces()
 
-#copy a piece into a new piece
-func duplicate_piece(var p:Piece) -> Piece:
-	var dup := Piece.new(self, p.type)
-	dup.table = p.table.duplicate()
-	
-	return dup
-
-#Various getters and setters
+### BOARD GETTERS
+#Budget private interaction with table
 
 #get the team of the current turn by taking turn % teams.size()
 func get_team(var offset:int = 0) -> int:
@@ -803,19 +751,29 @@ func get_losers() -> Array:
 func get_lock() -> int:
 	return lock
 
-#increment turn for both the board and the current team
-#can also take a number of turns to increment
-func turn() -> void:
-	if synchronize: teams[get_team()].table["turn"] += 1
-	table["turn"] += 1
+###PIECE GETTERS
+#Searches through the states array to produce data on pieces
 
 #pieces Dictionary interfaces and mutators has, erase, and clear
+#minimum complexity! :)
 func get_piece(var v:Vector2):
 	
-	var i := find(v)
-	if i == -1 || states[i].pieces[v].updates:
-		return null
-	return states[i].pieces[v]
+	var i := states.size() - 1
+	while i >= current_turn:
+		var s:BoardState = states[i]
+		var ps:Dictionary = s.pieces
+		
+		if ps.has(v):
+			var p = ps[v]
+			if p.updates: return null
+			return p
+		
+		i -= 1
+	
+	if current.has(v):
+		return current[v]
+	
+	return null
 
 func has(var v:Vector2) -> bool:
 	
@@ -864,6 +822,93 @@ func get_pieces(var team:int = -1) -> Dictionary:
 			
 	return pieces
 
+#copy a piece into a new piece
+func duplicate_piece(var p:Piece) -> Piece:
+	var dup := Piece.new(self, p.type)
+	dup.table = p.table.duplicate()
+	
+	return dup
+
+###PIECE SETTERS
+#these functions change the pieces Dictionary of the current latest state
+
+#move the piece on from onto to
+#optionally provide duplicate piece p in advance
+#set safe to false to skip checks
+func move_piece(var from:Vector2, var to:Vector2, var p:Piece = null,
+	var f:Piece = null, var safe:bool = true) -> bool:
+	
+	#if no piece is in the from square, do not attempt to move from it
+	if f == null:
+		f = get_piece(from)
+	if f == null:
+		return false
+	
+	#check if to is out of bounds, if so, just destroy from
+	if safe && !is_surrounding(to):
+		erase_piece(f)
+		return true
+		
+	#duplicate the piece to avoid changing earlier states
+	if p == null: p = duplicate_piece(f)
+	#second duplicate for erased piece
+	var f2 := duplicate_piece(f)
+	
+	#update the piece and board state with this movement
+	states[get_turn() + 1].pieces[to] = p
+	#remove the old version of the piece by flagging the duplicate in the new turn
+	f2.updates = true
+	states[get_turn() + 1].pieces[from] = f2
+	
+	#update the piece's local position and increment its move count, return a success
+	p.set_pos(to)
+	p.set_last_pos(from)
+	
+	#if synchronize is on, erase_piece() will have erased the old piece
+	#the new piece must then also be added to current
+	if synchronize: 
+		current.erase(from)
+		current[to] = p
+	
+	return true
+
+#set piece and return set position from array of length 4
+#returns the position interpereted from the input vector
+#the part which updates states can refer to nonexistent state and crash, so it can be disabled with the update_state bool
+func make_piece(var i:Array, var team:int, var init:bool = false) -> Vector2:
+	
+	#ignore arrays that are too small
+	if i.size() < 3: 
+		print("Board::make_piece() says \"cannot make piece from Array of size ", i.size(), "\"")
+		return Vector2.INF
+	
+	#extract the position from the input vector
+	var v = Vector2(i[1], i[2])
+	
+	#i[0] indicates the Piece's team and i[1] indicates the type
+	#also check if they are in range
+	if !(team < teams.size() && i[0] < piece_types.size()): return v
+	
+	#if they are in range, grab the piece from piece_types and update its data accordingly
+	var p:Piece = Piece.new(self, piece_types[i[0]], teams, team, v)
+	
+	#bounce the position back from the piece to accound for px or py overriding the Piece's original position
+	v = p.get_pos()
+		
+	#add the piece to the correct team's dictionary
+	if synchronize: 
+		current[v] = p
+		var sk = teams[p.get_team()].start_keys
+		for k in p.table:
+			if !sk.has(k): sk.append(k)
+	
+	if init:
+		states[0].pieces[v] = p
+	else:
+		states[get_turn() + 1].pieces[v] = p
+	
+	return v
+
 #erase also serves the same purpose as an old destroy_piece method
 #free can be set to false to keep the piece at v in memory after the erasure
 #free needs to be called manually because pieces are not nodes in the node tree, and so will leak if not freed
@@ -896,22 +941,6 @@ func erase_piece(var p:Piece, var duplicate:Piece = null) -> bool:
 func clear(var free:bool = true) -> void:
 	for s in states:
 		s.clear(free)
-
-#revert the board to a turn 
-func revert(var turn:int = get_turn() - 1) -> void:
-	
-	#don't do anything if no info is had on the turn
-	if turn > get_turn() || turn < 0:
-		return
-	
-	#set the turn of the board and team
-	if synchronize: teams[get_team()].table["turn"] -= 1
-	table["turn"] -= 1
-	#trim states to the right size
-	states = states.slice(0, turn)
-	
-	#reinitialize current if Board is reverting from a synchronized turn
-	if synchronize: current = get_pieces()
 
 #print the board as a 2D matrix of squares, denoting pieces by the first character in their name
 func _to_string():

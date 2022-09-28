@@ -355,6 +355,7 @@ func execute_turn(var v:Vector2) -> void:
 	
 	var state = board.execute_turn(v, changes)
 	board.project_states()
+	print(state)
 	
 	#temporary win checker
 	if !state.losers.empty(): end()
