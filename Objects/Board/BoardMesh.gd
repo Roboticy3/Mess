@@ -324,7 +324,7 @@ func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
-	marks = board.super_mark(v)
+	marks = board.mark(v)
 	highlight_squares(marks.keys())
 	
 #run this method whenever a player clicks on a square
@@ -350,25 +350,22 @@ func handle(var v:Vector2, var team:int = 0):
 func execute_turn(var v:Vector2) -> void:
 	
 	#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
-	var changes := Array()
-	board.handle(v, changes)
+	var state = board.execute_turn(v)
+	print(board)
 	
 	if !board.states[-1].losers.empty(): end()
 	
 	#apply the changes from this turn
-	for i in changes.size():
-		var c = changes[i]
-		match typeof(c):
-			
-			TYPE_VECTOR2_ARRAY: 
-				move_piece(c[0], c[1])
-			
-			TYPE_ARRAY: 
-				var square:Vector2 = Vector2(c[1],c[2])
-				create_piece(board.get_piece(square),square)
-			
-			TYPE_VECTOR2:
-				destroy_piece(c)
+	for v in state.pieces:
+		var p = state.pieces[v]
+		var l = p.last
+		
+		if l == null:
+			create_piece(p, p.get_pos())
+		elif p.updates:
+			destroy_piece(p.get_pos())
+		else:
+			move_piece(l.get_pos(), p.get_pos())
 	
 	#clear board marks
 	highlight_squares()

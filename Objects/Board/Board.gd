@@ -435,11 +435,6 @@ func super_mark(var v:Vector2, var set:bool = true) -> Dictionary:
 ### APPLY TURNS
 #Mutate the states array and possible state tree
 
-#handle both th execution of a turn and the projection of states
-func handle(var v:Vector2, var changes:Array = [], var _marks := {}):
-	execute_turn(v, changes, _marks)
-	project_states()
-
 #execute a turn by creating a new BoardState and adding it to the states Array
 #returns an Array of changes to the board
 #mode is a bitmask
@@ -447,13 +442,15 @@ func handle(var v:Vector2, var changes:Array = [], var _marks := {}):
 # bit 1 - turn, set to 1 to pass to the next turn
 # bit 2 - clear, set to 1 to clear the marks dictionary after the end of the method
 # bit 3 - reread, set to 1 to reread the moved piece's instruction file
-func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
+func execute_turn(var v:Vector2, var _marks := {},
 	var mode := 7) -> BoardState:
+	
+	var state
 	
 	#if marks have not been inputted, use board.marks
 	if _marks.empty(): _marks = marks
 	
-	var state = BoardState.new(self)
+	state = BoardState.new(self)
 	
 	#the index of m that was used to move, assert that it exists before continuing
 	if !_marks.has(v):
@@ -503,10 +500,9 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	#convert the piece's behaviors into a set of changes
 	#changes contain the piece's behaviors this turn
 	#add changes from the piece and make changes to the board
-	execute_behaviors(changes, p, move, [0])
+	execute_behaviors(p, move, [0])
 	
 	#print(p.table)
-	#print(changes)
 	
 	#piece's temporary behaviors so they don't effect future turns
 	p.behaviors.clear()
@@ -543,7 +539,7 @@ func execute_turn(var v:Vector2, var changes:Array = [], var _marks := {},
 	return state
 
 #update an Array of changes to the board from a piece using its behaviors Array
-func execute_behaviors(var changes:Array, var piece:Piece, 
+func execute_behaviors(var piece:Piece, 
 	#and the index of the move being made in piece's instructions
 	#transformed is an array of indices in piece.behaviors that have already been transformed
 	var idx:int = -1, var transformed:Array = []) -> void:
@@ -569,11 +565,6 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 				var d:Vector2 = b[2]
 				if transform: d = transform(d, piece)
 				erase(d)
-				
-				#if the destruction fails, do not add any change
-				if d == Vector2.INF: continue
-				
-				changes.append(d)
 			
 			1:
 				#creations are Vector2 and int pairs
@@ -592,7 +583,6 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 				if p_type > piece_types.size(): continue
 				
 				make_piece(a, get_team())
-				changes.append(a)
 			
 			2:
 				var from:Vector2 = b[2]
@@ -613,7 +603,6 @@ func execute_behaviors(var changes:Array, var piece:Piece,
 			
 				#add change to Array
 				move_piece(from,to,p,f,false)
-				changes.append(PoolVector2Array([from, to]))
 
 #vectorize each element in win_conditions and return data on them in the form of an n by 3 Array
 #each element of the array contains at its end an index for its source Instruction in win conditions, and contains the following:
@@ -709,7 +698,7 @@ func project_states_from_piece(var v:Vector2, var s := {},
 		#var _t := OS.get_ticks_usec()
 		
 		#progress a turn to be reverted later
-		var state := execute_turn(i, [], m)
+		var state := execute_turn(i, m)
 		#if depth is high enough, call project states recursively from this point
 		project_states(depth - 1)
 		
@@ -848,6 +837,7 @@ func get_pieces(var team:int = -1) -> Dictionary:
 func duplicate_piece(var p:Piece) -> Piece:
 	var dup := Piece.new(self, p.type)
 	dup.table = p.table.duplicate()
+	dup.last = p
 	
 	return dup
 
@@ -988,7 +978,8 @@ func _to_string():
 			#check if square contains a piece
 			var p = get_piece(v)
 			if p != null:
-				var c = p.get_name()[0]
+				var c = "*"
+				if p.last: c = p.last.get_name()[0]
 				#add the letter to the string and the used letters array
 				s += c
 			else:
