@@ -52,9 +52,6 @@ var awake := false
 #signal to emit when the board emits its win signal
 signal end
 
-#copy of the available marks on the board for players to click on
-var marks := {}
-
 #results of the game added onto as the game moves on
 #the values of results are meant to be displayed by UI, and so are always Strings
 var results:Dictionary = {"winners":"none","losers":"none"}
@@ -324,8 +321,8 @@ func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
-	marks = board.mark(v)
-	highlight_squares(marks.keys())
+	board.super_mark(v)
+	highlight_squares(board.marks.keys())
 	
 #run this method whenever a player clicks on a square
 #generally handles all interactions a Player object could have with the main Board object
@@ -342,15 +339,17 @@ func handle(var v:Vector2, var team:int = 0):
 		#mark from selectable piece
 		mark(v)
 		set_selected(v)
-		
 	
 	return get_team() #get team from board in case there is one player which has to switch
 
 #get updates to the board to apply to BoardMesh while updating the Board's data as well
 func execute_turn(var v:Vector2) -> void:
 	
-	#execute_turn() update's the boards data from the selected mark and returns the changes for BoardMesh to execute visually
-	var state = board.execute_turn(v)
+	#grab the state from the selected mark and apply it to the board
+	var state = board.marks[v]
+	board.append(state)
+	
+	board.project_states()
 	print(board)
 	
 	if !board.states[-1].losers.empty(): end()
@@ -369,7 +368,7 @@ func execute_turn(var v:Vector2) -> void:
 	
 	#clear board marks
 	highlight_squares()
-	marks.clear()
+	board.marks.clear()
 
 #get the team moving on the current turn from board
 func get_team() -> int:

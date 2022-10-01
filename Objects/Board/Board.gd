@@ -150,7 +150,9 @@ func t_phase(var I, var vec:Array, var persist:Array) -> void:
 		#the next two are the forward direction of the team
 		var j = Vector2(vec[3], vec[4])
 		
-		teams.append(Team.new(self, i, j, teams.size()))
+		var t := Team.new(self, i, j, teams.size())
+		teams.append(t)
+		
 	
 	else:
 		#allow for updates to the team's table after their declaration
@@ -163,7 +165,9 @@ func g_phase(var I, var vec:Array, var persist:Array) -> void:
 	#if there are no teams from the t phase, implicitly create black and white teams
 	if teams.empty():
 		teams.append(Team.new(self))
+		teams[0].set_name("white")
 		teams.append(Team.new(self, Color.black, Vector2.UP))
+		teams[1].set_name("black")
 	
 	var c = "Instructions/pieces/" + I.contents
 	
@@ -235,21 +239,14 @@ func find_surrounding(var pos:Vector2, var inclusive:bool = true):
 			surrounding.append(i)
 	return surrounding
 
-#given a from and to square, returns true if a piece in from can take the to square, and false otherwise
-func can_take_from(var from:Vector2, var to:Vector2) -> bool:
-	var teamf:int = -1
-	var f = get_piece(from)
+func can_take_piece(var from:Piece, var to:Piece) -> bool:
 	
-	#null pieces cannot take
-	if f == null: return false
+	if from == null: return false
+	if to == null || to.updates: return true
 	
-	if has(from): teamf = f.get_team()
-	var teamt:int = -1
-	if has(to): teamt = get_piece(to).get_team()
+	if from.get_team() == -1: return false
 	
-	if teamf == -1: return false
-	#from BoardConverter.gd
-	if teamf != teamt || f.get_ff(): return true
+	if from.get_team() != to.get_team() || from.get_ff(): return true
 	return false
 
 #transform a square using mark step in the jump mode, returning a singular transformed square
@@ -397,11 +394,12 @@ func mark_step(var from:Piece, var to:Vector2,
 		if !is_surrounding(square): break
 		
 		#if the square being checked is occupied, check if the piece can be taken
-		var occ:bool = has(square)
+		var p = get_piece(square)
+		var occ:bool = p != null
 		var take:bool = true
 		if occ: 
 			#check if the from piece can take the to square
-			take = can_take_from(from.get_pos(), square)
+			take = can_take_piece(from, p)
 			#move type 1 cannot take, type 2 always can
 			take = (take || type == 2) && type != 1
 			
@@ -409,7 +407,7 @@ func mark_step(var from:Piece, var to:Vector2,
 			if !take:
 				break
 		
-		#add instruction index to a new position in s
+		#add instruction index to a new position in s, first in overrides newer marks
 		if !s.has(square): s[square] = i
 		
 		#if square is occupied by a takeable piece, break after adding the square
@@ -424,6 +422,7 @@ func mark_step(var from:Piece, var to:Vector2,
 
 #generate marks from a piece's possible BoardStates
 func super_mark(var v:Vector2, var set:bool = true) -> Dictionary:
+	
 	var p = get_piece(v)
 	
 	if p == null:
@@ -445,12 +444,10 @@ func super_mark(var v:Vector2, var set:bool = true) -> Dictionary:
 func execute_turn(var v:Vector2, var _marks := {},
 	var mode := 7) -> BoardState:
 	
-	var state
-	
 	#if marks have not been inputted, use board.marks
 	if _marks.empty(): _marks = marks
 	
-	state = BoardState.new(self)
+	var state = BoardState.new(self)
 	
 	#the index of m that was used to move, assert that it exists before continuing
 	if !_marks.has(v):
@@ -667,10 +664,15 @@ func project_states(var depth := 1, var locked := false):
 	if locked: lock = true
 	
 	#get all the pieces from the last turn in the current team
-	var pieces:Dictionary = get_pieces(get_team())
+	var pieces:Dictionary = get_pieces()
 	
-	#loop through all pieces on the team
+	#loop through all pieces, filtering out those on other teams
 	for v in pieces:
+		if pieces[v].get_team() != get_team(): continue
+		
+		#clear the old possibilities in place of new ones
+		pieces[v].possible.clear()
+		#then project in the new possible states
 		project_states_from_piece(v, pieces[v].possible, depth)
 	
 	if locked: lock = false
@@ -682,10 +684,13 @@ func project_states(var depth := 1, var locked := false):
 #use depth argument to call recursively with project_states()
 func project_states_from_piece(var v:Vector2, var s := {},
 	var depth := 1) -> void:
-		
+	
 	#mark their moves without setting the marks to board.marks
 	#var t := OS.get_ticks_usec()
 	var m := mark(v, false)
+	if m.empty(): return
+	
+	#set the selected piece for these projected state
 	set_selected(v)
 	#print("mark ", String(v), ": ", OS.get_ticks_usec() - t)
 	
@@ -707,7 +712,7 @@ func project_states_from_piece(var v:Vector2, var s := {},
 		
 		s[i] = state
 		#print("exec ", String(i), ": ", OS.get_ticks_usec() - _t)
-		
+	
 	synchronize = true
 
 #revert the board to a turn, reverse of execute_turn()
@@ -718,13 +723,26 @@ func revert(var turn:int = get_turn() - 1) -> void:
 		return
 	
 	#set the turn of the board and team
-	if synchronize: teams[get_team()].table["turn"] = turn
 	table["turn"] = turn
 	#trim states to the right size
 	states = states.slice(0, turn)
 	
 	#reinitialize current if Board is reverting from a synchronized turn
-	if synchronize: current = get_pieces()
+	if synchronize: 
+		current = get_pieces()
+		current_turn = turn
+
+#add a new state onto the board
+func append(var state:BoardState) -> void:
+	
+	if synchronize: teams[get_team()].table["turn"] += 1
+	table["turn"] += 1
+	
+	states.append(state)
+	
+	if synchronize:
+		current = get_pieces()
+		current_turn += 1
 
 ### BOARD GETTERS
 #Budget private interaction with table
@@ -811,21 +829,17 @@ func find(var v:Vector2) -> int:
 #return every square that has a piece
 #offset controls how many states away from the state at get_turn() will be considered
 #team can be set higher than -1 to filter pieces from a specific team
-func get_pieces(var team:int = -1) -> Dictionary:
-	
-	#find all pieces, deleted or not, in states
+func get_pieces() -> Dictionary:
+
 	var pieces:Dictionary = current.duplicate()
+
 	for i in range(current_turn, get_turn()):
 		
 		#for all the pieces in this state
 		var ps:Dictionary = states[i].pieces
 		for v in ps:
 			
-			if team > -1:
-				if ps[v].get_team() == team:
-					pieces[v] = ps[v]
-			else:
-				pieces[v] = ps[v]
+			pieces[v] = ps[v]
 			
 			#remove flagged pieces when they are found
 			if ps[v].updates:
@@ -837,6 +851,7 @@ func get_pieces(var team:int = -1) -> Dictionary:
 func duplicate_piece(var p:Piece) -> Piece:
 	var dup := Piece.new(self, p.type)
 	dup.table = p.table.duplicate()
+	#duplicate pieces refer to the original copy as their last piece
 	dup.last = p
 	
 	return dup
@@ -978,10 +993,8 @@ func _to_string():
 			#check if square contains a piece
 			var p = get_piece(v)
 			if p != null:
-				var c = "*"
-				if p.last: c = p.last.get_name()[0]
 				#add the letter to the string and the used letters array
-				s += c
+				s += p.get_name()[0]
 			else:
 				#"." signifies a blank spot inside the board
 				s += "."

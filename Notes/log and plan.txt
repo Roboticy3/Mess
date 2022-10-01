@@ -521,3 +521,15 @@
 	 - began implementing super_mark() and Board.handle(), but ran into a problem where execute turn needs a setting for how it handles the marks dictionary
 	NEXT
 	 - make opposite version of revert() method (maybe append()?) that adds a new state like execute_turn() without interpereting and instruction from marks
+9/29/2022
+	 - Removed changes array from the execute_turn() stack in place of pieces referring to their last copy
+	NEXT
+	 - Use new system to support the new method
+10/1/2022
+	 - Added Board.append() method (to say the least)
+	 - added default names to the default teams
+	 - replaces Board.can_take_from() with Board.can_take_piece(), which drastically lowers the number of searches through the board
+	NEXT
+	 - remove possible states from marks if they have losing conditions for the responsible team, effectively implementing illegal moves
+	 - plan how to detect a check and communicate it with the player
+	 
