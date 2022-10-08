@@ -532,4 +532,7 @@
 	NEXT
 	 - remove possible states from marks if they have losing conditions for the responsible team, effectively implementing illegal moves
 	 - plan how to detect a check and communicate it with the player
-	 
+10/8/2022
+	 - fixed get_pieces() for the 10 squadrillionth time
+	NEXT
+	 - take a break from all this math and do some UI and control fixes (i.e. camera spinning out of range while the game loads / game crash when a bad file path is attempted to be loaded)

@@ -704,6 +704,9 @@ func project_states_from_piece(var v:Vector2, var s := {},
 		
 		#progress a turn to be reverted later
 		var state := execute_turn(i, m)
+		
+		if !state.losers.empty(): print(state.losers)
+		
 		#if depth is high enough, call project states recursively from this point
 		project_states(depth - 1)
 		
@@ -833,7 +836,7 @@ func get_pieces() -> Dictionary:
 
 	var pieces:Dictionary = current.duplicate()
 
-	for i in range(current_turn, get_turn()):
+	for i in range(current_turn, states.size()):
 		
 		#for all the pieces in this state
 		var ps:Dictionary = states[i].pieces

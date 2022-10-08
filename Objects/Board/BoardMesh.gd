@@ -350,7 +350,6 @@ func execute_turn(var v:Vector2) -> void:
 	board.append(state)
 	
 	board.project_states()
-	print(board)
 	
 	if !board.states[-1].losers.empty(): end()
 	
