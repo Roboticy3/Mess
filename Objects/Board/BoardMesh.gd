@@ -46,16 +46,15 @@ var duplicates:DuplicateMap
 var dups_pos_only:DuplicateMap
 var graph:MeshGraph
 
-#set to true at the end of the begin() method, signifies that this BoardMesh and its Board are finished loading
-var awake := false
-
 #signal to emit when the board emits its win signal
 signal end
 
 #results of the game added onto as the game moves on
 #the values of results are meant to be displayed by UI, and so are always Strings
 var results:Dictionary = {"winners":"none","losers":"none"}
-	
+
+
+
 #construct the Board and the BoardMesh
 #distinguish from _ready() to better control the initialization of the board
 func begin(var _path:String = ""):
@@ -91,8 +90,6 @@ func begin(var _path:String = ""):
 	
 	#send mesh and collision shape to physics objects
 	send_shape(m)
-	
-	awake = true
 
 #create a mesh and send it out to the Board Shape Node in BoardMesh's tree
 func init_mesh():

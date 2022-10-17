@@ -96,8 +96,6 @@ func set_mesh(var mesh:Mesh) -> void:
 func _physics_process(delta):
 	#apply movement based on momentum
 	move_and_slide(momentum["v"])
-	#rotate the camera
-	look(delta)
 	#update momentum based on target_motion
 	accelerate(delta)
 
@@ -113,13 +111,9 @@ func _input(event):
 		if ck1 != 0:
 			target_motion["b"] = event.speed
 			
-		
-	#if the board_mesh has not been activated yet, do so on the first keystroke
-	if !board_mesh.awake && event is InputEventKey:
-		board_mesh.begin(board_mesh.path)
 
 #handle button inputs each frame
-func _process(_delta):
+func _process(delta):
 	
 	#camera buttons
 	var ctrl:float = Input.get_action_raw_strength(cam_lock)
@@ -145,22 +139,6 @@ func _process(_delta):
 	if click:
 		request_square(uv_query.get_mouse_position())
 	
-	#controller look
-	var azimuth:float = Input.get_axis("lk_left","lk_right")
-	var zenith:float = Input.get_axis("lk_up","lk_down")
-	var r:Vector2 = Vector2(azimuth, zenith)
-	if r.length() < dead_zone[1]: r = Vector2.ZERO
-	else: 
-		#use r to move the mouse within the screen to select a piece
-		var mpos:Vector2 = uv_query.get_mouse_position()
-		if (Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED): 
-			uv_query.warp_mouse(mpos + Vector2(azimuth, zenith) * stick_sens / 100)
-		
-		#if r is not going to be zero, multiply r by the stick sensitivity and the state of the look button (0 or 1)
-		#this makes r not zero if and only if both the right stick is moving and the look button is being held
-		r *= ctrl * ck1 * stick_sens
-	target_motion["r"] = r
-	
 	#lock or unlock the mouse according to keypresses or visibility
 	if (ctrl != 0 || ck1 != 0) || menu.visible || gameover.visible: 
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -173,6 +151,9 @@ func _process(_delta):
 		if ctrl == 0:
 			board_mesh.transform = board_mesh.transform.interpolate_with(Transform(), 0.5)
 	
+	#run visual functions on frame timestep
+	look(delta)
+	
 #make momentum move towards target motion
 func accelerate(var delta:float):
 	for tm in momentum.keys():
@@ -181,21 +162,15 @@ func accelerate(var delta:float):
 
 func look(delta):
 	#multiply rotation motions by delta and sens
-	var axes = transform.basis
 	var rots = target_motion["r"] * delta * -sens / 100
 	
 	#use true y axis for horizontal rotation to make rotation more intuitive
-	transform = rotate(Vector3.UP, rots.x)
-	
-	#do not rotate vertical camera past cutoffs
-	var limit = 0.95
-	var rot = rotate(axes.x, rots.y)
-	if abs(rot.basis.z.y) < limit:
-		transform = rot
-	
-	#counteract any roll that the camera might have suffered
-	var tilt = (transform.basis.x / transform.basis.y).y
-	transform = rotate(transform.basis.z, -tan(tilt))
+	global_rotate(Vector3.UP, rots.x)
+	#avoid rounding errors for veritcal rotation to work
+	transform.basis.x = transform.basis.x.normalized()
+	#use the normalized vector to rotate vertically around
+	global_rotate(transform.basis.x, rots.y)
+	#the basis vector shouldnt be non normal at all but whatever
 	
 	#reset mouse movement so user does not have to send another input to stop the camera
 	target_motion["r"] = Vector2.ZERO
