@@ -345,6 +345,7 @@ func execute_turn(var v:Vector2) -> void:
 	#grab the state from the selected mark and apply it to the board
 	var state = board.marks[v]
 	board.append(state)
+	print(state)
 	
 	board.project_states()
 	

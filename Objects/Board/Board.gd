@@ -270,7 +270,9 @@ func mark(var v:Vector2, var set:bool = true) -> Dictionary:
 	
 	#gain a reference to the piece at v
 	var p = get_piece(v)
-	
+	return mark_piece(p,set)
+
+func mark_piece(var p:Piece, var set:bool = true) -> Dictionary:
 	#do not consider missing pieces
 	if p == null:
 		return {}
@@ -659,7 +661,7 @@ func evaluate_win_conditions(var state:BoardState) -> Array:
 #locked param for whether turns are locked during this period
 func project_states(var depth := 1, var locked := false):
 	
-	if depth <= 0: return []
+	if depth < 1: return
 	
 	if locked: lock = true
 	
@@ -673,7 +675,7 @@ func project_states(var depth := 1, var locked := false):
 		#clear the old possibilities in place of new ones
 		pieces[v].possible.clear()
 		#then project in the new possible states
-		project_states_from_piece(v, pieces[v].possible, depth)
+		project_states_from_piece(pieces[v], pieces[v].possible, depth)
 	
 	if locked: lock = false
 	
@@ -682,16 +684,16 @@ func project_states(var depth := 1, var locked := false):
 
 #build all possible BoardStates for the next turn from a single piece given from a position
 #use depth argument to call recursively with project_states()
-func project_states_from_piece(var v:Vector2, var s := {},
+func project_states_from_piece(var p:Piece, var s := {},
 	var depth := 1) -> void:
 	
 	#mark their moves without setting the marks to board.marks
 	#var t := OS.get_ticks_usec()
-	var m := mark(v, false)
+	var m := mark_piece(p, false)
 	if m.empty(): return
 	
 	#set the selected piece for these projected state
-	set_selected(v)
+	set_selected(p.get_pos())
 	#print("mark ", String(v), ": ", OS.get_ticks_usec() - t)
 	
 	#remember the current turn to revert back to

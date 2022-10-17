@@ -196,7 +196,8 @@ func vectorize(var start:int = 0,
 			y = board.transform(y, board.get_piece(x))
 		
 		#check if the board has a piece at y
-		var has:bool = board.has(y)
+		var py = board.get_piece(y)
+		var has = py != null
 		
 		#if there are enough words for a relative conditional, and the 4th word is a conditional,
 		#the conditional consists of a conditional based on another square's property
@@ -210,7 +211,7 @@ func vectorize(var start:int = 0,
 				break
 			
 			#reinitialize w to use the new table
-			format(start + 2, 1, board.get_piece(y).table)
+			format(start + 2, 1, py.table)
 			w = wrds.slice(start, wrds.size() - 1)
 			
 			#evaluate the comparison

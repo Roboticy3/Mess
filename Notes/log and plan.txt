@@ -536,3 +536,8 @@
 	 - fixed get_pieces() for the 10 squadrillionth time
 	NEXT
 	 - take a break from all this math and do some UI and control fixes (i.e. camera spinning out of range while the game loads / game crash when a bad file path is attempted to be loaded)
+10/17/2022
+	 - Removed restrictions from the camera
+	 - Losing my mind over the project_states()' bugs
+	NEXT
+	 - Make some proper unit tests for the code used in project_states()
