@@ -734,8 +734,9 @@ func revert(var turn:int = get_turn() - 1) -> void:
 	
 	#reinitialize current if Board is reverting from a synchronized turn
 	if synchronize: 
-		current = get_pieces()
 		current_turn = turn
+		current = get_pieces_full()
+		
 
 #add a new state onto the board
 func append(var state:BoardState) -> void:
@@ -842,15 +843,31 @@ func get_pieces() -> Dictionary:
 		
 		#for all the pieces in this state
 		var ps:Dictionary = states[i].pieces
-		for v in ps:
-			
-			pieces[v] = ps[v]
-			
-			#remove flagged pieces when they are found
-			if ps[v].updates:
-				pieces.erase(v)
+		layer(pieces, ps)
 			
 	return pieces
+
+#get_pieces() without the optimizations using current pieces Dictionary
+func get_pieces_full() -> Dictionary:
+	
+	var pieces = states[0].pieces.duplicate()
+	
+	for i in range(1, states.size()):
+		
+		var ps:Dictionary = states[i].pieces
+		layer(pieces, ps)
+	
+	return pieces
+
+#layer a piece dictionary on another piece dictionary
+func layer(var old := {}, var new := {}) -> void:
+	for v in new:
+			
+			old[v] = new[v]
+			
+			#remove flagged pieces when they are found
+			if new[v].updates:
+				old.erase(v)
 
 #copy a piece into a new piece
 func duplicate_piece(var p:Piece) -> Piece:

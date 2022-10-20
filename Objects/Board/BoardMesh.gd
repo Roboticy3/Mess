@@ -186,39 +186,34 @@ func create_piece(var p:Piece, var v:Vector2):
 	#destroy any piece currently occupying the square
 	if pieces.has(v): destroy_piece(v)
 	
-	var can_collide:bool = false
+	var can_collide:bool = board.table["collision"] == 1
 	
 	#if the piece is not recorded in the piece_paths dict, update dict with its data
 	var pdata = {}
-	if !([p.get_name()] in piece_paths):
-		pdata["mat"] = PieceMesh.pmat(p, board)
+	if !(piece_paths.has(p.type)):
 		pdata["mesh"] = BoardConverter.path_to_mesh(p.get_mesh())
 		
-		#flag collision to be added if the piece and board collision modes align correctly
-		var bpcoll:bool = board.table["piece_collision"] == 1
-		var pcoll:int = board.table["collision"]
-		if bpcoll || pcoll == 2 && pcoll != 1:
-			can_collide = true
-		
-		pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
-		pdata["transform"] = BoardConverter.square_to_transform(graph, duplicates, board, p)
-		piece_paths[p._to_string()] = pdata
+		if can_collide: pdata["shape"] = BoardConverter.mesh_to_shape(pdata["mesh"])
+		piece_paths[p.type] = pdata
 	#otherwise, copy piece data out of current dict
 	else:
-		pdata = piece_paths[p.get_name()]
+		pdata = piece_paths[p.type]
 	
-	var coll = pdata["shape"]
-	if !can_collide: coll = CollisionShape.new()
+	var coll = CollisionShape.new()
+	if can_collide:
+		coll = pdata["shape"]
 	
 	#create the piece mesh with all the right references, then add the PieceMesh object to self's tree
 	var pm := PieceMesh.new(p, board 
-			,coll, pdata["mesh"], pdata["mat"]
+			,coll, pdata["mesh"], PieceMesh.pmat(p, board)
 			)
 	add_child(pm)
-	
+	pm.name = p.get_name()
+	print(p.get_name())
+		
 	#set pm's reference to its piece and transforms and return pm to be added to table
 	pm.piece = p
-	pm.transform = pdata["transform"]
+	pm.transform = BoardConverter.square_to_transform(graph, duplicates, board, p)
 	pieces[v] = pm
 
 #transform the piece in from to to, change location, rotation, and scale accordingly
@@ -257,19 +252,22 @@ func destroy_piece(var at:Vector2):
 #update BoardMesh to match its Board if they get desynchronized
 func synchronize() -> void:
 	
-	var p:Dictionary = board.get_pieces()
+	var p:Dictionary = board.current
 	
 	#iterate through pieces.keys() to not modify a dictionary while iterating through it
 	var vs := pieces.keys()
+	print(BoardConverter.pieces_to_string(pieces))
+	print(BoardConverter.pieces_to_string(p))
 	for v in vs:
 		if !p.has(v):
 			destroy_piece(v)
 	for v in p:
 		if !pieces.has(v): 
+			print(v,p[v])
 			create_piece(p[v], v)
 		
-func revert(var offset:int = board.get_turn() - 1) -> void:
-	board.revert(offset)
+func revert(var turn:int = board.get_turn() - 1) -> void:
+	board.revert(turn)
 	synchronize()
 
 #clear the board, optionally freeing the cleared pieces
@@ -318,7 +316,7 @@ func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
-	board.super_mark(v)
+	board.mark(v)
 	highlight_squares(board.marks.keys())
 	
 #run this method whenever a player clicks on a square
@@ -343,13 +341,11 @@ func handle(var v:Vector2, var team:int = 0):
 func execute_turn(var v:Vector2) -> void:
 	
 	#grab the state from the selected mark and apply it to the board
-	var state = board.marks[v]
-	board.append(state)
+	#var state = board.marks[v]
+	var state = board.execute_turn(v)
 	print(state)
 	
 	board.project_states()
-	
-	if !board.states[-1].losers.empty(): end()
 	
 	#apply the changes from this turn
 	for v in state.pieces:

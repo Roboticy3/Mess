@@ -322,7 +322,7 @@ static func pieces_to_string(var pieces:Dictionary) -> String:
 				if p == null:
 					s += "."
 				else:
-					s += pieces[v].get_name().substr(0,1)
+					s += pieces[v].get_name()[0]
 			else:
 				s += "."
 			s += " "

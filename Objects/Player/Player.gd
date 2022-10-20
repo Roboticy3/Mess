@@ -53,7 +53,7 @@ export (float) var sens = 0.1
 
 #dead zone on the controller axes
 #index 0 for left stick and 1 for right
-export (PoolRealArray) var dead_zone = [0.05, 0.05]
+export (PoolRealArray) var dead_zone := PoolRealArray([0.05, 0.05])
 #controller look sensitivity
 export (int) var stick_sens = 500
 

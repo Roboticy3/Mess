@@ -30,6 +30,7 @@ func _init(var _piece:Piece, var _board:Board,
 	mdt = MeshDataTool.new()
 	mdt.create_from_surface(mesh, 0)
 	mat = _mat
+	name = _piece.get_name()
 	
 	#generate the aabb and initialize the piece
 	aabb = mesh.get_aabb()
@@ -60,8 +61,12 @@ func _ready():
 	csg.material = mat
 	add_child(csg)
 
+#mimic Piece.get_name() to be printable by BoardConverter.pieces_to_string()
+func get_name():
+	return name
+
 func _to_string():
-	return piece._to_string()
+	return name + str(mesh) + str(mat) + str(shape) + piece._to_string()
 	
 #generate material of a piece from itself and its parent board
 static func pmat(var p:Piece = piece, var b:Board = board):
