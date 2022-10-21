@@ -6,7 +6,7 @@ extends StaticBody
 
 #control the visual and physical aspects of a Piece
 
-#reference to Piece and parent Board
+#reference Piece and parent Board
 var piece:Piece
 var board:Board
 
@@ -56,7 +56,7 @@ func _ready():
 	csg.material = SpatialMaterial.new()
 	#query board teams for material color if necessary
 	if mat == null:
-		mat = pmat(piece, board)
+		mat = pmat()
 	#commit the material
 	csg.material = mat
 	add_child(csg)
@@ -66,7 +66,7 @@ func get_name():
 	return name
 
 func _to_string():
-	return name + str(mesh) + str(mat) + str(shape) + piece._to_string()
+	return name + " " + piece._to_string()
 	
 #generate material of a piece from itself and its parent board
 static func pmat(var p:Piece = piece, var b:Board = board):

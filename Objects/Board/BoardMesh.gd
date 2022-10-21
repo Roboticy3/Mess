@@ -182,6 +182,8 @@ func uv_from_board(var object:Node):
 		mat_highlight.set_shader_param("uv1_offset", offset)
 
 #initialize a PieceMesh p at a position v on the board
+#count the number of pieces added to append the number onto their names for unique names
+var pieces_made := 0
 func create_piece(var p:Piece, var v:Vector2):
 	#destroy any piece currently occupying the square
 	if pieces.has(v): destroy_piece(v)
@@ -208,13 +210,16 @@ func create_piece(var p:Piece, var v:Vector2):
 			,coll, pdata["mesh"], PieceMesh.pmat(p, board)
 			)
 	add_child(pm)
-	pm.name = p.get_name()
-	print(p.get_name())
+	pm.name = p.get_name() + String(pieces_made)
+	print(pm.get_name())
 		
 	#set pm's reference to its piece and transforms and return pm to be added to table
 	pm.piece = p
 	pm.transform = BoardConverter.square_to_transform(graph, duplicates, board, p)
 	pieces[v] = pm
+	
+	#incremenet pieces_made
+	pieces_made += 1
 
 #transform the piece in from to to, change location, rotation, and scale accordingly
 func move_piece(var from:Vector2, var to:Vector2):
@@ -234,9 +239,9 @@ func move_piece(var from:Vector2, var to:Vector2):
 	pieces.erase(from)
 	
 	#move the PieceMesh object into the right spot, and update its piece
-	var p:PieceMesh = pieces[to]
-	p.piece = piece
-	p.transform = BoardConverter.square_to_transform(graph, duplicates, board, p.piece)
+	var pm:PieceMesh = pieces[to]
+	pm.piece = piece
+	pm.transform = BoardConverter.square_to_transform(graph, duplicates, board, pm.piece)
 
 #destroy the PieceMesh at the input Vector2 square
 #do not attempt to destroy at an empty square
@@ -259,11 +264,10 @@ func synchronize() -> void:
 	print(BoardConverter.pieces_to_string(pieces))
 	print(BoardConverter.pieces_to_string(p))
 	for v in vs:
-		if !p.has(v):
+		if !p.has(v) || p[v] != pieces[v].piece:
 			destroy_piece(v)
 	for v in p:
 		if !pieces.has(v): 
-			print(v,p[v])
 			create_piece(p[v], v)
 		
 func revert(var turn:int = board.get_turn() - 1) -> void:
@@ -362,6 +366,9 @@ func execute_turn(var v:Vector2) -> void:
 	#clear board marks
 	highlight_squares()
 	board.marks.clear()
+	
+	if board.get_turn() == 5:
+		revert(2)
 
 #get the team moving on the current turn from board
 func get_team() -> int:
