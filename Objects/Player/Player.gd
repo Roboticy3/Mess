@@ -203,7 +203,6 @@ func request_square(var position:Vector2):
 		var square:Vector2
 		if r["collider"] is PieceMesh:
 			square = r["collider"].piece.get_pos()
-			print(square)
 		#otherwise, return uv square of board
 		else:
 			var uv = uv_query.query(position)

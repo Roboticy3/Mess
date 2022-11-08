@@ -211,7 +211,6 @@ func create_piece(var p:Piece, var v:Vector2):
 			)
 	add_child(pm)
 	pm.name = p.get_name() + String(pieces_made)
-	print(pm.get_name())
 		
 	#set pm's reference to its piece and transforms and return pm to be added to table
 	pm.piece = p
@@ -261,8 +260,6 @@ func synchronize() -> void:
 	
 	#iterate through pieces.keys() to not modify a dictionary while iterating through it
 	var vs := pieces.keys()
-	print(BoardConverter.pieces_to_string(pieces))
-	print(BoardConverter.pieces_to_string(p))
 	for v in vs:
 		if !p.has(v) || p[v] != pieces[v].piece:
 			destroy_piece(v)
@@ -320,7 +317,7 @@ func highlight_squares(var vs:PoolVector2Array = [], var mode:int = 1) -> void:
 
 #use board.mark to highlight a set of square meshes from a starting square v
 func mark(var v:Vector2) -> void:
-	board.mark(v)
+	board.super_mark(v)
 	highlight_squares(board.marks.keys())
 	
 #run this method whenever a player clicks on a square
@@ -346,10 +343,8 @@ func execute_turn(var v:Vector2) -> void:
 	
 	#grab the state from the selected mark and apply it to the board
 	#var state = board.marks[v]
-	var state = board.execute_turn(v)
-	print(state)
-	
-	board.project_states()
+	var state = board.marks[v]
+	board.append(state)
 	
 	#apply the changes from this turn
 	for v in state.pieces:
@@ -367,8 +362,8 @@ func execute_turn(var v:Vector2) -> void:
 	highlight_squares()
 	board.marks.clear()
 	
-	if board.get_turn() == 5:
-		revert(2)
+	if !state.losers.empty():
+		print(">:(")
 
 #get the team moving on the current turn from board
 func get_team() -> int:

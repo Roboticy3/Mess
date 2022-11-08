@@ -431,6 +431,15 @@ func super_mark(var v:Vector2, var set:bool = true) -> Dictionary:
 		return {}
 	
 	if set: marks = p.possible
+	
+	for option in p.possible:
+		var state = p.possible[option]
+		synchronize = false
+		append(state)
+		print(states)
+		revert()
+		synchronize = true
+	
 	return p.possible
 
 ### APPLY TURNS
