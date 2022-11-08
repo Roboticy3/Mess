@@ -541,4 +541,9 @@
 	 - Losing my mind over the project_states()' bugs
 	NEXT
 	 - Make some proper unit tests for the code used in project_states()
+11/8/2022
+	 - Took a hiatus
+	 - Found and fixed a lot of issues with the game in general after thouroughly testing Board methods
+	NEXT
+	 - Design a way for super_mark to exclude illegal moves, then use that to make a check system
 

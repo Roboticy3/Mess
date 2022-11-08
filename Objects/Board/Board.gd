@@ -430,17 +430,18 @@ func super_mark(var v:Vector2, var set:bool = true) -> Dictionary:
 	if p == null:
 		return {}
 	
-	if set: marks = p.possible
-	
-	for option in p.possible:
-		var state = p.possible[option]
+	var possible = p.possible
+	for option in possible:
+		var state = possible[option]
 		synchronize = false
 		append(state)
-		print(states)
+		project_states()
 		revert()
 		synchronize = true
 	
-	return p.possible
+	if set: marks = possible
+	
+	return possible
 
 ### APPLY TURNS
 #Mutate the states array and possible state tree

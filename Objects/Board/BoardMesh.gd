@@ -346,6 +346,8 @@ func execute_turn(var v:Vector2) -> void:
 	var state = board.marks[v]
 	board.append(state)
 	
+	board.project_states()
+	
 	#apply the changes from this turn
 	for v in state.pieces:
 		var p = state.pieces[v]
@@ -363,7 +365,7 @@ func execute_turn(var v:Vector2) -> void:
 	board.marks.clear()
 	
 	if !state.losers.empty():
-		print(">:(")
+		end()
 
 #get the team moving on the current turn from board
 func get_team() -> int:
