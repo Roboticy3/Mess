@@ -1,0 +1,87 @@
+[gd_scene load_steps=7 format=3 uid="uid://c3con8v4hskdp"]
+
+[ext_resource type="Script" path="res://Classes/Board.gd" id="1_506ni"]
+[ext_resource type="Script" path="res://Classes/Piece.gd" id="2_p07bk"]
+[ext_resource type="Script" path="res://Classes/Team.gd" id="2_uxcu2"]
+[ext_resource type="Script" path="res://Piece Types/Pawn2D.gd" id="4_pparx"]
+[ext_resource type="Script" path="res://Bound Types/Bound2i.gd" id="5_vy57e"]
+
+[sub_resource type="Resource" id="Resource_8a4kp"]
+script = ExtResource("4_pparx")
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Board" type="Node" parent="."]
+script = ExtResource("1_506ni")
+node_paths = Array[NodePath]([NodePath("White Team"), NodePath(".")])
+
+[node name="White Team" type="Node" parent="Board"]
+script = ExtResource("2_uxcu2")
+
+[node name="Pawn" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(0, 1)
+}
+
+[node name="Pawn2" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(1, 1)
+}
+
+[node name="Pawn3" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(2, 1)
+}
+
+[node name="Pawn4" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(3, 1)
+}
+
+[node name="Pawn5" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(4, 1)
+}
+
+[node name="Pawn6" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(5, 1)
+}
+
+[node name="Pawn7" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(6, 1)
+}
+
+[node name="Pawn8" type="Node" parent="Board/White Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(7, 1)
+}
+
+[node name="Shape" type="Node" parent="Board"]
+
+[node name="Bound2i" type="Node" parent="Board/Shape"]
+script = ExtResource("5_vy57e")
+_a = Vector2i(7, 7)
