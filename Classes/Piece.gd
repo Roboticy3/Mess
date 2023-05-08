@@ -3,10 +3,12 @@ class_name Piece
 
 @export var type:PieceType
 
-@export var starting_state:Dictionary = {"position":null}
+@export var starting_state:Dictionary = {"position":null,"team":null}
 
 var states:Array[Dictionary]
 var starting_turn := 0
+
+var options:Dictionary
 
 func _ready():
 	for k in type.state_form:
@@ -19,11 +21,17 @@ func _ready():
 	
 	states = [starting_state]
 
-func generate_options(b:Board) -> Dictionary:
-	return type.generate_options(self, b)
+func generate_options(b:Board) -> void:
+	options = type.generate_options(self, b)
 
 func to_global(position):
 	return type.to_global(get_state(), position)
 
 func get_state(turn := states.size() - 1) -> Dictionary:
 	return states[turn]
+
+func get_position() -> Variant:
+	return get_state()["position"]
+
+func get_team():
+	return get_state()["team"]

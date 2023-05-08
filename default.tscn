@@ -21,6 +21,68 @@ grow_vertical = 2
 script = ExtResource("1_506ni")
 node_paths = Array[NodePath]([NodePath("White Team"), NodePath(".")])
 
+[node name="Black Team" type="Node" parent="Board"]
+script = ExtResource("2_uxcu2")
+starting_state = {
+"direction": Vector2i(0, -1)
+}
+
+[node name="Pawn" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(0, 6)
+}
+
+[node name="Pawn2" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(1, 6)
+}
+
+[node name="Pawn3" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(2, 6)
+}
+
+[node name="Pawn4" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(3, 6)
+}
+
+[node name="Pawn5" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(4, 6)
+}
+
+[node name="Pawn6" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(5, 6)
+}
+
+[node name="Pawn7" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(6, 6)
+}
+
+[node name="Pawn8" type="Node" parent="Board/Black Team"]
+script = ExtResource("2_p07bk")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(1, 2)
+}
+
 [node name="White Team" type="Node" parent="Board"]
 script = ExtResource("2_uxcu2")
 
