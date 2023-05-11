@@ -32,10 +32,10 @@ var current_state := starting_state
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
 	for v in node_paths:
-		StaticFuncs.get_children_recursive(get_node(v), add_node)
+		Accessor.get_children_recursive(get_node(v), add_node)
 	
 	teams.sort_custom(func (a:Team, b:Team): return a.priority > b.priority)
-	print(teams)
+	Accessor.a_print(str(teams))
 	
 #everybody shut up new class just dropped
 #call this with a node to add it to the board individually
@@ -114,16 +114,15 @@ func generate_options() -> void:
 #create a new turn by calling an option on a piece
 #creates a new state and fills it by calling the given option on the given piece
 func call_option(p:Piece, o) -> bool:
-	print(p, p.options)
 	
 	var p_o := p.options
 	if p_o.has(o):
 		add_state()
 		p_o[o].call(p, self, o)
-		print(self," played option ",o," found in piece",p)
+		Accessor.a_print(str(self) + " played option " + str(o) + " found in piece" + str(p))
 		generate_options()
 		return true
-	print(self," no option ",o," found in piece ",p)
+	Accessor.a_print(str(self) + " no option " + str(o) + " found in piece" + str(p))
 	return false
 
 func move(p:Piece, option:Callable):

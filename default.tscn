@@ -1,16 +1,19 @@
-[gd_scene load_steps=8 format=3 uid="uid://djv0qib3upurx"]
+[gd_scene load_steps=11 format=3 uid="uid://dav05j32gud40"]
 
-[ext_resource type="Script" path="res://Board Types/Board2i.gd" id="1_ubeqa"]
-[ext_resource type="Script" path="res://Board Elements/Team.gd" id="2_wrsf0"]
-[ext_resource type="Script" path="res://Board Elements/Piece.gd" id="3_2m6dy"]
-[ext_resource type="Script" path="res://Piece Types/Pawn2D.gd" id="4_pparx"]
-[ext_resource type="Script" path="res://Board Elements/Bound Types/Bound2i.gd" id="5_vqdf6"]
-[ext_resource type="Script" path="res://Player/Player.gd" id="6_u41eu"]
+[ext_resource type="Script" path="res://Scripts/Board Types/Board2i.gd" id="1_aifr8"]
+[ext_resource type="Script" path="res://Scripts/Board Elements/Team.gd" id="2_l4gke"]
+[ext_resource type="Script" path="res://Scripts/Board Elements/Piece.gd" id="3_tivbx"]
+[ext_resource type="Script" path="res://Scripts/Piece Types/Pawn2D.gd" id="4_y6u2j"]
+[ext_resource type="Script" path="res://Scripts/Board Elements/Bound Types/Bound2i.gd" id="5_h6ohc"]
+[ext_resource type="Script" path="res://Scripts/Player/Player.gd" id="6_34qhd"]
+[ext_resource type="Theme" uid="uid://b76e6ruwcxs2s" path="res://Resources/UI/UI_Theme.tres" id="7_bmt6j"]
+[ext_resource type="Script" path="res://Scripts/Technical/CopyProperties.gd" id="8_68y8w"]
+[ext_resource type="FontFile" uid="uid://ckqe7wyyay7fh" path="res://Resources/UI/FreeMono.ttf" id="8_kjhd7"]
 
 [sub_resource type="Resource" id="Resource_8a4kp"]
-script = ExtResource("4_pparx")
+script = ExtResource("4_y6u2j")
 
-[node name="Control" type="Control"]
+[node name="Default" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,125 +22,129 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Board" type="Node" parent="."]
-script = ExtResource("1_ubeqa")
+script = ExtResource("1_aifr8")
 
 [node name="Black Team" type="Node" parent="Board"]
-script = ExtResource("2_wrsf0")
+script = ExtResource("2_l4gke")
 starting_state = {
 "direction": Vector2i(0, -1)
 }
+node_paths = null
+priority = null
 
 [node name="Pawn" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(0, 6)
 }
 
 [node name="Pawn2" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(1, 6)
 }
 
 [node name="Pawn3" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(2, 6)
 }
 
 [node name="Pawn4" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(3, 6)
 }
 
 [node name="Pawn5" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(4, 6)
 }
 
 [node name="Pawn6" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(5, 6)
 }
 
 [node name="Pawn7" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(6, 6)
 }
 
 [node name="Pawn8" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(7, 6)
 }
 
 [node name="White Team" type="Node" parent="Board"]
-script = ExtResource("2_wrsf0")
+script = ExtResource("2_l4gke")
+starting_state = null
+node_paths = null
 priority = 1
 
 [node name="Pawn" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(0, 1)
 }
 
 [node name="Pawn2" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(1, 1)
 }
 
 [node name="Pawn3" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(2, 1)
 }
 
 [node name="Pawn4" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(3, 1)
 }
 
 [node name="Pawn5" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(4, 1)
 }
 
 [node name="Pawn6" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(5, 1)
 }
 
 [node name="Pawn7" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(6, 1)
 }
 
 [node name="Pawn8" type="Node" parent="Board/White Team"]
-script = ExtResource("3_2m6dy")
+script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(7, 1)
@@ -146,10 +153,50 @@ starting_state = {
 [node name="Shape" type="Node" parent="Board"]
 
 [node name="Bound2i" type="Node" parent="Board/Shape"]
-script = ExtResource("5_vqdf6")
+script = ExtResource("5_h6ohc")
 _a = Vector2i(7, 7)
 
 [node name="Player" type="Node" parent="."]
-script = ExtResource("6_u41eu")
-team_paths = Array[NodePath]([NodePath("../Board/White Team")])
+script = ExtResource("6_34qhd")
+team_paths = Array[NodePath]([NodePath("../Board/White Team"), NodePath("../Board/Black Team")])
 board_path = NodePath("../Board")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 462.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 8
+theme = ExtResource("7_bmt6j")
+theme_override_fonts/normal_font = ExtResource("8_kjhd7")
+bbcode_enabled = true
+scroll_following = true
+autowrap_mode = 1
+script = ExtResource("8_68y8w")
+
+[node name="LineEdit" type="LineEdit" parent="UI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -25.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("8_kjhd7")
+placeholder_text = "enter command here"

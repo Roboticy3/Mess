@@ -9,6 +9,6 @@ func _ready():
 	b = _b
 	
 	if a.x < b.x or a.y < b.y:
-		print(self, ": corner a must be greater than corner b")
+		Accessor.a_print(str(self) + ": corner a must be greater than corner b")
 	else:
 		valid = true

@@ -14,3 +14,11 @@ config/name="Mess"
 run/main_scene="res://default.tscn"
 config/features=PackedStringArray("4.0", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+Accessor="*res://Scripts/Technical/Accessor.gd"
+
+[display]
+
+window/stretch/aspect="keep_height"

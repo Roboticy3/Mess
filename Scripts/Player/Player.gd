@@ -31,7 +31,7 @@ func select_piece(pos) -> Piece:
 	var p = board.get_piece(pos)
 	if p && teams.has(p.get_team()):
 		selection = p
-		print(self,": selected ",p)
+		Accessor.a_print(str(self) + ": selected " + str(p))
 		return p
 	return null
 

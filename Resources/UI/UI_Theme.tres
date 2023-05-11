@@ -1,0 +1,5 @@
+[gd_resource type="Theme" format=3 uid="uid://b76e6ruwcxs2s"]
+
+[resource]
+RichTextLabel/colors/table_even_row_bg = Color(0.0917731, 0.106811, 0.197109, 1)
+RichTextLabel/colors/table_odd_row_bg = Color(0.133333, 0.152941, 0.266667, 1)

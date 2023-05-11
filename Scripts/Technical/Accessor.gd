@@ -1,6 +1,6 @@
-class_name StaticFuncs
+extends Node
 
-static func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[Node]:
+func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[Node]:
 	var stk:Array[Node] = [v]
 	var fnd := Dictionary()
 	while !stk.is_empty():
@@ -14,7 +14,7 @@ static func get_children_recursive(v:Node, action:Callable = func (): pass) -> A
 				stk.push_back(w)
 	return stk
 
-static func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, display_mode:int = 0) -> String:
+func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, display_mode:int = 0) -> String:
 	var result := ""
 	for b in shape:
 		result += str(b) + ":\n"
@@ -39,10 +39,16 @@ static func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, disp
 	
 	return result
 
-static func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
+func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
 	match display_mode:
 		0:
 			return p.type.name[0]
 		1:
 			return p.starting_state["team"].name.substr(0, 1) + " "
 	return "?"
+
+signal a_print_signal
+var a_debug:=""
+func a_print(s:String) -> void:
+	a_debug += s + "\n"
+	emit_signal("a_print_signal")

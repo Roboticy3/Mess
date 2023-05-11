@@ -10,7 +10,7 @@ class_name Team
 func _ready():
 	starting_state["team"] = self
 	for v in node_paths:
-		StaticFuncs.get_children_recursive(get_node(v), cascade_state)
+		Accessor.get_children_recursive(get_node(v), cascade_state)
 
 var cascade_state := func (v:Node):
 	if v is Piece:
