@@ -29,10 +29,6 @@ func generate_options(p:Piece, b:Board)->Dictionary:
 	var tr = b.get_team(diag_right)
 	var tl = b.get_team(diag_left)
 	
-	print(diag_right)
-	
-	print(tr, tl)
-	
 	if tr && tr != p.get_team():
 		options[diag_right] = move
 	if tl && tl != p.get_team():
