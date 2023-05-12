@@ -1,9 +1,9 @@
 extends Board
 class_name Board2i
 
-const position_type = TYPE_VECTOR2I
-
 func _ready():
+	
+	position_type = TYPE_VECTOR2I
 	
 	#fill the board
 	fill_nodes()

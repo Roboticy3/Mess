@@ -20,10 +20,12 @@ func generate_options(p:Piece, b:Board)->Dictionary:
 	var p_state = p.get_state()
 	var b_state = b.get_state()
 	
+	#forward step
 	var up_one:Vector2i = to_global(p_state, Vector2i(0, 1))
 	if !b.get_piece(up_one):
 		options[up_one] = move
 	
+	#diagonal takes
 	var diag_right:Vector2i = to_global(p_state, Vector2i(1, 1))
 	var diag_left:Vector2i = to_global(p_state, Vector2i(-1, 1))
 	var tr = b.get_team(diag_right)
@@ -33,13 +35,18 @@ func generate_options(p:Piece, b:Board)->Dictionary:
 		options[diag_right] = move
 	if tl && tl != p.get_team():
 		options[diag_left] = move
-		
+	
+	#double forward step
+	var up_two = to_global(p_state, Vector2i(0, 2))
+	
+	if p_state["moves"] == 0 && !b.get_piece(up_one) && !b.get_piece(up_two):
+		options[up_two] = move
 	
 	return options
 
 var move := func (p:Piece, b:Board, o:Variant) -> void:
 	var p_state = p.get_state()
-	b.move_piece(p, o)
+	var p_new = b.move_piece(p, o)
 
 func to_global(s:Dictionary, position):
 	var by:Vector2i = s["direction"]

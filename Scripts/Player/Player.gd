@@ -21,22 +21,26 @@ func _ready():
 			teams[i] = null
 			continue
 		teams[i] = v
-	
-	select_piece(Vector2i(0, 1))
-	play(Vector2i(0,2))
-	select_piece(Vector2i(1, 1))
-	play(Vector2i(1,2))
 
 func select_piece(pos) -> Piece:
 	var p = board.get_piece(pos)
 	if p && teams.has(p.get_team()):
 		selection = p
-		Accessor.a_print(str(self) + ": selected " + str(p))
+		Accessor.a_print("selected " + str(p))
+		Accessor.a_print("options: " + str(p.options.keys()) + "\n")
 		return p
 	return null
 
 func play(o) -> bool:
-	return board.call_option(selection, o)
+	var success := board.call_option(selection, o)
+	if success: Accessor.a_print(str(self) + " played option " + str(o) + " found in piece " + str(selection))
+	else: Accessor.a_print(str(self) + " no option " + str(o) + " found in piece " + str(selection))
+	
+	selection = null
+	
+	Accessor.a_print(str(board))
+	
+	return success
 		
 
 

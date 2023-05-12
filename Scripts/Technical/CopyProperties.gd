@@ -19,8 +19,6 @@ func _ready():
 	source.connect(copy_signal, copy)
 	
 	if copy_on_ready: copy()
-	
-	
 
 func _process(_delta):
 	copy()

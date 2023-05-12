@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dav05j32gud40"]
+[gd_scene load_steps=12 format=3 uid="uid://dav05j32gud40"]
 
 [ext_resource type="Script" path="res://Scripts/Board Types/Board2i.gd" id="1_aifr8"]
 [ext_resource type="Script" path="res://Scripts/Board Elements/Team.gd" id="2_l4gke"]
@@ -9,6 +9,7 @@
 [ext_resource type="Theme" uid="uid://b76e6ruwcxs2s" path="res://Resources/UI/UI_Theme.tres" id="7_bmt6j"]
 [ext_resource type="Script" path="res://Scripts/Technical/CopyProperties.gd" id="8_68y8w"]
 [ext_resource type="FontFile" uid="uid://ckqe7wyyay7fh" path="res://Resources/UI/FreeMono.ttf" id="8_kjhd7"]
+[ext_resource type="Script" path="res://Scripts/Player/CommandLine.gd" id="10_to7dn"]
 
 [sub_resource type="Resource" id="Resource_8a4kp"]
 script = ExtResource("4_y6u2j")
@@ -23,6 +24,7 @@ grow_vertical = 2
 
 [node name="Board" type="Node" parent="."]
 script = ExtResource("1_aifr8")
+node_paths = null
 
 [node name="Black Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")
@@ -189,7 +191,7 @@ scroll_following = true
 autowrap_mode = 1
 script = ExtResource("8_68y8w")
 
-[node name="LineEdit" type="LineEdit" parent="UI"]
+[node name="CommandLine" type="LineEdit" parent="UI"]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -200,3 +202,5 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/font = ExtResource("8_kjhd7")
 placeholder_text = "enter command here"
+script = ExtResource("10_to7dn")
+player_path = NodePath("../../Player")

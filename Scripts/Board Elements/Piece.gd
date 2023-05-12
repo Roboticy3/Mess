@@ -30,8 +30,14 @@ func to_global(position):
 func get_state(turn := states.size() - 1) -> Dictionary:
 	return states[turn]
 
+func add_state():
+	states.append(get_state().duplicate())
+
 func get_position() -> Variant:
 	return get_state()["position"]
 
 func get_team():
 	return get_state()["team"]
+
+func _to_string():
+	return "Piece:<" + str(type) + " at " + str(get_position()) + ", from " + str(get_team()) + ", " + str(get_state()) + ">"

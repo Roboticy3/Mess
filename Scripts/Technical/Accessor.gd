@@ -42,9 +42,9 @@ func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, display_mod
 func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
 	match display_mode:
 		0:
-			return p.type.name[0]
+			return p.type.name.left(1)
 		1:
-			return p.starting_state["team"].name.substr(0, 1) + " "
+			return p.starting_state["team"].name.left(1) + " "
 	return "?"
 
 signal a_print_signal

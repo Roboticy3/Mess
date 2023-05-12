@@ -15,6 +15,8 @@ extends Node
 #technically, the turn starts when the new state is added, since the length of the states array increases
 #the only way players should cause a turn is by getting options from generate_options() and adding a new state to play them on
 
+var position_type = TYPE_NIL
+
 var shape:Array[Bound]
 var teams:Array[Team]
 
@@ -43,7 +45,7 @@ var add_node:Callable = func (v:Node) -> bool:
 	if v is Piece: 
 		v = v as Piece
 		
-		add_piece(v)
+		add_existing_piece(v)
 		return true
 	elif v is Bound:
 		v = v as Bound
@@ -61,7 +63,7 @@ var add_node:Callable = func (v:Node) -> bool:
 #editing pieces will effect the last state in states as well as the current_state
 #the assumption is that the last state is the changes on this turn being generated
 
-func add_piece(p:Piece) -> void:
+func add_existing_piece(p:Piece) -> void:
 	p.starting_turn = states.size() - p.states.size()
 	var p_ss:Dictionary = p.starting_state
 	if !p.states.is_empty(): p_ss = p.get_state()
@@ -82,17 +84,23 @@ func get_team(pos:Variant):
 	if p: return p.get_state()["team"]
 	return null
 
-func move_piece(p:Piece, new_pos:Variant) -> void:
+func move_piece(p:Piece, new_pos:Variant) -> Piece:
 	var s := current_state
 	var p_s := p.get_state()
 	var pos:Variant = p_s["position"]
 	
 	s.erase(pos)
-	s[new_pos] = p
-	get_state()[new_pos] = p.duplicate()
+	var p_new = p.duplicate()
+	p.get_team().add_child(p_new)
+	p_new.add_state()
+	s[new_pos] = p_new
+	get_state()[new_pos] = p_new
 	
-	p_s["position"] = new_pos
 	p_s["changed"] = true
+	p_new.get_state()["position"] = new_pos
+	p_new.get_state()["moves"] += 1
+	
+	return p_new
 
 func take_piece(p:Piece) -> void:
 	var s := current_state
@@ -119,10 +127,10 @@ func call_option(p:Piece, o) -> bool:
 	if p_o.has(o):
 		add_state()
 		p_o[o].call(p, self, o)
-		Accessor.a_print(str(self) + " played option " + str(o) + " found in piece" + str(p))
+		
 		generate_options()
 		return true
-	Accessor.a_print(str(self) + " no option " + str(o) + " found in piece" + str(p))
+	
 	return false
 
 func move(p:Piece, option:Callable):
