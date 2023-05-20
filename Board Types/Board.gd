@@ -31,6 +31,9 @@ var starting_state := {}
 var states:Array[Dictionary] = [starting_state.duplicate()]
 var current_state := starting_state
 
+#flag one board as current
+var current := true
+
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
 	for v in node_paths:
@@ -148,3 +151,10 @@ func get_state(turn := states.size() - 1) -> Dictionary:
 
 func get_state_team(turn := states.size() - 1) -> Team:
 	return teams[turn % teams.size()]
+
+#returns false if the input position is out of bounds
+func has_position(pos) -> bool:
+	for s in shape:
+		if s.has_position(pos):
+			return true
+	return false

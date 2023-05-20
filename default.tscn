@@ -1,10 +1,11 @@
-[gd_scene load_steps=12 format=3 uid="uid://dav05j32gud40"]
+[gd_scene load_steps=14 format=3 uid="uid://c4i6uv7patxx2"]
 
-[ext_resource type="Script" path="res://Scripts/Board Types/Board2i.gd" id="1_aifr8"]
+[ext_resource type="Script" path="res://Board Types/Board2i.gd" id="1_e3vkr"]
 [ext_resource type="Script" path="res://Scripts/Board Elements/Team.gd" id="2_l4gke"]
 [ext_resource type="Script" path="res://Scripts/Board Elements/Piece.gd" id="3_tivbx"]
-[ext_resource type="Script" path="res://Scripts/Piece Types/Pawn2D.gd" id="4_y6u2j"]
+[ext_resource type="Script" path="res://Piece Types/Pawn2i.gd" id="4_c2gxl"]
 [ext_resource type="Script" path="res://Scripts/Board Elements/Bound Types/Bound2i.gd" id="5_h6ohc"]
+[ext_resource type="Script" path="res://Piece Types/Knight2i.gd" id="5_sjywq"]
 [ext_resource type="Script" path="res://Scripts/Player/Player.gd" id="6_34qhd"]
 [ext_resource type="Theme" uid="uid://b76e6ruwcxs2s" path="res://Resources/UI/UI_Theme.tres" id="7_bmt6j"]
 [ext_resource type="Script" path="res://Scripts/Technical/CopyProperties.gd" id="8_68y8w"]
@@ -12,7 +13,10 @@
 [ext_resource type="Script" path="res://Scripts/Player/CommandLine.gd" id="10_to7dn"]
 
 [sub_resource type="Resource" id="Resource_8a4kp"]
-script = ExtResource("4_y6u2j")
+script = ExtResource("4_c2gxl")
+
+[sub_resource type="Resource" id="Resource_1421e"]
+script = ExtResource("5_sjywq")
 
 [node name="Default" type="Control"]
 layout_mode = 3
@@ -23,7 +27,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Board" type="Node" parent="."]
-script = ExtResource("1_aifr8")
+script = ExtResource("1_e3vkr")
 node_paths = null
 
 [node name="Black Team" type="Node" parent="Board"]
@@ -31,8 +35,6 @@ script = ExtResource("2_l4gke")
 starting_state = {
 "direction": Vector2i(0, -1)
 }
-node_paths = null
-priority = null
 
 [node name="Pawn" type="Node" parent="Board/Black Team"]
 script = ExtResource("3_tivbx")
@@ -92,8 +94,6 @@ starting_state = {
 
 [node name="White Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")
-starting_state = null
-node_paths = null
 priority = 1
 
 [node name="Pawn" type="Node" parent="Board/White Team"]
@@ -150,6 +150,13 @@ script = ExtResource("3_tivbx")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(7, 1)
+}
+
+[node name="Knight" type="Node" parent="Board/White Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_1421e")
+starting_state = {
+"position": Vector2i(1, 0)
 }
 
 [node name="Shape" type="Node" parent="Board"]

@@ -1,8 +1,17 @@
 extends Node
 
+var current_board:Board
+
+func _ready():
+	get_children_recursive(
+	get_tree().root,
+	func (v): if v is Board && v.current: current_board = v
+	)
+	print(current_board)
+
 func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[Node]:
 	var stk:Array[Node] = [v]
-	var fnd := Dictionary()
+	var fnd := {}
 	while !stk.is_empty():
 		v = stk.pop_back()
 		
@@ -16,9 +25,9 @@ func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[No
 
 func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, display_mode:int = 0) -> String:
 	var result := ""
-	for b in shape:
-		result += str(b) + ":\n"
-		var bs = b.get_size()
+	for s in shape:
+		result += str(s) + ":\n"
+		var bs = s.get_size()
 		
 		var i:int = bs[1]
 		while i >= 0:
@@ -38,6 +47,15 @@ func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, display_mod
 		result += "\n"
 	
 	return result
+
+#traverse a board with respect to its shape, wrapping around portals and returning null if the resulting position is out of bounds
+func traverse_board(p, q, b:=current_board):
+	var v = q
+	
+	if b.has_position(q):
+		return v
+	
+	return null
 
 func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
 	match display_mode:

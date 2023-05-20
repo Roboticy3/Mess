@@ -12,3 +12,7 @@ func _ready():
 		Accessor.a_print(str(self) + ": corner a must be greater than corner b")
 	else:
 		valid = true
+
+func has_position(pos:Vector2i) -> bool:
+	return (a.x >= pos.x and pos.x >= b.x) and \
+			(a.y >= pos.y and pos.y >= b.y)

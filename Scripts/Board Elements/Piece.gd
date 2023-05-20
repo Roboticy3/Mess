@@ -40,4 +40,9 @@ func get_team():
 	return get_state()["team"]
 
 func _to_string():
-	return "Piece:<" + str(type) + " at " + str(get_position()) + ", from " + str(get_team()) + ", " + str(get_state()) + ">"
+	var result := "Piece:<" + str(type)
+	if states.size() > 0:
+		result += " at " + str(get_position()) + ", from " + str(get_team()) + ", " + str(get_state()) + ">"
+	else:
+		result += ", not ready>"
+	return result
