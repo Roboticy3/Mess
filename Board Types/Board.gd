@@ -158,3 +158,6 @@ func has_position(pos) -> bool:
 		if s.has_position(pos):
 			return true
 	return false
+
+func get_winner(state:=get_state()) -> Team:
+	return

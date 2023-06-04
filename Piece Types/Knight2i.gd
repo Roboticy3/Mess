@@ -6,7 +6,7 @@ const knight2i_state_form := {
 		}
 
 func _init():
-	name = "Knight2i"
+	name = "knight2i" #lower case so single-character representation differs from King2i
 	state_form.merge(knight2i_state_form, true)
 
 const squares:Array[Vector2i] = [
@@ -26,8 +26,6 @@ func generate_options(p:Piece, b:Board) -> Dictionary:
 	
 	for sq in squares:
 		var option = to_global(p_state, sq)
-		
-		print(sq, option)
 		
 		if option && b.get_team(option) != p.get_team():
 			o[option] = option_move

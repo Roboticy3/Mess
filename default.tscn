@@ -159,6 +159,13 @@ starting_state = {
 "position": Vector2i(1, 0)
 }
 
+[node name="Knight2" type="Node" parent="Board/White Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_1421e")
+starting_state = {
+"position": Vector2i(6, 0)
+}
+
 [node name="Shape" type="Node" parent="Board"]
 
 [node name="Bound2i" type="Node" parent="Board/Shape"]
