@@ -105,9 +105,6 @@ func move_piece(p:Piece, new_pos:Variant) -> Piece:
 	
 	return p_new
 
-func take_piece(p:Piece) -> void:
-	var s := current_state
-
 func generate_options() -> void:
 	var s := current_state
 	var o := s.duplicate()

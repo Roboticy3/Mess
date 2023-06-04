@@ -3,7 +3,7 @@ class_name Piece
 
 @export var type:PieceType
 
-@export var starting_state:Dictionary = {"position":null,"team":null}
+@export var starting_state:Dictionary = {"position":null}
 
 var states:Array[Dictionary]
 var starting_turn := 0
@@ -16,7 +16,7 @@ func _ready():
 			starting_state[k] = type.state_form[k]
 		elif typeof(starting_state[k]) != typeof(type.state_form[k]):
 			push_error("starting_state pair (", k, ": ", starting_state[k], ") does not match the type of the state_form pair (", k, ": ", type.state_form[k], "), aborting piece creation.")
-			free()
+			call_deferred("free")
 			return
 	
 	states = [starting_state]

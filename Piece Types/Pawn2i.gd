@@ -8,7 +8,7 @@ const pawn2i_state_form := {
 		}
 
 func _init():
-	name = "Pawn2i"
+	name = "pawn2i"
 	state_form.merge(pawn2i_state_form, true)
 
 func generate_options(p:Piece, b:Board)->Dictionary:
