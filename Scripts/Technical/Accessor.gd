@@ -48,15 +48,6 @@ func shaped_2i_state_to_string(shape:Array[Bound], state:Dictionary, display_mod
 	
 	return result
 
-#traverse a board with respect to its shape, wrapping around portals and returning null if the resulting position is out of bounds
-func traverse_board(p, q, b:=current_board):
-	var v = q
-	
-	if b.has_position(q):
-		return v
-	
-	return null
-
 func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
 	match display_mode:
 		0:

@@ -158,3 +158,11 @@ func has_position(pos) -> bool:
 
 func get_winner(state:=get_state()) -> Team:
 	return
+
+func traverse(from, to):
+	var v = to
+	
+	if has_position(to):
+		return v
+	
+	return null

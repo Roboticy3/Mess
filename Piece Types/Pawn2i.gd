@@ -22,13 +22,13 @@ func generate_options(p:Piece, b:Board)->Dictionary:
 	var b_state = b.get_state()
 	
 	#forward step
-	var up_one:Vector2i = to_global(p_state, Vector2i(0, 1))
+	var up_one:Vector2i = to_global(p_state, b, Vector2i(0, 1))
 	if !b.get_piece(up_one):
 		options[up_one] = option_move
 	
 	#diagonal takes
-	var diag_right:Vector2i = to_global(p_state, Vector2i(1, 1))
-	var diag_left:Vector2i = to_global(p_state, Vector2i(-1, 1))
+	var diag_right:Vector2i = to_global(p_state, b, Vector2i(1, 1))
+	var diag_left:Vector2i = to_global(p_state, b, Vector2i(-1, 1))
 	var take_right = b.get_team(diag_right)
 	var take_left = b.get_team(diag_left)
 	
@@ -38,19 +38,19 @@ func generate_options(p:Piece, b:Board)->Dictionary:
 		options[diag_left] = option_move
 	
 	#double forward step
-	var up_two = to_global(p_state, Vector2i(0, 2))
+	var up_two = to_global(p_state, b, Vector2i(0, 2))
 	
 	if p_state["moves"] == 0 && !b.get_piece(up_one) && !b.get_piece(up_two):
 		options[up_two] = option_move
 	
 	return options
 
-func to_global(s:Dictionary, position):
+func to_global(s:Dictionary, b:Board, position):
 	var by:Vector2i = s["direction"]
 	var bx := Vector2i(by.y, by.x)
 	var px:Vector2i = bx * position.x
 	var py:Vector2i = by * position.y
-	var result = Accessor.traverse_board(s["position"], px + py + s["position"])
+	var result = b.traverse(s["position"], px + py + s["position"])
 	if result: return result
 	return s["position"]
 	

@@ -24,8 +24,8 @@ func _ready():
 func generate_options(b:Board) -> void:
 	options = type.generate_options(self, b)
 
-func to_global(position):
-	return type.to_global(get_state(), position)
+func to_global(position, b:Board):
+	return type.to_global(get_state(), b, position)
 
 func get_state(turn := states.size() - 1) -> Dictionary:
 	return states[turn]
