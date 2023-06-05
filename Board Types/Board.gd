@@ -59,9 +59,8 @@ var add_node:Callable = func (v:Node) -> bool:
 	
 	return false
 
-#editing pieces
-#editing pieces will effect the last state in states as well as the current_state
-#the assumption is that the last state is the changes on this turn being generated
+### STATE MUTATORS
+#only call after calling add_state()!
 
 func add_existing_piece(p:Piece) -> void:
 	p.starting_turn = states.size() - p.states.size()
@@ -71,36 +70,25 @@ func add_existing_piece(p:Piece) -> void:
 	get_state()[p_ss["position"]] = p
 	current_state[p_ss["position"]] = p
 
-func get_piece(pos:Variant):
-	var s := current_state
-	if !s.has(pos): return null
-	
-	var p = s[pos]
-	if !(p is Piece): return null
-	return p
-
-func get_team(pos:Variant):
-	var p = get_piece(pos)
-	if p: return p.get_state()["team"]
-	return null
-
 func move_piece(p:Piece, new_pos:Variant) -> Piece:
 	var s := current_state
 	var p_s := p.get_state()
 	var pos:Variant = p_s["position"]
 	
 	s.erase(pos)
-	var p_new = p.duplicate()
+	var p_new:Piece = p.duplicate()
 	p.get_team().add_child(p_new)
 	p_new.add_state()
 	s[new_pos] = p_new
 	get_state()[new_pos] = p_new
-	
-	p_s["changed"] = true
-	p_new.get_state()["position"] = new_pos
-	p_new.get_state()["moves"] += 1
+
+	var pn_s := p_new.get_state()
+	pn_s["position"] = new_pos
+	pn_s["moves"] += 1
 	
 	return p_new
+
+###STATE GENERATORS
 
 func generate_options() -> void:
 	var s := current_state
@@ -130,12 +118,38 @@ func call_option(p:Piece, o) -> bool:
 	
 	return false
 
+#generate a state from calling an option without updating the board, returns the new state
+func call_option_virtual(p:Piece, o) -> Dictionary:
+	var new_s := {}
+	var cur := current_state.duplicate()
+	
+	
+	
+	current_state = cur
+	return new_s
+	
+
 func add_state():
 	if states.size() == 0: 
 		states = [{}]
 		return
 	
 	states.append({})
+
+###GETTERS
+
+func get_piece(pos:Variant):
+	var s := current_state
+	if !s.has(pos): return null
+	
+	var p = s[pos]
+	if !(p is Piece): return null
+	return p
+
+func get_team(pos:Variant):
+	var p = get_piece(pos)
+	if p: return p.get_state()["team"]
+	return null
 
 func get_state(turn := states.size() - 1) -> Dictionary:
 	return states[turn]
@@ -153,6 +167,7 @@ func has_position(pos) -> bool:
 func get_winner(state:=get_state()) -> Team:
 	return
 
+#traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds
 func traverse(from, to):
 	var v = to
 	

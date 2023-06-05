@@ -10,8 +10,6 @@ func _ready():
 	
 	#generate options to use for the turn
 	generate_options()
-	
-	Accessor.a_print(str(self))
 
 func _to_string():
 	
