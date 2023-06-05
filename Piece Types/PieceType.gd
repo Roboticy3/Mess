@@ -38,7 +38,7 @@ const max_iter := 100
 func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=can_take, iterations:=max_iter) -> Array[Array]:
 	var p_state = p.get_state()
 	
-	var positions:Array[Array]
+	var positions:Array[Array] = []
 	positions.resize(directions.size())
 	
 	#try to create options in lines in each direction

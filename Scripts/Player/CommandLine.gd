@@ -73,6 +73,10 @@ func show_state(args:Array[String]):
 		elif args[0] != "-r":
 			idx = args[0].to_int()
 	
+	if idx >= player.board.states.size():
+		Accessor.a_print("state " + str(idx) + " out of bounds")
+		return
+	
 	Accessor.a_print(
 		Accessor.shaped_2i_state_to_string(player.board.get_state(idx))
 	)

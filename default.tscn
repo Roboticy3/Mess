@@ -44,6 +44,7 @@ grow_vertical = 2
 
 [node name="Board" type="Node" parent="."]
 script = ExtResource("1_e3vkr")
+node_paths = null
 
 [node name="Black Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")
@@ -330,5 +331,4 @@ grow_vertical = 0
 theme_override_fonts/font = ExtResource("8_kjhd7")
 placeholder_text = "enter command here"
 script = ExtResource("10_to7dn")
-send_action = null
 player_path = NodePath("../../Player")
