@@ -21,6 +21,6 @@ func _to_string():
 	var result := "Board (turn " + str(states.size() - 1) + "):\n"
 	var s = current_state
 	
-	result += Accessor.shaped_2i_state_to_string(shape, s)
+	result += Accessor.shaped_2i_state_to_string(s, shape)
 	
 	return result

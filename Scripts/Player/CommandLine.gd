@@ -25,16 +25,17 @@ func send():
 	
 	match s[0]:
 		commands[0]: select_piece(args)
-		commands[1]: play_piece(args)
+		commands[1]: play(args)
+		commands[2]: show_state(args)
 	
 	text = ""
 
 const commands := [
 	"select",
-	"move"
+	"move",
+	"show"
 ]
 
-#
 func select_piece(args:Array[String]):
 	
 	if args.size() < 2:
@@ -48,7 +49,7 @@ func select_piece(args:Array[String]):
 			return
 		TYPE_VECTOR2I: player.select_piece(args_to_vector2i(args))
 
-func play_piece(args:Array[String]):
+func play(args:Array[String]):
 	
 	if !player.selection:
 		Accessor.a_print("cannot move a piece with no selection")
@@ -61,6 +62,20 @@ func play_piece(args:Array[String]):
 	var b := player.board
 	match b.position_type:
 		TYPE_VECTOR2I: player.play(args_to_vector2i(args))
+
+func show_state(args:Array[String]):
+	
+	var idx := player.board.states.size() - 1
+	
+	if !args.is_empty():
+		if args[0] == "-r" && args.size() > 1:
+			idx += args[1].to_int()
+		elif args[0] != "-r":
+			idx = args[0].to_int()
+	
+	Accessor.a_print(
+		Accessor.shaped_2i_state_to_string(player.board.get_state(idx))
+	)
 
 func args_to_vector2i(args:Array) -> Vector2i:
 	var x = args[0].to_int()

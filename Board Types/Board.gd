@@ -39,9 +39,6 @@ func fill_nodes():
 	for v in node_paths:
 		Accessor.get_children_recursive(get_node(v), add_node)
 	
-	teams.sort_custom(func (a:Team, b:Team): return a.priority > b.priority)
-	Accessor.a_print(str(teams))
-	
 #everybody shut up new class just dropped
 #call this with a node to add it to the board individually
 var add_node:Callable = func (v:Node) -> bool:
@@ -126,15 +123,12 @@ func call_option(p:Piece, o) -> bool:
 	var p_o := p.options
 	if p_o.has(o):
 		add_state()
-		p_o[o].call(p, self, o)
+		p_o[o].call()
 		
 		generate_options()
 		return true
 	
 	return false
-
-func move(p:Piece, option:Callable):
-	option.call(p, self)
 
 func add_state():
 	if states.size() == 0: 

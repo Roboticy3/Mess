@@ -108,6 +108,62 @@ starting_state = {
 "position": Vector2i(7, 6)
 }
 
+[node name="Knight" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_1421e")
+starting_state = {
+"position": Vector2i(1, 7)
+}
+
+[node name="Knight2" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_1421e")
+starting_state = {
+"position": Vector2i(6, 7)
+}
+
+[node name="King" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_e0o4y")
+starting_state = {
+"position": Vector2i(4, 7)
+}
+
+[node name="Rook" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_ve2vv")
+starting_state = {
+"position": Vector2i(0, 7)
+}
+
+[node name="Rook2" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_ve2vv")
+starting_state = {
+"position": Vector2i(7, 7)
+}
+
+[node name="Bishop" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_v6ihh")
+starting_state = {
+"position": Vector2i(2, 7)
+}
+
+[node name="Bishop2" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_v6ihh")
+starting_state = {
+"position": Vector2i(5, 7)
+}
+
+[node name="Queen" type="Node" parent="Board/Black Team"]
+script = ExtResource("3_tivbx")
+type = SubResource("Resource_6gybt")
+starting_state = {
+"position": Vector2i(3, 7)
+}
+
 [node name="White Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")
 priority = 1
@@ -275,4 +331,5 @@ grow_vertical = 0
 theme_override_fonts/font = ExtResource("8_kjhd7")
 placeholder_text = "enter command here"
 script = ExtResource("10_to7dn")
+send_action = null
 player_path = NodePath("../../Player")

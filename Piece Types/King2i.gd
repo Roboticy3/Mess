@@ -10,7 +10,6 @@ func _init():
 	name = "King2i"
 	state_form.merge(king2i_state_form, true)
 
-var castle_rooks := {}
 func option_castle(king:Piece, b:Board, o:Vector2i, rook:Piece, ro:Vector2i) -> void:
 	
 	option_move(king, b, o)
@@ -38,8 +37,8 @@ func generate_options(p:Piece, b:Board) -> Dictionary:
 	var ra = p_state["rook axes"]
 	var c1 = can_castle_to(ra, p, b)
 	var c2 = can_castle_to(-ra, p, b)
-	if c1: o[c1[0][1]] = option_castle.bind(c1[1], c1[0][0])
-	if c2: o[c2[0][1]] = option_castle.bind(c2[1], c2[0][0])
+	if c1: o[c1[0][1]] = option_castle.bind(p, b, c1[0][1], c1[1], c1[0][0])
+	if c2: o[c2[0][1]] = option_castle.bind(p, b, c2[0][1], c2[1], c2[0][0])
 	
 	return o
 	

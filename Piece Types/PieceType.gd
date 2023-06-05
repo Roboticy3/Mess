@@ -8,6 +8,7 @@ var state_form:Dictionary = {"team":Team.new(),"moves":0,"position":null,"change
 func generate_options(_p:Piece, _b:Board)->Dictionary:
 	return {}
 
+#options typically take a piece, board, and the option's "key" or id specifying a position or holding more information
 func option_move(p:Piece, b:Board, o) -> void:
 	b.move_piece(p, o)
 
@@ -26,7 +27,7 @@ func add_options_from_positions(options:Dictionary, positions:Array, p:Piece, b:
 		pos = to_global(p.get_state(), b, pos)
 		
 		if validator.call(p, b, pos):
-			options[pos] = option
+			options[pos] = option.bind(p, b, pos)
 
 #spaces from a list of (sorta) global directions
 #directions will not be transformed by the piece's direction since the piece may not have the direction property
@@ -62,8 +63,9 @@ func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=
 func add_options_from_line_directions(options:Dictionary, directions:Array, p:Piece, b:Board, option:=option_move, validator:=can_take, iterations:=max_iter) -> void:
 	var positions = spaces_from_line_directions(directions, p, b, validator, iterations)
 	
-	for pos in positions:
-		options[pos] = option
+	for y in positions:
+		for x in y:
+			options[x] = option.bind(p, b, x)
 
 func _to_string():
 	return "PieceType<" + name + ">"
