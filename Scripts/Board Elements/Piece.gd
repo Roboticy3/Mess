@@ -24,12 +24,12 @@ func _ready():
 	
 	states = [starting_state]
 
-func generate_options(b:Board, set:=true) -> Dictionary:
+func generate_options(b:=Accessor.current_board, set:=true) -> Dictionary:
 	var res := type.generate_options(self, b)
 	if set: options = res
 	return res
 
-func to_global(position, b:Board):
+func to_global(position, b:=Accessor.current_board):
 	return type.to_global(get_state(), b, position)
 
 func get_state(turn := states.size() - 1) -> Dictionary:

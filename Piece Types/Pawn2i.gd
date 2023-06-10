@@ -11,7 +11,7 @@ func _init():
 	name = "pawn2i"
 	state_form.merge(pawn2i_state_form, true)
 
-func generate_options(p:Piece, b:Board)->Dictionary:
+func generate_options(p:Piece, b:=Accessor.current_board)->Dictionary:
 	var options := {}
 	
 	if !(p.type is Pawn2i):

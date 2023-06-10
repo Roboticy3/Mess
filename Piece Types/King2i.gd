@@ -25,7 +25,7 @@ const squares:Array[Vector2i] = [
 	Vector2i(1, -1),
 	Vector2i(-1, -1)
 ]
-func generate_options(p:Piece, b:Board) -> Dictionary:
+func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	
 	var o := {}
 	var p_state = p.get_state()

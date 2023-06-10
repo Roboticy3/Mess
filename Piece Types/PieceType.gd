@@ -5,7 +5,7 @@ var name:StringName = "?"
 
 var state_form:Dictionary = {"team":Team.new(),"moves":0,"position":null}
 
-func generate_options(_p:Piece, _b:Board)->Dictionary:
+func generate_options(_p:Piece, _b:=Accessor.current_board)->Dictionary:
 	return {}
 
 #options typically take a piece, board, and the option's "key" or id specifying a position or holding more information

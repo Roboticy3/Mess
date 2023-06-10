@@ -125,6 +125,8 @@ func call_option(p:Piece, o) -> bool:
 		print("direct")
 		return true
 	
+	states[-1].make_read_only()
+	
 	return false
 
 #generate a state from calling an option without updating the board, returns the new state

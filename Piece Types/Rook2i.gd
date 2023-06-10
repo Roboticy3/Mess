@@ -15,7 +15,7 @@ const directions:Array[Vector2i] = [
 	Vector2i(0, -1),
 	Vector2i(-1, 0)
 ]
-func generate_options(p:Piece, b:Board) -> Dictionary:
+func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	var o := {}
 	add_options_from_line_directions(o, directions, p, b)
 	return o

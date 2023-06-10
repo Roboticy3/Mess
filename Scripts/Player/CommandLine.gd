@@ -66,22 +66,21 @@ func play(args:Array[String]):
 func show_state(args:Array[String]):
 	
 	var idx := player.board.states.size() - 1
-	
-	var r := false
+
 	var c := false
 	if !args.is_empty():
-		r = args.has("-r")
+		if args.has("-a"):
+			for b in player.board.states:
+				Accessor.a_print(
+					Accessor.shaped_2i_state_to_string(b)
+				)
+			return
+		
 		c = args.has("-c")
 		
-		if r && args.size() > 1:
-			idx += args[1].to_int()
-		elif !r:
-			idx = args[0].to_int()
-		
-		if c:
-			idx = 0
+		idx = args.back().to_int()
 	
-	if idx >= player.board.states.size():
+	if idx >= player.board.states.size() || -idx > player.board.states.size():
 		Accessor.a_print("state " + str(idx) + " out of bounds")
 		return
 	
