@@ -27,7 +27,8 @@ func select_piece(pos) -> Piece:
 	if p && teams.has(p.get_team()):
 		selection = p
 		Accessor.a_print("selected " + str(p))
-		Accessor.a_print("options: " + str(p.options.keys()) + "\n")
+		Accessor.a_print("options: " + str(p.options.keys()))
+		Accessor.a_print("o_states: " + str(p.o_states.keys()) + "\n")
 		return p
 	return null
 

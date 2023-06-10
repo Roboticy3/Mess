@@ -9,6 +9,7 @@ var states:Array[Dictionary]
 var starting_turn := 0
 
 var options:Dictionary
+var o_states:Dictionary
 
 var last:Piece
 
@@ -23,8 +24,10 @@ func _ready():
 	
 	states = [starting_state]
 
-func generate_options(b:Board) -> void:
-	options = type.generate_options(self, b)
+func generate_options(b:Board, set:=true) -> Dictionary:
+	var res := type.generate_options(self, b)
+	if set: options = res
+	return res
 
 func to_global(position, b:Board):
 	return type.to_global(get_state(), b, position)
