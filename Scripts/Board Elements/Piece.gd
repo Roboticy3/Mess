@@ -11,8 +11,6 @@ var starting_turn := 0
 var options:Dictionary
 var o_states:Dictionary
 
-var last:Piece
-
 func _ready():
 	for k in type.state_form:
 		if !starting_state.has(k):
