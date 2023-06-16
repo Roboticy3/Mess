@@ -9,7 +9,6 @@ var states:Array[Dictionary]
 var starting_turn := 0
 
 var options:Dictionary
-var o_states:Dictionary
 
 func _ready():
 	for k in type.state_form:
