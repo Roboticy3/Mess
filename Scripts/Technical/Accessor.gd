@@ -34,8 +34,11 @@ func shaped_2i_state_to_string(state:Dictionary=current_board.get_state(), shape
 			var j := 0
 			while j <= bs[0]:
 				var pos := Vector2i(j, i)
-				if state.has(pos):
+				var p = state.get(pos)
+				if p is Piece:
 					result += piece_single_character_display(state[pos], display_mode) + " "
+				elif p is Removed:
+					result += "~ "
 				else:
 					result += ". "
 				

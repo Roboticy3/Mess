@@ -27,13 +27,15 @@ func send():
 		commands[0]: select_piece(args)
 		commands[1]: play(args)
 		commands[2]: show_state(args)
+		commands[3]: undo()
 	
 	text = ""
 
 const commands := [
 	"select",
 	"move",
-	"show"
+	"show",
+	"undo",
 ]
 
 func select_piece(args:Array[String]):
@@ -89,6 +91,16 @@ func show_state(args:Array[String]):
 	)
 	else: Accessor.a_print(
 		Accessor.shaped_2i_state_to_string(player.board.get_state(idx))
+	)
+
+func undo():
+	var s := player.board.undo()
+	Accessor.a_print(
+		"undid:\n" + Accessor.shaped_2i_state_to_string(s)
+	)
+	
+	Accessor.a_print(
+		"current:\n" + Accessor.shaped_2i_state_to_string(player.board.current_state)
 	)
 
 func args_to_vector2i(args:Array) -> Vector2i:
