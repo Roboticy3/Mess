@@ -78,13 +78,20 @@ func add_existing_piece(p:Piece) -> void:
 	if !build: current_state[p_ss["position"]] = p
 
 func move_piece(p:Piece, new_pos) -> Piece:
-	var s := current_state
+	var s
 	if build:
 		s = get_state()
+	else:
+		s = current_state
 	var p_s := p.get_state()
 	var pos = p_s["position"]
 	
-	var p_new:Piece = copy_piece(p)
+	
+	var p_new:Piece
+	if build:
+		p_new = s[pos]
+	else:
+		p_new = copy_piece(p)
 	s.erase(pos)
 	
 	if !build: 

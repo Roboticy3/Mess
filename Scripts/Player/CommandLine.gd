@@ -28,6 +28,7 @@ func send():
 		commands[1]: play(args)
 		commands[2]: show_state(args)
 		commands[3]: undo()
+		commands[4]: show_options(args)
 	
 	text = ""
 
@@ -36,6 +37,7 @@ const commands := [
 	"move",
 	"show",
 	"undo",
+	"options"
 ]
 
 func select_piece(args:Array[String]):
@@ -102,6 +104,44 @@ func undo():
 	Accessor.a_print(
 		"current:\n" + Accessor.shaped_2i_state_to_string(player.board.current_state)
 	)
+
+func show_options(args:Array[String]):
+	var a = args.has("-a")
+	
+	if !player.selection && !a:
+		Accessor.a_print("cannot show options of a piece with no selection, use -a argument to show options on all pieces")
+		return
+	
+	if a:
+		for pos in player.board.current_state:
+			var p:Piece = player.board.current_state[pos]
+			if !(p is Piece):
+				continue
+			
+			Accessor.a_print(str(p))
+			var p_o := p.options
+			for o in p_o:
+				if p_o is Dictionary:
+					Accessor.a_print(
+						Accessor.shaped_2i_state_to_string(p_o[o])
+					)
+				else:
+					Accessor.a_print(str(p_o[o]))
+			
+			if p_o.is_empty():
+				Accessor.a_print("no options\n")
+			
+		return
+	
+	var p_o := player.selection.options 
+	for o in p_o:
+		if p_o is Dictionary:
+			Accessor.a_print(
+				Accessor.shaped_2i_state_to_string(p_o[o])
+			)
+		else:
+			Accessor.a_print(str(p_o[o]))
+	
 
 func args_to_vector2i(args:Array) -> Vector2i:
 	var x = args[0].to_int()

@@ -330,5 +330,4 @@ grow_vertical = 0
 theme_override_fonts/font = ExtResource("8_kjhd7")
 placeholder_text = "enter command here"
 script = ExtResource("10_to7dn")
-send_action = null
 player_path = NodePath("../../Player")
