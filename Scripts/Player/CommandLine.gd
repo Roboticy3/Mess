@@ -117,9 +117,14 @@ func show_options(args:Array[String]):
 			var p:Piece = player.board.current_state[pos]
 			if !(p is Piece):
 				continue
+				
+			var p_o := p.options
+			
+			if p_o.is_empty():
+				continue
 			
 			Accessor.a_print(str(p))
-			var p_o := p.options
+			
 			for o in p_o:
 				if p_o is Dictionary:
 					Accessor.a_print(
@@ -127,9 +132,6 @@ func show_options(args:Array[String]):
 					)
 				else:
 					Accessor.a_print(str(p_o[o]))
-			
-			if p_o.is_empty():
-				Accessor.a_print("no options\n")
 			
 		return
 	
