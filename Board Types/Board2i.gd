@@ -9,8 +9,9 @@ func _ready():
 	fill_nodes()
 	
 	#generate options to use for the turn
-	build = true
-	b_options()
+#	build = true
+#	b_options()
+	g_options()
 	
 	Accessor.a_print(str(self))
 

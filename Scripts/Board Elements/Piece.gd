@@ -10,6 +10,8 @@ var starting_turn := 0
 
 var options:Dictionary
 
+var last
+
 func _ready():
 	if !state.is_empty():
 		return
@@ -42,5 +44,5 @@ func get_team():
 
 func _to_string():
 	var result := "Piece:<" + str(type)
-	result += " at " + str(get_position()) + ", from " + str(get_team()) + ", " + str(state) + ">"
+	result += " at " + str(get_position()) + ", " + str(state) + ">"
 	return result

@@ -3,7 +3,7 @@ class_name PieceType
 
 var name:StringName = "?"
 
-var state_form:Dictionary = {"team":Team.new(),"moves":0,"position":null}
+var state_form:Dictionary = {"team":Team,"moves":0,"position":null}
 
 func generate_options(_p:Piece, _b:=Accessor.current_board)->Dictionary:
 	return {}

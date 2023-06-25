@@ -15,24 +15,34 @@ extends Node
 #technically, the turn starts when the new state is added, since the length of the states array increases
 #the only way players should cause a turn is by getting options from generate_options() and adding a new state to play them on
 
+#the board behaves differently based on this variable, and it should not change after the start of a game
+#build = true implies that states are constructed fully, allowing for checkmate
+#build = false implies a more efficient, functional option generation
+#functions prefixed g_ are meant to be used when build is false
+#functions prefixed b_ are meant to be used when build is true
+#mutators should be able to handle both cases if they are not prefixed
+var build := false
+
 var position_type = TYPE_NIL
 
 var shape:Array[Bound]
 var teams:Array[Team]
 
+#the sources of the board's objects in the SceneTree, optionally used to fill shape, teams, and the pieces in starting_state
 @export var node_paths:Array[NodePath] = [NodePath(".")]
 
-var piece_types:Array[PieceType]
-
+#the initial state of the board, can contain Pieces and Variants
 var starting_state := {}
 
 #the board stores its state at the beginning of each turn
 #each state is a dictionary including pieces and variables that can change during a game
+#each state should store its own copies of pieces and values for other states of the board
 var states:Array[Dictionary] = [starting_state.duplicate()]
+#only used when build is false
 var current_state := starting_state
 
-#flag one board as current
-var current := true
+#first board flagged as active will be set to Accessor's current_board
+var active := true
 
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
@@ -62,14 +72,6 @@ var add_node:Callable = func (v:Node) -> bool:
 ### STATE MUTATORS
 #only call after calling add_state()!
 
-#the board behaves differently based on this variable, and it should not change after the first option is played
-#build = true implies that states are constructed fully, allowing for checkmate
-#build = false implies a more efficient, functional option generation
-#functions prefixed g_ are meant to be used when build is false
-#functions prefixed b_ are meant to be used when build is true
-#mutators should be able to handle both cases if they are not prefixed
-var build := false
-
 func add_existing_piece(p:Piece) -> void:
 	p.starting_turn = states.size() - 1
 	var p_ss:Dictionary = p.starting_state
@@ -92,11 +94,18 @@ func move_piece(p:Piece, new_pos) -> Piece:
 		p_new = s[pos]
 	else:
 		p_new = copy_piece(p)
-	s.erase(pos)
 	
 	if !build: 
-		get_state()[new_pos] = p_new
-		get_state()[pos] = Removed.new()
+		
+		var new_s := get_state()
+		p_new.last = s.get(new_pos)
+		new_s[new_pos] = p_new
+		
+		var r = Removed.new()
+		r.last = p
+		new_s[pos] = r
+	
+	s.erase(pos)
 	s[new_pos] = p_new
 	
 	var n_s := p_new.get_state()
@@ -165,7 +174,7 @@ func b_options(depth:=1) -> void:
 	if depth < 1:
 		return
 	
-	var s := current_state
+	var s := get_state()
 	
 	#generate the options
 	for pos in s:
@@ -183,14 +192,12 @@ func b_options(depth:=1) -> void:
 			
 			var option:Callable = p_o[o]
 			
-			add_state(duplicate_state(current_state, true))
+			add_state(duplicate_state(s, true))
 			option.call()
 			
-			current_state = get_state()
 			b_options(depth - 1)
 			
 			var new_s := states.pop_back() as Dictionary
-			current_state = get_state()
 			
 			p.options[o] = new_s
 			
@@ -212,6 +219,7 @@ func duplicate_state(s:=current_state, copy_pieces:=false) -> Dictionary:
 	
 	return new_s
 
+#undo and return the undone state
 func undo() -> Dictionary:
 	
 	if states.size() == 1:
@@ -220,9 +228,11 @@ func undo() -> Dictionary:
 	var s:Dictionary = states.pop_back()
 	
 	if build:
-		current_state = states[-1]
+		current_state = get_state()
 	else:
-		g_rebuild_current()
+		for pos in s:
+			var p = s[pos]
+			current_state[pos] = p.last
 	
 	return s
 

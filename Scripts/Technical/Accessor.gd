@@ -5,7 +5,7 @@ var current_board:Board
 func _ready():
 	get_children_recursive(
 	get_tree().root,
-	func (v): if v is Board && v.current: current_board = v
+	func (v): if v is Board && v.active: current_board = v
 	)
 	print(current_board)
 
