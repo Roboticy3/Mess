@@ -7,7 +7,6 @@ func _ready():
 	get_tree().root,
 	func (v): if v is Board && v.active: current_board = v
 	)
-	print(current_board)
 
 func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[Node]:
 	var stk:Array[Node] = [v]
@@ -23,7 +22,12 @@ func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[No
 				stk.push_back(w)
 	return stk
 
-func shaped_2i_state_to_string(state:Dictionary=current_board.get_state(), shape:Array[Bound]=current_board.shape, display_mode:int = 0) -> String:
+func shaped_2i_state_to_string(state:Dictionary, shape:Array[Bound]=current_board.shape, 
+	display_mode:int = 0, position_type = current_board.position_type) -> String:
+	
+	if position_type != TYPE_VECTOR2I:
+		return "Not 2i"
+	
 	var result := ""
 	for s in shape:
 		result += str(s) + ":\n"

@@ -11,7 +11,6 @@ extends Node
 #pieces in current_state are references to pieces in states, and does not store duplications
 
 #passing a turn can be described by adding a new state, and then making modifications to it
-#using provided functions should update both the new state and current_state in sync
 #technically, the turn starts when the new state is added, since the length of the states array increases
 #the only way players should cause a turn is by getting options from generate_options() and adding a new state to play them on
 
@@ -25,6 +24,7 @@ var build := false
 
 var position_type = TYPE_NIL
 
+#the shape of the board and the teams on it
 var shape:Array[Bound]
 var teams:Array[Team]
 
@@ -72,15 +72,21 @@ var add_node:Callable = func (v:Node) -> bool:
 ### STATE MUTATORS
 #only call after calling add_state()!
 
+#add a piece that was already in the SceneTree
 func add_existing_piece(p:Piece) -> void:
 	p.starting_turn = states.size() - 1
-	var p_ss:Dictionary = p.starting_state
-	
-	get_state()[p_ss["position"]] = p
-	if !build: current_state[p_ss["position"]] = p
+	add_piece(p)
 
+#add a piece, even if it is not in the SceneTree
+func add_piece(p:Piece):
+	var p_s = p.state
+	get_state()[p_s["position"]] = p
+	if !build: current_state[p_s["position"]] = p
+
+#move piece p to a new position on the active state
+#adds a Removed in the old position of the piece in generated mode
 func move_piece(p:Piece, new_pos) -> Piece:
-	var s
+	var s:Dictionary
 	if build:
 		s = get_state()
 	else:
@@ -88,29 +94,25 @@ func move_piece(p:Piece, new_pos) -> Piece:
 	var p_s := p.get_state()
 	var pos = p_s["position"]
 	
-	
 	var p_new:Piece
+	#build mode precopies pieces, so it can be grabbed directly from the current_state
 	if build:
 		p_new = s[pos]
 	else:
 		p_new = copy_piece(p)
 	
 	if !build: 
-		
-		var new_s := get_state()
 		p_new.last = s.get(new_pos)
-		new_s[new_pos] = p_new
-		
 		var r = Removed.new()
 		r.last = p
-		new_s[pos] = r
-	
-	s.erase(pos)
-	s[new_pos] = p_new
+		get_state()[pos] = r
 	
 	var n_s := p_new.get_state()
 	n_s["position"] = new_pos
 	n_s["moves"] += 1
+	
+	s.erase(pos)
+	add_piece(p_new)
 	
 	return p_new
 
@@ -195,6 +197,7 @@ func b_options(depth:=1) -> void:
 			add_state(duplicate_state(s, true))
 			option.call()
 			
+			#if the build has depth, build the next turn on each new state
 			b_options(depth - 1)
 			
 			var new_s := states.pop_back() as Dictionary
@@ -206,6 +209,7 @@ func b_options(depth:=1) -> void:
 func add_state(s:={}):
 	states.append(s)
 
+#duplicate a state, with an optional flag to duplicate the pieces in it
 func duplicate_state(s:=current_state, copy_pieces:=false) -> Dictionary:
 	
 	var new_s = {}
@@ -236,7 +240,7 @@ func undo() -> Dictionary:
 	
 	return s
 
-#assumes build is false
+#fill the current_state from every generated state
 func g_rebuild_current():
 	
 	current_state = states[0].duplicate()
@@ -280,6 +284,7 @@ func has_position(pos) -> bool:
 			return true
 	return false
 
+#implemented by inheritors
 func get_winner(_state:=current_state) -> Team:
 	return
 

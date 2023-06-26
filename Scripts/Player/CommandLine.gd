@@ -46,12 +46,7 @@ func select_piece(args:Array[String]):
 		Accessor.a_print("not enough arguments to select")
 		return
 	
-	var b := player.board
-	match b.position_type:
-		TYPE_NIL:
-			Accessor.a_print("cannot select on board with position type TYPE_NIL")
-			return
-		TYPE_VECTOR2I: player.select_piece(args_to_vector2i(args))
+	player.select_piece(args_to_vector2i(args))
 
 func play(args:Array[String]):
 	
@@ -63,9 +58,7 @@ func play(args:Array[String]):
 		Accessor.a_print("not enough arguments to move")
 		return
 	
-	var b := player.board
-	match b.position_type:
-		TYPE_VECTOR2I: player.play(args_to_vector2i(args))
+	player.play(args_to_vector2i(args))
 
 func show_state(args:Array[String]):
 	
