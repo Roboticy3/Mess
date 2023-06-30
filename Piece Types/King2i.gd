@@ -51,7 +51,7 @@ func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	return o
 	
 func can_castle_to(direction:Vector2i, p:Piece, b:Board):
-	var is_empty = func (p, b, pos): return b.get_piece(pos) == null
+	var is_empty = func (_p, b, pos): return b.get_piece(pos) == null
 	var positions = spaces_from_line_directions([direction], p, b, is_empty, 3)[0]
 	if positions.size() < 2:
 		return

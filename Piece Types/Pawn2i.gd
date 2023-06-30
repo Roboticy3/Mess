@@ -29,7 +29,6 @@ func generate_options(p:Piece, b:=Accessor.current_board)->Dictionary:
 		return options
 	
 	var p_state = p.get_state()
-	var b_state = b.get_state()
 	
 	#forward step
 	var up_one:Vector2i = to_global(p_state, b, Vector2i(0, 1))

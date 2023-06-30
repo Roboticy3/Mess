@@ -288,9 +288,9 @@ func get_winner(_state:=current_state) -> Team:
 
 #traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds
 func traverse(from, to):
-	var v = to
+	var v = from + to - from
 	
-	if has_position(to):
+	if has_position(v):
 		return v
 	
 	return null

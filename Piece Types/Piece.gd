@@ -38,9 +38,9 @@ func _ready():
 	
 	state = starting_state
 
-func generate_options(b:=Accessor.current_board, set:=true) -> Dictionary:
+func generate_options(b:=Accessor.current_board, apply:=true) -> Dictionary:
 	var res := type.generate_options(self, b)
-	if set: options = res
+	if apply: options = res
 	return res
 
 func to_global(position, b:=Accessor.current_board):

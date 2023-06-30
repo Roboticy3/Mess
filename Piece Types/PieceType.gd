@@ -23,7 +23,6 @@ func can_take(p:Piece, b:Board, position) -> bool:
 
 #from a list of local positions
 func add_options_from_positions(options:Dictionary, positions:Array, p:Piece, b:Board, option=option_move, validator=can_take) -> void:
-	var p_state = p.get_state()
 	for pos in positions:
 		pos = to_global(p.get_state(), b, pos)
 		
