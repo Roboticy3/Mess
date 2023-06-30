@@ -3,22 +3,23 @@ class_name PieceType
 
 var name:StringName = "?"
 
-var state_form:Dictionary = {"team":Team,"moves":0,"position":null}
+var state_form:Dictionary = {"position":null}
 
 func generate_options(_p:Piece, _b:=Accessor.current_board)->Dictionary:
 	return {}
 
 #options typically take a piece, board, and the option's "key" or id specifying a position or holding more information
-func option_move(p:Piece, b:Board, o) -> void:
-	b.move_piece(p, o)
-
-func can_take(p:Piece, b:Board, position) -> bool:
-	return position && b.get_team(position) != p.get_team()
+func option_move(p:Piece, b:Board, o) -> Piece:
+	return b.move_piece(p, o)
 
 func to_global(s:Dictionary, b:Board, position):
 	return b.traverse(s["position"], s["position"] + position)
 
-###Builtin forms for generating options in bulk
+###Builtin forms for generating options
+
+func can_take(p:Piece, b:Board, position) -> bool:
+	var t = p.get_team()
+	return position && b.get_team(position) != t || t == null
 
 #from a list of local positions
 func add_options_from_positions(options:Dictionary, positions:Array, p:Piece, b:Board, option=option_move, validator=can_take) -> void:

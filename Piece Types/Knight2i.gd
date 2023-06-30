@@ -21,5 +21,6 @@ const squares:Array[Vector2i] = [
 ]
 func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	var o := {}
+	if p.get_team() != b.get_team(): return o
 	add_options_from_positions(o, squares, p, b)
 	return o

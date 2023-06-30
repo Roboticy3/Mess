@@ -2,6 +2,8 @@ extends PieceType
 class_name King2i
 
 const king2i_state_form := {
+	"team": Accessor.types.TYPE.TEAM,
+	"moves": 0,
 	"position": Vector2i(),
 	"rook axes": Vector2i(1, 0)
 	}
@@ -11,9 +13,14 @@ func _init():
 	state_form.merge(king2i_state_form, true)
 
 func option_castle(king:Piece, b:Board, o:Vector2i, rook:Piece, ro:Vector2i) -> void:
-	
 	option_move(king, b, o)
 	option_move(rook, b, ro)
+
+#hook the movement function to update moves
+func option_move(p,b,o):
+	p = super.option_move(p,b,o)
+	p.state["moves"] += 1
+	return p
 
 const squares:Array[Vector2i] = [
 	Vector2i(1, 0),
@@ -28,6 +35,7 @@ const squares:Array[Vector2i] = [
 func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	
 	var o := {}
+	if p.get_team() != b.get_team(): return o
 	var p_state = p.get_state()
 	add_options_from_positions(o, squares, p, b)
 	

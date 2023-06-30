@@ -17,10 +17,22 @@ func _ready():
 		return
 	
 	for k in type.state_form:
-		if !starting_state.has(k):
-			starting_state[k] = type.state_form[k]
-		elif typeof(starting_state[k]) != typeof(type.state_form[k]):
-			push_error("starting_state pair (", k, ": ", starting_state[k], ") does not match the type of the state_form pair (", k, ": ", type.state_form[k], "), aborting piece creation.")
+		var v = starting_state.get(k)
+		var f = type.state_form[k]
+		
+		if v is NodePath:
+			v = get_node_or_null(v)
+		
+		var custom_type = f is Accessor.types.TYPE
+		
+		if v == null:
+			starting_state[k] = f
+		elif custom_type && Accessor.types.of(v) != f:
+			push_error("starting_state pair (", k, ": path to ", v, ") does not match the custom type of the state_form pair (", k, ": ", Accessor.types.get_name(f), "), aborting piece creation.")
+			call_deferred("free")
+			return
+		elif !custom_type && (typeof(v) != typeof(type.state_form[k])):
+			push_error("starting_state pair (", k, ": ", v, ") does not match the type of the state_form pair (", k, ": ", f, "), aborting piece creation.")
 			call_deferred("free")
 			return
 	
@@ -40,7 +52,7 @@ func get_state() -> Dictionary:
 	return state
 
 func get_team():
-	return state["team"]
+	return state.get("team")
 
 func _to_string():
 	var result := "Piece:<" + str(type)

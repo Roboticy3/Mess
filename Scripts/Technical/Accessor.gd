@@ -2,13 +2,15 @@ extends Node
 
 var current_board:Board
 
+const types := preload("res://Scripts/Technical/CustomTypes.gd")
+
 func _ready():
 	get_children_recursive(
 	get_tree().root,
 	func (v): if v is Board && v.active: current_board = v
 	)
 
-func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[Node]:
+static func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[Node]:
 	var stk:Array[Node] = [v]
 	var fnd := {}
 	while !stk.is_empty():
@@ -55,7 +57,7 @@ func shaped_2i_state_to_string(state:Dictionary, shape:Array[Bound]=current_boar
 	
 	return result
 
-func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
+static func piece_single_character_display(p:Piece, display_mode:int = 0) -> String:
 	match display_mode:
 		0:
 			return p.type.name.left(1)

@@ -2,6 +2,7 @@ extends PieceType
 class_name Pawn2i
 
 const pawn2i_state_form := {
+		"moved": false,
 		"position": Vector2i(), 
 		"direction": Vector2i(),
 		"distance": 0
@@ -11,8 +12,17 @@ func _init():
 	name = "pawn2i"
 	state_form.merge(pawn2i_state_form, true)
 
+func option_move(p,b,o):
+	p = super.option_move(p,b,o)
+	p.state["moved"] = true
+	return p
+
 func generate_options(p:Piece, b:=Accessor.current_board)->Dictionary:
+	
 	var options := {}
+	
+	if p.get_team() != b.get_team():
+		return options
 	
 	if !(p.type is Pawn2i):
 		push_error("PieceType Pawn2i can only generate options for Pawn2i pieces")
@@ -40,7 +50,7 @@ func generate_options(p:Piece, b:=Accessor.current_board)->Dictionary:
 	#double forward step
 	var up_two = to_global(p_state, b, Vector2i(0, 2))
 	
-	if p_state["moves"] == 0 && !b.get_piece(up_one) && !b.get_piece(up_two):
+	if !p_state["moved"] && !b.get_piece(up_one) && !b.get_piece(up_two):
 		options[up_two] = option_move.bind(p, b, up_two)
 	
 	return options

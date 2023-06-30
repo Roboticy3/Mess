@@ -24,7 +24,7 @@ func _ready():
 
 func select_piece(pos) -> Piece:
 	var p = board.get_piece(pos)
-	if p && teams.has(p.get_team()):
+	if p:
 		selection = p
 		Accessor.a_print("selected " + str(p))
 		Accessor.a_print("options: " + str(p.options.keys()))

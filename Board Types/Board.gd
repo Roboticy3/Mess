@@ -25,8 +25,8 @@ var build := false
 var position_type = TYPE_NIL
 
 #the shape of the board and the teams on it
-var shape:Array[Bound]
-var teams:Array[Team]
+@export var shape:Array[Bound]
+@export var teams:Array[Team]
 
 #the sources of the board's objects in the SceneTree, optionally used to fill shape, teams, and the pieces in starting_state
 @export var node_paths:Array[NodePath] = [NodePath(".")]
@@ -109,7 +109,6 @@ func move_piece(p:Piece, new_pos) -> Piece:
 	
 	var n_s := p_new.get_state()
 	n_s["position"] = new_pos
-	n_s["moves"] += 1
 	
 	s.erase(pos)
 	add_piece(p_new)
@@ -125,10 +124,6 @@ func g_options() -> void:
 	for pos in o:
 		var p:Piece = get_piece(pos)
 		if !p: continue
-		
-		if p.get_team() != get_state_team(): 
-			p.options = {}
-			continue
 		
 		p.generate_options(self)
 
@@ -182,9 +177,6 @@ func b_options(depth:=1) -> void:
 	for pos in s:
 		var p:Piece = get_piece(pos, s)
 		if !p: continue
-		
-		if p.get_team() != get_state_team(): 
-			continue
 		
 		p.generate_options(self)
 		var p_o := p.options
@@ -266,15 +258,21 @@ func get_piece(pos, s:=current_state):
 	if !(p is Piece): return null
 	return p
 
-func get_team(pos):
-	var p = get_piece(pos)
-	if p: return p.get_state()["team"]
-	return null
-
 func get_state(turn := states.size() - 1) -> Dictionary:
 	return states[turn]
 
-func get_state_team(turn := states.size() - 1) -> Team:
+func get_team(pos=null, turn := states.size() - 1) -> Team:
+	
+	if typeof(pos) == position_type:
+		var p:Piece = get_piece(pos)
+		var t:Team
+		if p: t = p.get_team()
+		
+		return t
+	
+	if teams.is_empty():
+		return null
+	
 	return teams[turn % teams.size()]
 
 #returns false if the input position is out of bounds
