@@ -44,10 +44,15 @@ var current_state := starting_state
 #first board flagged as active will be set to Accessor's current_board
 var active := true
 
+func _init():
+	if active: Accessor.current_board = self
+
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
 	for v in node_paths:
 		Accessor.get_children_recursive(get_node(v), add_node)
+	#sort the teams array by the priority assigned to each team
+	teams.sort_custom(func (t1:Team, t2:Team) -> bool: return t1.priority > t2.priority)
 	
 #everybody shut up new class just dropped
 #call this with a node to add it to the board individually

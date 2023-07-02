@@ -3,7 +3,7 @@ class_name King2i
 
 const king2i_state_form := {
 	"team": Accessor.types.TYPE.TEAM,
-	"moves": 0,
+	"moved": false,
 	"position": Vector2i(),
 	"rook axes": Vector2i(1, 0)
 	}
@@ -19,7 +19,7 @@ func option_castle(king:Piece, b:Board, o:Vector2i, rook:Piece, ro:Vector2i) -> 
 #hook the movement function to update moves
 func option_move(p,b,o):
 	p = super.option_move(p,b,o)
-	p.state["moves"] += 1
+	p.state["moved"] = true
 	return p
 
 const squares:Array[Vector2i] = [
@@ -39,7 +39,7 @@ func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	var p_state = p.get_state()
 	add_options_from_positions(o, squares, p, b)
 	
-	if p_state["moves"] != 0:
+	if !p_state["moved"]:
 		return o
 	
 	var ra = p_state["rook axes"]

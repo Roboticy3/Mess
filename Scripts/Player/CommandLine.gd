@@ -1,7 +1,7 @@
 extends LineEdit
 class_name CommandLine
 
-#the commandline is a text medium for a user to interact with a board as a player
+#the commandline is a text medium for a user to interact with a board using a player
 
 #button to send a command
 @export var send_action := "ui_text_completion_accept"
@@ -11,13 +11,18 @@ class_name CommandLine
 @onready var player:Player = get_node(player_path)
 
 #check for the button to send a command
-func _process(_delta):
-	if !text.is_empty() && Input.is_action_just_pressed(send_action):
+func _input(event):
+	if event.is_action_pressed(send_action) && !text.is_empty():
 		send()
+		text = ""
 
 #send a command by matching the first word in this commandline to something in the constant list of commands
 #then run that command with the rest of the words as arguments
 func send():
+	if !player.board:
+		Accessor.a_print("Player " + str(player) + " has no Board")
+		return
+	
 	var s := text.split(" ")
 	var args := s.slice(1)
 	
@@ -29,8 +34,6 @@ func send():
 		commands[2]: show_state(args)
 		commands[3]: undo()
 		commands[4]: show_options(args)
-	
-	text = ""
 
 const commands := [
 	"select",
@@ -62,14 +65,15 @@ func play(args:Array[String]):
 
 func show_state(args:Array[String]):
 	
-	var idx := player.board.states.size() - 1
+	var b := player.board
+	var idx := b.states.size() - 1
 
 	var c := false
 	if !args.is_empty():
 		if args.has("-a"):
-			for b in player.board.states:
+			for s in b.states:
 				Accessor.a_print(
-					Accessor.shaped_2i_state_to_string(b)
+					Accessor.shaped_2i_state_to_string(s, b.shape)
 				)
 			return
 		
@@ -77,37 +81,40 @@ func show_state(args:Array[String]):
 		
 		idx = args.back().to_int()
 	
-	if idx >= player.board.states.size() || -idx > player.board.states.size():
+	if idx >= b.states.size() || -idx > b.states.size():
 		Accessor.a_print("state " + str(idx) + " out of bounds")
 		return
 	
 	if c: Accessor.a_print(
-		Accessor.shaped_2i_state_to_string(player.board.current_state)
+		Accessor.shaped_2i_state_to_string(b.current_state, b.shape)
 	)
 	else: Accessor.a_print(
-		Accessor.shaped_2i_state_to_string(player.board.get_state(idx))
+		Accessor.shaped_2i_state_to_string(b.get_state(idx), b.shape)
 	)
 
 func undo():
-	var s := player.board.undo()
+	var b := player.board
+	var s := b.undo()
+	
 	Accessor.a_print(
-		"undid:\n" + Accessor.shaped_2i_state_to_string(s)
+		"undid:\n" + Accessor.shaped_2i_state_to_string(s, b.shape)
 	)
 	
 	Accessor.a_print(
-		"current:\n" + Accessor.shaped_2i_state_to_string(player.board.current_state)
+		"current:\n" + Accessor.shaped_2i_state_to_string(b.current_state, b.shape)
 	)
 
 func show_options(args:Array[String]):
-	var a = args.has("-a")
+	var a := args.has("-a")
+	var b := player.board
 	
 	if !player.selection && !a:
 		Accessor.a_print("cannot show options of a piece with no selection, use -a argument to show options on all pieces")
 		return
 	
 	if a:
-		for pos in player.board.current_state:
-			var p:Piece = player.board.current_state[pos]
+		for pos in b.current_state:
+			var p:Piece = b.current_state[pos]
 			if !(p is Piece):
 				continue
 				
@@ -121,7 +128,7 @@ func show_options(args:Array[String]):
 			for o in p_o:
 				if p_o is Dictionary:
 					Accessor.a_print(
-						Accessor.shaped_2i_state_to_string(p_o[o])
+						Accessor.shaped_2i_state_to_string(p_o[o], b.shape)
 					)
 				else:
 					Accessor.a_print(str(p_o[o]))
@@ -132,7 +139,7 @@ func show_options(args:Array[String]):
 	for o in p_o:
 		if p_o is Dictionary:
 			Accessor.a_print(
-				Accessor.shaped_2i_state_to_string(p_o[o])
+				Accessor.shaped_2i_state_to_string(p_o[o], b.shape)
 			)
 		else:
 			Accessor.a_print(str(p_o[o]))
