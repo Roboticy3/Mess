@@ -14,8 +14,6 @@ func get_size():
 
 #decide which corener is greater, and check if the given position is between them
 func has_position(pos) -> bool:
-	
-	print(a, b, pos, a >= pos and pos >= b)
 	return a >= pos and pos >= b
 
 func _to_string():
