@@ -13,7 +13,7 @@ func _ready():
 	
 	#generate options to use for the turn
 	build = true
-	b_options()
+	b_options(2)
 	
 	Accessor.a_print(str(self))
 

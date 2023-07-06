@@ -166,7 +166,7 @@ func b_options(depth:=1) -> void:
 			k[i] = Removed
 	
 	for i in k.size():
-		if k[i] is Removed: continue
+		if k[i] is Object and k[i] == Removed: continue
 		
 		var p = v[i]
 		if !(p is Piece): continue
@@ -176,15 +176,10 @@ func b_options(depth:=1) -> void:
 		
 		for j in o_k.size():
 			var o = o_v[j]
-			
-			print(p.type, p.get_position(), typeof(o))
-			
-			if o is Dictionary:
-				add_state(o)
-			else:
-				var new_s = b_state_from_key_val(k, v)
-				add_state(new_s)
-				o.call()
+
+			var new_s = b_state_from_key_val(k, v)
+			add_state(new_s)
+			o.call()
 			
 			b_options(depth - 1)
 			p.options[o_k[j]] = states.pop_back()
@@ -197,7 +192,7 @@ func b_state_from_key_val(k:Array, v:Array) -> Dictionary:
 	var new_s = {}
 	
 	for i in k.size():
-		if k[i] is Removed: continue
+		if k[i] is Object and k[i] == Removed: continue
 		
 		var p = v[i]
 		if !(p is Piece): continue
