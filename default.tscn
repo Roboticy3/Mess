@@ -288,6 +288,7 @@ _a = Vector2i(7, 7)
 [node name="Test" type="Node" parent="."]
 script = ExtResource("6_34qhd")
 team_paths = Array[NodePath]([NodePath("../Board/White Team"), NodePath("../Board/Black Team")])
+board_path = NodePath("../Board")
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 1

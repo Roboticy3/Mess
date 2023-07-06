@@ -39,7 +39,8 @@ func _ready():
 	state = starting_state
 
 func generate_options(b:=Accessor.current_board, apply:=true) -> Dictionary:
-	var res := type.generate_options(self, b)
+	var res := {}
+	if get_team() == b.get_team(): res = type.generate_options(self, b)
 	if apply: options = res
 	return res
 

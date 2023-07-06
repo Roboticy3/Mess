@@ -15,12 +15,18 @@ class_name Player
 var teams:Array[Team] = [null]
 
 #the player must have a board to interact with to be able to do anything
-@export_node_path("Board") var board_path:NodePath
-@onready var board:Board = get_node_or_null(board_path)
+@export_node_path var board_path:NodePath
+var board:Board
 
 var selection:Piece
 
 func _ready():
+	
+	var b = get_node_or_null(board_path)
+	if b is Board:
+		board = b
+	else:
+		push_error("Player ", self, "'s board path does not point to a Board")
 	
 	for i in team_paths.size():
 		var v = get_node(team_paths[i])

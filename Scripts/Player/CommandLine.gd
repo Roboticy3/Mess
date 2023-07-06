@@ -125,25 +125,22 @@ func show_options(args:Array[String]):
 			
 			Accessor.a_print(str(p))
 			
-			for o in p_o:
-				if p_o is Dictionary:
-					Accessor.a_print(
-						Accessor.shaped_2i_state_to_string(p_o[o], b.shape)
-					)
-				else:
-					Accessor.a_print(str(p_o[o]))
+			_show_options(p, b)
 			
 		return
 	
-	var p_o := player.selection.options 
+	_show_options(player.selection, b)
+
+func _show_options(p:Piece, b:Board):
+	var p_o := p.options 
 	for o in p_o:
+		Accessor.a_print(str(o) + ":")
 		if p_o is Dictionary:
 			Accessor.a_print(
 				Accessor.shaped_2i_state_to_string(p_o[o], b.shape)
 			)
 		else:
 			Accessor.a_print(str(p_o[o]))
-	
 
 func args_to_vector2i(args:Array) -> Vector2i:
 	var x = args[0].to_int()

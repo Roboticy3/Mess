@@ -21,13 +21,6 @@ func generate_options(p:Piece, b:=Accessor.current_board)->Dictionary:
 	
 	var options := {}
 	
-	if p.get_team() != b.get_team():
-		return options
-	
-	if !(p.type is Pawn2i):
-		push_error("PieceType Pawn2i can only generate options for Pawn2i pieces")
-		return options
-	
 	var p_state = p.get_state()
 	
 	#forward step

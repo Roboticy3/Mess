@@ -10,10 +10,10 @@ func _ready():
 	#fill the board
 	fill_nodes()
 	
+	
 	#generate options to use for the turn
 	build = true
 	b_options()
-#	g_options()
 	
 	Accessor.a_print(str(self))
 
