@@ -79,7 +79,6 @@ var add_node:Callable = func (v:Node) -> bool:
 
 #add a piece that was already in the SceneTree
 func add_existing_piece(p:Piece) -> void:
-	p.starting_turn = states.size() - 1
 	add_piece(p)
 
 #add a piece, even if it is not in the SceneTree
@@ -157,49 +156,55 @@ func b_options(depth:=1) -> void:
 	var k := s.keys()
 	var v := s.values()
 	
-	for i in k.size():
-		var p = v[i]
-		if !(p is Piece): continue
-		
-		p.generate_options(self)
-		if p.options.is_empty():
-			k[i] = Removed
+	print(get_team())
 	
+	#create a base for every new state to be created at this depth
+	#contains a copy of all pieces which have options, with the options filled out
+	var b_new_s := {}
 	for i in k.size():
-		if k[i] is Object and k[i] == Removed: continue
-		
 		var p = v[i]
-		if !(p is Piece): continue
+		if !(p is Piece): 
+			k[i] = null
+			continue
 		
-		var o_k = p.options.keys()
-		var o_v = p.options.values()
+		var options:Dictionary = p.generate_options(self, false)
+		
+		if options.is_empty():
+			k[i] = null
+			continue
+		
+		var new_p := copy_piece(p)
+		new_p.options = options
+		
+		b_new_s[k[i]] = new_p
+		v[i] = new_p
+	
+	merge_state(b_new_s, s)
+	
+	#build states from options, by applying each option to the base new state
+	for i in k.size():
+		if k[i] == null: continue
+		var p:Piece = v[i]
+		
+		var options := p.options
+		var o_k := options.keys()
+		var o_v := options.values()
 		
 		for j in o_k.size():
-			var o = o_v[j]
-
-			var new_s = b_state_from_key_val(k, v)
-			add_state(new_s)
-			o.call()
+			
+			if o_v[j] is Dictionary:
+				add_state(o_v[j])
+			
+			elif o_v[j] is Callable:
+				var new_s := duplicate_state(b_new_s)
+				add_state(new_s)
+				merge_state(new_s)
+				o_v[j].call()
 			
 			b_options(depth - 1)
-			p.options[o_k[j]] = states.pop_back()
 			
+			options[o_k[j]] = states.pop_back()
 			current_state = s.duplicate()
-
-#copy all the pieces in a state cut down by b_options
-func b_state_from_key_val(k:Array, v:Array) -> Dictionary:
-	
-	var new_s = {}
-	
-	for i in k.size():
-		if k[i] is Object and k[i] == Removed: continue
-		
-		var p = v[i]
-		if !(p is Piece): continue
-		
-		new_s[k[i]] = p
-	
-	return new_s
 
 func add_state(s:={}, merge:=false):
 	states.append(s)
@@ -213,13 +218,19 @@ func undo() -> Dictionary:
 		return {}
 	
 	var s:Dictionary = states.pop_back()
+	var k := s.keys()
+	var v := s.values()
 	
-	if build:
-		current_state = get_state()
-	else:
-		for pos in s:
-			var p = s[pos]
-			current_state[pos] = p.last
+	for i in k.size():
+		var p = v[i]
+		if p is Piece or p is Removed:
+			print(k[i],p==p.last)
+			if p.last == null or p.last is Removed:
+				current_state.erase(k[i])
+			else:
+				current_state[k[i]] = p.last
+	
+	b_options()
 	
 	return s
 
@@ -234,13 +245,33 @@ func g_rebuild_current():
 		
 		i += 1
 
-func merge_state(s:Dictionary):
-	for pos in s:
-		var p = s[pos]
+func merge_state(s:Dictionary, target:=current_state):
+	var k := s.keys()
+	var v := s.values()
+	
+	for i in k.size():
+		var p = v[i]
 		if !(p is Removed):
-			current_state[pos] = p
+			if p is Piece:
+				var x = target.get(k[i])
+				p.last = x
+			
+			target[k[i]] = p
 		else:
-			current_state.erase(pos)
+			target.erase(k[i])
+
+func duplicate_state(s:Dictionary) -> Dictionary:
+	var new_s := s.duplicate()
+	
+	var k := s.keys()
+	var v := s.values()
+	
+	for i in k.size():
+		var p = v[i]
+		if p is Piece:
+			new_s[k[i]] = copy_piece(p)
+	
+	return new_s
 
 ###GETTERS
 
@@ -293,8 +324,8 @@ func copy_piece(p:Piece) -> Piece:
 	var pp = p.get_parent()
 	
 	new_p.type = p.type
+	new_p.last = p.last
 	new_p.state = p.state.duplicate()
-	new_p.starting_turn = states.size() - 1
 	
 	pp.add_child(new_p)
 	

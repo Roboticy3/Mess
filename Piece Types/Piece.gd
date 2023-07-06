@@ -6,7 +6,6 @@ class_name Piece
 @export var starting_state:Dictionary = {"position":null}
 
 var state:Dictionary
-var starting_turn := 0
 
 var options:Dictionary
 
