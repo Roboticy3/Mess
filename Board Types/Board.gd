@@ -147,7 +147,7 @@ func call_option(p:Piece, o) -> bool:
 	return true
 
 #similar to generate options, except it generates the states resulting from each option as the values, instead of the Callables themselves
-func b_options(depth:=1) -> void:
+func b_options(depth:=2) -> void:
 	
 	if depth < 1:
 		return
@@ -155,8 +155,6 @@ func b_options(depth:=1) -> void:
 	var s := current_state.duplicate()
 	var k := s.keys()
 	var v := s.values()
-	
-	print(get_team())
 	
 	#create a base for every new state to be created at this depth
 	#contains a copy of all pieces which have options, with the options filled out
@@ -167,6 +165,7 @@ func b_options(depth:=1) -> void:
 			k[i] = null
 			continue
 		
+		p.options = {}
 		var options:Dictionary = p.generate_options(self, false)
 		
 		if options.is_empty():
@@ -209,7 +208,7 @@ func b_options(depth:=1) -> void:
 func add_state(s:={}, merge:=false):
 	states.append(s)
 	
-	if merge:	merge_state(states[-1])
+	if merge: merge_state(states[-1])
 
 #undo and return the undone state
 func undo() -> Dictionary:
@@ -218,32 +217,11 @@ func undo() -> Dictionary:
 		return {}
 	
 	var s:Dictionary = states.pop_back()
-	var k := s.keys()
-	var v := s.values()
-	
-	for i in k.size():
-		var p = v[i]
-		if p is Piece or p is Removed:
-			print(k[i],p==p.last)
-			if p.last == null or p.last is Removed:
-				current_state.erase(k[i])
-			else:
-				current_state[k[i]] = p.last
+	tear_state(s)
 	
 	b_options()
 	
 	return s
-
-#fill the current_state from every generated state
-func g_rebuild_current():
-	
-	current_state = states[0].duplicate()
-	var i := 1
-	while i < states.size():
-		
-		merge_state(states[i])
-		
-		i += 1
 
 func merge_state(s:Dictionary, target:=current_state):
 	var k := s.keys()
@@ -259,6 +237,20 @@ func merge_state(s:Dictionary, target:=current_state):
 			target[k[i]] = p
 		else:
 			target.erase(k[i])
+
+func tear_state(s:Dictionary, target:=current_state):
+	var k := s.keys()
+	var v := s.values()
+	
+	for i in k.size():
+		var p = v[i]
+		if p is Removed or p is Piece:
+			var l = p.last
+			if l is Piece:
+				target[k[i]] = l
+			else:
+				target.erase(k[i])
+
 
 func duplicate_state(s:Dictionary) -> Dictionary:
 	var new_s := s.duplicate()
