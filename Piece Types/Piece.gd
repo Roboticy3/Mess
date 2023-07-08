@@ -39,7 +39,7 @@ func _ready():
 
 func generate_options(b:=Accessor.current_board, apply:=true) -> Dictionary:
 	var res := {}
-	if get_team() == b.get_team(): res = type.generate_options(self, b)
+	if b.is_playable(self): res = type.generate_options(self, b)
 	if apply: options = res
 	return res
 

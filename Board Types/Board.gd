@@ -90,6 +90,9 @@ func add_piece(p:Piece):
 #move piece p to a new position on the active state
 #adds a Removed in the old position of the piece in generated mode
 func move_piece(p:Piece, new_pos) -> Piece:
+	if new_pos == null:
+		print("ah!")
+	
 	var s := current_state
 	var p_s := p.get_state()
 	var pos = p_s["position"]
@@ -273,6 +276,10 @@ func get_piece(pos, s:=current_state):
 	var p = s[pos]
 	if !(p is Piece): return null
 	return p
+
+func is_playable(p:Piece) -> bool:
+	var t = p.get_team()
+	return t == null || t == get_team()
 
 func get_state(turn := states.size() - 1) -> Dictionary:
 	return states[turn]

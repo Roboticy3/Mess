@@ -4,7 +4,7 @@ class_name Pawn2i
 const pawn2i_state_form := {
 		"moved": false,
 		"position": Vector2i(), 
-		"direction": Vector2i(),
+		"direction": Vector2i(0, 1),
 		"distance": 0
 		}
 

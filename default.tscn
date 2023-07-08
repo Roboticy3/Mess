@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://csevw85mg4w2l"]
+[gd_scene load_steps=23 format=3 uid="uid://csevw85mg4w2l"]
 
 [ext_resource type="Script" path="res://Board Types/Board2i.gd" id="1_e3vkr"]
 [ext_resource type="Script" path="res://Scripts/Board Elements/Team.gd" id="2_l4gke"]
@@ -33,6 +33,9 @@ script = ExtResource("8_q5qix")
 
 [sub_resource type="Resource" id="Resource_6gybt"]
 script = ExtResource("9_wrjyr")
+
+[sub_resource type="Resource" id="Resource_308xv"]
+script = ExtResource("5_sjywq")
 
 [node name="Default" type="Control"]
 layout_mode = 3
@@ -284,6 +287,13 @@ starting_state = {
 [node name="Bound2i" type="Node" parent="Board/Shape"]
 script = ExtResource("10_mxo0n")
 _a = Vector2i(7, 7)
+
+[node name="Pawn" type="Node" parent="Board"]
+script = ExtResource("3_inpwt")
+type = SubResource("Resource_308xv")
+starting_state = {
+"position": Vector2i(2, 3)
+}
 
 [node name="Test" type="Node" parent="."]
 script = ExtResource("6_34qhd")
