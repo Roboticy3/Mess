@@ -220,12 +220,10 @@ func b_options(depth:=2) -> void:
 				merge_state(new_s)
 				o_v[j].call()
 			
-			var w := is_winning(get_team_idx(get_turn() - 1))
-			var l := is_losing(get_team_idx())
+			var l := should_lose(get_team_idx())
 			
-			if depth == 1 && (w || l):
+			if depth == 1 && l:
 				print(Accessor.shaped_2i_state_to_string(current_state, shape))
-				print(w)
 				print(l)
 			
 			b_options(depth - 1)
@@ -353,10 +351,10 @@ func copy_piece(p:Piece) -> Piece:
 
 ### DESIGNED TO BE OVERRIDDEN BY INHERITORS
 
-func is_winning(team_idx:int) -> bool:
+func should_win(team_idx:int) -> bool:
 	return false
 
-func is_losing(team_idx:int) -> bool:
+func should_lose(team_idx:int) -> bool:
 	return false
 
 #traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds

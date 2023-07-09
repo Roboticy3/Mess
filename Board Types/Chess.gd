@@ -16,5 +16,5 @@ func add_piece(p:Piece, pos=null) -> void:
 	super.add_piece(p, pos)
 	
 
-func is_losing(team_idx:int) -> bool:
+func should_lose(team_idx:int) -> bool:
 	return kings[team_idx] == null
