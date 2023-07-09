@@ -45,8 +45,8 @@ func select_piece(pos) -> Piece:
 
 func play(o) -> bool:
 	var success := board.call_option(selection, o)
-	if success: Accessor.a_print(str(self) + " played option " + str(o) + " found in piece " + str(selection))
-	else: Accessor.a_print(str(self) + " no option " + str(o) + " found in piece " + str(selection))
+	if success: Accessor.a_print(str(self) + " played option " + str(o))
+	else: Accessor.a_print(str(self) + " no option " + str(o))
 	
 	selection = null
 	

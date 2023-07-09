@@ -66,7 +66,7 @@ func play(args:Array[String]):
 func show_state(args:Array[String]):
 	
 	var b := player.board
-	var idx := b.states.size() - 1
+	var idx := b.get_turn()
 
 	var c := false
 	if !args.is_empty():
