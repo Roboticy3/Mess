@@ -14,7 +14,6 @@ func add_piece(p:Piece, pos=null) -> void:
 			kings[i] = null
 	
 	super.add_piece(p, pos)
-	
 
 func should_lose(team_idx:int) -> bool:
 	return kings[team_idx] == null

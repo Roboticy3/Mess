@@ -45,7 +45,6 @@ grow_vertical = 2
 [node name="Board" type="Node" parent="."]
 script = ExtResource("1_843vs")
 max_shape = 1
-node_paths = null
 
 [node name="White Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")
@@ -132,7 +131,7 @@ starting_state = {
 script = ExtResource("3_inpwt")
 type = SubResource("Resource_ve2vv")
 starting_state = {
-"position": Vector2i(0, 7)
+"position": Vector2i(3, 7)
 }
 
 [node name="Rook2" type="Node" parent="Board/White Team"]

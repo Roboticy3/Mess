@@ -220,12 +220,6 @@ func b_options(depth:=2) -> void:
 				merge_state(new_s)
 				o_v[j].call()
 			
-			var l := should_lose(get_team_idx())
-			
-			if depth == 1 && l:
-				print(Accessor.shaped_2i_state_to_string(current_state, shape))
-				print(l)
-			
 			b_options(depth - 1)
 			
 			options[o_k[j]] = states.pop_back()
