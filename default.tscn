@@ -131,7 +131,7 @@ starting_state = {
 script = ExtResource("3_inpwt")
 type = SubResource("Resource_ve2vv")
 starting_state = {
-"position": Vector2i(3, 7)
+"position": Vector2i(0, 0)
 }
 
 [node name="Rook2" type="Node" parent="Board/White Team"]

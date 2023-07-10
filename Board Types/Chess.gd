@@ -15,5 +15,11 @@ func add_piece(p:Piece, pos=null) -> void:
 	
 	super.add_piece(p, pos)
 
+func _ready():
+	super._ready()
+	
+	kings.sort_custom(func (a:Piece, b:Piece): 
+		return a && b && a.get_team().priority > b.get_team().priority)
+
 func should_lose(team_idx:int) -> bool:
 	return kings[team_idx] == null

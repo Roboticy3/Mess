@@ -53,12 +53,12 @@ var active := true
 func _init():
 	if active: Accessor.current_board = self
 
+var team_sort := func (a, b): return a.priority > b.priority
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
 	for v in node_paths:
 		Accessor.get_children_recursive(get_node(v), add_node)
-	#sort the teams array by the priority assigned to each team
-	teams.sort_custom(func (a:Team, b:Team) -> bool: return a.priority > b.priority)
+	teams.sort_custom(team_sort)
 
 func _ready():
 	fill_nodes()
@@ -87,7 +87,6 @@ var add_node:Callable = func (v:Node) -> bool:
 		else: Accessor.a_print("Could not add " + str(v) + ", max teams exceeded")
 	
 	return false
-
 ### STATE MUTATORS
 #only call after calling add_state()!
 
@@ -219,6 +218,9 @@ func b_options(depth:=2) -> void:
 				add_state(new_s)
 				merge_state(new_s)
 				o_v[j].call()
+			
+			if should_lose(get_team_idx()):
+				print(self, get_team())
 			
 			b_options(depth - 1)
 			
