@@ -219,9 +219,6 @@ func b_options(depth:=2) -> void:
 				merge_state(new_s)
 				o_v[j].call()
 			
-			if should_lose(get_team_idx()):
-				print(self, get_team())
-			
 			b_options(depth - 1)
 			
 			options[o_k[j]] = states.pop_back()
