@@ -40,8 +40,8 @@ var position_type = TYPE_NIL
 #the board stores its state at the beginning of each turn
 #each state is a dictionary including pieces and variables that can change during a game
 #each state should store its own copies of pieces and values for other states of the board
-var states:Array[Dictionary] = [starting_state.duplicate()]
-var current_state := starting_state
+var states:Array[Dictionary]
+var current_state:Dictionary
 
 #first board flagged as active will be set to Accessor's current_board
 var active := true
@@ -50,6 +50,9 @@ var active := true
 
 func _init():
 	if active: Accessor.current_board = self
+	
+	states = [starting_state.duplicate()]
+	current_state = starting_state.duplicate()
 
 var team_sort := func (a, b): return a.priority > b.priority
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
@@ -61,8 +64,10 @@ func fill_nodes():
 
 func _ready():
 	fill_nodes()
-	if build: b_options()
-	else: g_options()
+	
+	if build:b_options()
+	else:g_options()
+	
 	Accessor.a_print(str(self))
 	
 #everybody shut up new class just dropped
@@ -87,7 +92,6 @@ var add_node:Callable = func (v:Node, t:Array, s:Array) -> bool:
 	
 	return false
 ### STATE MUTATORS
-#only call after calling add_state()!
 
 #add a piece that was already in the SceneTree
 func add_existing_piece(p:Piece) -> void:
@@ -97,7 +101,7 @@ func add_existing_piece(p:Piece) -> void:
 func add_piece(p:Piece, pos=null) -> void:
 	if pos == null: pos = p.get_position()
 	
-	if get_piece(pos) == null:
+	if get_piece(pos) != null:
 		remove_piece(p, pos)
 	
 	get_state()[pos] = p

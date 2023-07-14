@@ -56,5 +56,5 @@ func get_team():
 
 func _to_string():
 	var result := "Piece:<" + str(type)
-	result += " at " + str(get_position()) + ", " + str(state) + ">"
+	result += ", " + str(state) + ">"
 	return result
