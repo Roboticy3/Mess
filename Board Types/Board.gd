@@ -55,15 +55,11 @@ var team_sort := func (a, b): return a.priority > b.priority
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
 	var a := add_node.bind(get_teams(),get_shape())
-	print(a.get_bound_arguments())
-	
 	for v in node_paths:
 		Accessor.get_children_recursive(get_node(v), a)
 	get_teams().sort_custom(team_sort)
 
 func _ready():
-	
-	
 	fill_nodes()
 	if build: b_options()
 	else: g_options()
@@ -379,6 +375,3 @@ func _traverse(from, to):
 		return v
 	
 	return null
-
-func _to_string() -> String:
-	return "Board " + str(get_shape()) + " | " + str(get_teams()) + " (build " + str(build) + ", turn " + str(get_turn()) + ")"

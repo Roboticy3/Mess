@@ -27,6 +27,8 @@ func shaped_2i_state_to_string(state:Dictionary, shape:Array,
 	if position_type != TYPE_VECTOR2I:
 		return "Not 2i"
 	
+	var temp_state := state.duplicate()
+	
 	var result := "(display mode " + str(display_mode) + ")\n"
 	for s in shape:
 		result += str(s) + ":\n"
@@ -40,8 +42,10 @@ func shaped_2i_state_to_string(state:Dictionary, shape:Array,
 				var p = state.get(pos)
 				if p is Piece:
 					result += piece_single_char_display(state[pos], display_mode, display_key) + " "
+					temp_state.erase(pos)
 				elif p is Removed:
 					result += "~ "
+					temp_state.erase(pos)
 				else:
 					result += ". "
 				
@@ -50,7 +54,7 @@ func shaped_2i_state_to_string(state:Dictionary, shape:Array,
 			result += "\n"
 			i -= 1
 		
-		result += "\n"
+		result += str(temp_state) + "\n"
 	
 	return result
 

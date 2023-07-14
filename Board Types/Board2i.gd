@@ -10,7 +10,7 @@ func _to_string():
 	if states.is_empty():
 		return "Board (empty)"
 	
-	var result:String = super._to_string() + "\n"
+	var result:String = ""
 	var s = current_state
 	
 	result += Accessor.shaped_2i_state_to_string(s, get_shape())
