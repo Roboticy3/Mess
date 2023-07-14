@@ -37,6 +37,8 @@ var position_type = TYPE_NIL
 	"shape":[],
 	"teams":[]}
 
+@export var dynamic_state_keys:PackedStringArray = []
+
 #the board stores its state at the beginning of each turn
 #each state is a dictionary including pieces and variables that can change during a game
 #each state should store its own copies of pieces and values for other states of the board
@@ -203,6 +205,9 @@ func b_options(depth:=2) -> void:
 		
 		b_new_s[k[i]] = new_p
 		v[i] = new_p
+	#additionally copy keys that were flagged as dynamic
+	for d in dynamic_state_keys:
+		b_new_s[d] = get_state().get(d)
 	
 	merge_state(b_new_s, s)
 	
