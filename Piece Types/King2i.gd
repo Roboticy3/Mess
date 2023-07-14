@@ -55,7 +55,7 @@ func can_castle_to(direction:Vector2i, p:Piece, b:Board):
 	if positions.size() < 2:
 		return
 	
-	var rook = b.get_piece(b.traverse(positions.back(), positions.back() + direction))
+	var rook = b.get_piece(b._traverse(positions.back(), positions.back() + direction))
 	if !(rook is Piece && rook.type is Rook2i) :
 		return
 	

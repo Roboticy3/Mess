@@ -52,7 +52,7 @@ func to_global(s:Dictionary, b:Board, position):
 	var bx := Vector2i(by.y, by.x)
 	var px:Vector2i = bx * position.x
 	var py:Vector2i = by * position.y
-	var result = b.traverse(s["position"], px + py + s["position"])
+	var result = b._traverse(s["position"], px + py + s["position"])
 	if result: return result
 	return s["position"]
 	

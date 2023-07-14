@@ -13,7 +13,7 @@ func option_move(p:Piece, b:Board, o) -> Piece:
 	return b.move_piece(p, o)
 
 func to_global(s:Dictionary, b:Board, position):
-	return b.traverse(s["position"], s["position"] + position)
+	return b._traverse(s["position"], s["position"] + position)
 
 ###Builtin forms for generating options
 func can_take(p:Piece, b:Board, position) -> bool:
@@ -66,14 +66,14 @@ func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=
 	for i in directions.size():
 		var j = 1
 		#starting from the first square in a direction, travel in that direction until a square that cannot be taken is reached
-		var pos = b.traverse(p_state["position"], p_state["position"] + directions[i])
+		var pos = b._traverse(p_state["position"], p_state["position"] + directions[i])
 		while validator.call(p, b, pos):
 			
 			positions[i].append(pos)
 			
-			#to travel in the direction, traverse the board from the current position to the next multiple of the direction
+			#to travel in the direction, _traverse the board from the current position to the next multiple of the direction
 			j += 1
-			pos = b.traverse(pos, pos + directions[i])
+			pos = b._traverse(pos, pos + directions[i])
 			
 			#nasa memory safety
 			if j > iterations:

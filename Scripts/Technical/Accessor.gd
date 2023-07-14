@@ -21,7 +21,7 @@ func get_children_recursive(v:Node, action:Callable = func (): pass) -> Array[No
 
 #return the state of a Board2i, with the pieces laid out on a 2d grid, as a string of rows and columns
 #requires a shape to bound the grid, I'd like the type to be Array[Bound2i] but typed array casts are still a little half baked, so I have to stay away from them here
-func shaped_2i_state_to_string(state:Dictionary, shape:Array[Bound], 
+func shaped_2i_state_to_string(state:Dictionary, shape:Array, 
 	display_mode:int = 0, display_key:="", position_type = current_board.position_type) -> String:
 	
 	if position_type != TYPE_VECTOR2I:

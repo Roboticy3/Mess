@@ -24,25 +24,23 @@ var build := true
 
 var position_type = TYPE_NIL
 
-#the shape of the board and the teams on it
-var shape:Array[Bound]
-var teams:Array[Team]
-#max shapes and teams, set to 0 to ignore
-@export var max_shape := 0
-@export var max_teams := 0
-
 #the sources of the board's objects in the SceneTree, optionally used to fill shape, teams, and the pieces in starting_state
 #anything outside of the Board's section of the SceneTree may not be loaded by the time the Board is loaded
 @export var node_paths:Array[NodePath] = [NodePath(".")]
 
+#max shapes and teams, set to 0 to ignore
+@export var max_shape := 0
+@export var max_teams := 0
+
 #the initial state of the board, can contain Pieces and Variants
-var starting_state := {}
+@export var starting_state := {
+	"shape":[],
+	"teams":[]}
 
 #the board stores its state at the beginning of each turn
 #each state is a dictionary including pieces and variables that can change during a game
 #each state should store its own copies of pieces and values for other states of the board
 var states:Array[Dictionary] = [starting_state.duplicate()]
-#only used when build is false
 var current_state := starting_state
 
 #first board flagged as active will be set to Accessor's current_board
@@ -56,11 +54,16 @@ func _init():
 var team_sort := func (a, b): return a.priority > b.priority
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
+	var a := add_node.bind(get_teams(),get_shape())
+	print(a.get_bound_arguments())
+	
 	for v in node_paths:
-		Accessor.get_children_recursive(get_node(v), add_node)
-	teams.sort_custom(team_sort)
+		Accessor.get_children_recursive(get_node(v), a)
+	get_teams().sort_custom(team_sort)
 
 func _ready():
+	
+	
 	fill_nodes()
 	if build: b_options()
 	else: g_options()
@@ -68,7 +71,7 @@ func _ready():
 	
 #everybody shut up new class just dropped
 #call this with a node to add it to the board individually
-var add_node:Callable = func (v:Node) -> bool:
+var add_node:Callable = func (v:Node, t:Array, s:Array) -> bool:
 	if v is Piece: 
 		v = v as Piece
 		
@@ -77,13 +80,13 @@ var add_node:Callable = func (v:Node) -> bool:
 	elif v is Bound:
 		v = v as Bound
 		
-		if (max_shape == 0 || shape.size() < max_shape): shape.append(v)
+		if (max_shape == 0 || s.size() < max_shape): s.append(v)
 		else: Accessor.a_print("Could not add " + str(v) + ", max shape exceeded")
 		return true
 	elif v is Team:
 		v = v as Team
 		
-		if (max_teams == 0 || shape.size() < max_teams): teams.append(v)
+		if (max_teams == 0 || t.size() < max_teams): t.append(v)
 		else: Accessor.a_print("Could not add " + str(v) + ", max teams exceeded")
 	
 	return false
@@ -97,6 +100,10 @@ func add_existing_piece(p:Piece) -> void:
 #add a piece, even if it is not in the SceneTree
 func add_piece(p:Piece, pos=null) -> void:
 	if pos == null: pos = p.get_position()
+	
+	if get_piece(pos) == null:
+		remove_piece(p, pos)
+	
 	get_state()[pos] = p
 	current_state[pos] = p
 
@@ -219,6 +226,8 @@ func b_options(depth:=2) -> void:
 				merge_state(new_s)
 				o_v[j].call()
 			
+			_evaluate()
+			
 			b_options(depth - 1)
 			
 			options[o_k[j]] = states.pop_back()
@@ -286,6 +295,12 @@ func duplicate_state(s:Dictionary) -> Dictionary:
 
 ###GETTERS
 
+func get_shape():
+	return current_state.get("shape")
+
+func get_teams():
+	return current_state.get("teams")
+
 func get_piece(pos, s:=current_state):
 	if !s.has(pos): return null
 	
@@ -302,6 +317,8 @@ func get_state(turn := get_turn()) -> Dictionary:
 
 func get_team(pos=null, turn := get_turn()) -> Team:
 	
+	var ts = get_teams()
+	
 	if typeof(pos) == position_type:
 		var p:Piece = get_piece(pos)
 		var t:Team
@@ -309,23 +326,29 @@ func get_team(pos=null, turn := get_turn()) -> Team:
 		
 		return t
 	
-	if teams.is_empty():
+	if ts.is_empty():
 		return null
 	
-	return teams[turn % teams.size()]
+	return ts[turn % ts.size()]
 
 func get_turn() -> int:
 	return states.size() - 1
 
-func get_team_idx(turn := get_turn()) -> int:
-	if teams.is_empty():
-		return -1
+func get_team_idx(pos=null, turn := get_turn()) -> int:
 	
-	return turn % teams.size()
+	var ts = get_teams()
+	var t := get_team(pos, turn)
+	
+	if !t:
+		return -1
+	else:
+		return ts.find(t)
 
 #returns false if the input position is out of bounds
 func has_position(pos) -> bool:
-	for s in shape:
+	var ss = get_shape()
+	
+	for s in ss:
 		if s.has_position(pos):
 			return true
 	return false
@@ -344,14 +367,12 @@ func copy_piece(p:Piece) -> Piece:
 
 ### DESIGNED TO BE OVERRIDDEN BY INHERITORS
 
-func should_win(team_idx:int) -> bool:
-	return false
+#end the game if a winner is found
+func _evaluate() -> void:
+	pass
 
-func should_lose(team_idx:int) -> bool:
-	return false
-
-#traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds
-func traverse(from, to):
+#_traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds
+func _traverse(from, to):
 	var v = from + to - from
 	
 	if has_position(v):
@@ -360,4 +381,4 @@ func traverse(from, to):
 	return null
 
 func _to_string() -> String:
-	return "Board " + str(shape) + " | " + str(teams) + " (build " + str(build) + ", turn " + str(get_turn()) + ")"
+	return "Board " + str(get_shape()) + " | " + str(get_teams()) + " (build " + str(build) + ", turn " + str(get_turn()) + ")"

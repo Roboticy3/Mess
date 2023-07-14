@@ -13,6 +13,6 @@ func _to_string():
 	var result:String = super._to_string() + "\n"
 	var s = current_state
 	
-	result += Accessor.shaped_2i_state_to_string(s, shape)
+	result += Accessor.shaped_2i_state_to_string(s, get_shape())
 	
 	return result

@@ -12,14 +12,18 @@ enum TYPE {
 	BOARD,
 	PIECE,
 	TEAM,
+	TEAMS,
 	BOUND,
+	SHAPE,
 	UNDEF
 }
 static func of(ob) -> TYPE:
 	if ob is Board: return TYPE.BOARD
 	elif ob is Piece: return TYPE.PIECE
 	elif ob is Team: return TYPE.TEAM
+	elif ob is Array[Team]: return TYPE.TEAMS
 	elif ob is Bound: return TYPE.BOUND
+	elif ob is Array[Bound]: return TYPE.SHAPE
 	
 	return TYPE.UNDEF
 
@@ -27,7 +31,9 @@ const names:PackedStringArray = [
 	"Board",
 	"Piece",
 	"Team",
+	"Teams",
 	"Bound",
+	"Shape",
 	"Undef"
 ]
 static func get_name(t:TYPE) -> String:

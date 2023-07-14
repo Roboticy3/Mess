@@ -73,7 +73,7 @@ func show_state(args:Array[String]):
 		if args.has("-a"):
 			for s in b.states:
 				Accessor.a_print(
-					Accessor.shaped_2i_state_to_string(s, b.shape)
+					Accessor.shaped_2i_state_to_string(s, b.get_shape())
 				)
 			return
 		
@@ -86,10 +86,10 @@ func show_state(args:Array[String]):
 		return
 	
 	if c: Accessor.a_print(
-		Accessor.shaped_2i_state_to_string(b.current_state, b.shape)
+		Accessor.shaped_2i_state_to_string(b.current_state, b.get_shape())
 	)
 	else: Accessor.a_print(
-		Accessor.shaped_2i_state_to_string(b.get_state(idx), b.shape)
+		Accessor.shaped_2i_state_to_string(b.get_state(idx), b.get_shape())
 	)
 
 func undo():
@@ -97,11 +97,11 @@ func undo():
 	var s := b.undo()
 	
 	Accessor.a_print(
-		"undid:\n" + Accessor.shaped_2i_state_to_string(s, b.shape)
+		"undid:\n" + Accessor.shaped_2i_state_to_string(s, b.get_shape())
 	)
 	
 	Accessor.a_print(
-		"current:\n" + Accessor.shaped_2i_state_to_string(b.current_state, b.shape)
+		"current:\n" + Accessor.shaped_2i_state_to_string(b.current_state, b.get_shape())
 	)
 
 func show_options(args:Array[String]):
@@ -137,7 +137,7 @@ func _show_options(p:Piece, b:Board):
 		Accessor.a_print(str(o) + ":")
 		if p_o is Dictionary:
 			Accessor.a_print(
-				Accessor.shaped_2i_state_to_string(p_o[o], b.shape)
+				Accessor.shaped_2i_state_to_string(p_o[o], b.get_shape())
 			)
 		else:
 			Accessor.a_print(str(p_o[o]))
