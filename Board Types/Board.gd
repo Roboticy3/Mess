@@ -37,8 +37,6 @@ var position_type = TYPE_NIL
 	"shape":[],
 	"teams":[]}
 
-@export var dynamic_state_keys:PackedStringArray = []
-
 #the board stores its state at the beginning of each turn
 #each state is a dictionary including pieces and variables that can change during a game
 #each state should store its own copies of pieces and values for other states of the board
@@ -51,6 +49,7 @@ var active := true
 ### INITIALIZATION, MAY BE OVERRIDEN BY INHERITORS
 
 func _init():
+
 	if active: Accessor.current_board = self
 	
 	states = [starting_state.duplicate()]
@@ -109,16 +108,19 @@ func add_piece(p:Piece, pos=null) -> void:
 	get_state()[pos] = p
 	current_state[pos] = p
 
-func remove_piece(p:Piece, pos=null) -> void:
+func remove_piece(p:Piece, pos=null) -> Removed:
 	var r = Removed.new()
 	r.last = p
 	
 	if pos == null: pos = p.get_position()
 	get_state()[pos] = r
 	current_state.erase(pos)
+	
+	return r
 
 #move piece p to a new position on the active state
 #adds a Removed in the old position of the piece in generated mode
+#returns the new copy of the Piece
 func move_piece(p:Piece, new_pos) -> Piece:
 	
 	var s := current_state
@@ -130,6 +132,7 @@ func move_piece(p:Piece, new_pos) -> Piece:
 
 	p_new.last = s.get(new_pos)
 	remove_piece(p, pos)
+	if p_new.last is Piece: remove_piece(p_new.last, new_pos)
 	
 	var n_s := p_new.get_state()
 	n_s["position"] = new_pos
@@ -151,24 +154,23 @@ func g_options() -> void:
 		
 		p.generate_options(self)
 
-func g_call_option(o:Callable):
-	add_state()
-	o.call()
-	g_options()
-
 #create a new turn by calling an option on a piece
 #creates a new state and fills it by calling the given option on the given piece
 func call_option(p:Piece, o) -> bool:
 	
 	var p_o := p.options
-	if !p.options.has(o):
+	var option = p_o.get(o)
+	if option == null:
 		return false
 	
-	if build:
-		add_state(p_o[o], true)
-		b_options()
-	else:
-		g_call_option(p_o[o])
+	if option is Dictionary:
+		add_state(option, true)
+	elif option is Callable:
+		add_state()
+		option.call()
+	
+	if build: b_options()
+	else: g_options()
 	
 	states[-1].make_read_only()
 	
@@ -193,8 +195,9 @@ func b_options(depth:=2) -> void:
 			k[i] = null
 			continue
 		
-		p.options = {}
-		var options:Dictionary = p.generate_options(self, false)
+		var options:Dictionary = p.options
+		if options.is_empty():
+			options = p.generate_options(self, false)
 		
 		if options.is_empty():
 			k[i] = null
@@ -205,9 +208,6 @@ func b_options(depth:=2) -> void:
 		
 		b_new_s[k[i]] = new_p
 		v[i] = new_p
-	#additionally copy keys that were flagged as dynamic
-	for d in dynamic_state_keys:
-		b_new_s[d] = get_state().get(d)
 	
 	merge_state(b_new_s, s)
 	
@@ -251,8 +251,10 @@ func undo() -> Dictionary:
 	
 	var s:Dictionary = states.pop_back()
 	tear_state(s)
+	merge_state_misc(states[-1])
 	
-	b_options()
+	if build: b_options()
+	else: g_options()
 	
 	return s
 
@@ -270,6 +272,16 @@ func merge_state(s:Dictionary, target:=current_state):
 			target[k[i]] = p
 		else:
 			target.erase(k[i])
+
+func merge_state_misc(s:Dictionary, target:=current_state):
+	var k := s.keys()
+	var v := s.values()
+	
+	for i in k.size():
+		var p = v[i]
+		
+		if !(p is Piece) and !(p is Removed):
+			target[k[i]] = v[i]
 
 func tear_state(s:Dictionary, target:=current_state):
 	var k := s.keys()
@@ -318,6 +330,7 @@ func is_playable(p:Piece) -> bool:
 	return t == null || t == get_team()
 
 func get_state(turn := get_turn()) -> Dictionary:
+	if turn < 0: return starting_state
 	return states[turn]
 
 func get_team(pos=null, turn := get_turn()) -> Team:
