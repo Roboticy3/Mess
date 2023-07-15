@@ -5,7 +5,7 @@ extends Node
 
 #Board is described by two states, the current_state and the states
 #current_state shows everything that is currently on the board
-#states describes the changes created by each turn
+#states describe the changes created by each turn
 #pieces stored in states are unique, duplicated from the same piece on the last turn, 
 #	turn is synonimous with the length of the states array
 #pieces in current_state are references to pieces in states, and does not store duplications
@@ -13,6 +13,8 @@ extends Node
 #passing a turn can be described by adding a new state, and then making modifications to it
 #technically, the turn starts when the new state is added, since the length of the states array increases
 #the only way players should cause a turn is by getting options from generate_options() and adding a new state to play them on
+
+#a state is made up of BoardElements, which store a reference to whatever BoardElement was in the same key last turn
 
 #the board behaves differently based on this variable, and it should not change after the start of a game
 #build = true implies that states are constructed fully, allowing for checkmate
@@ -92,6 +94,7 @@ var add_node:Callable = func (v:Node, t:Array, s:Array) -> bool:
 		else: Accessor.a_print("Could not add " + str(v) + ", max teams exceeded")
 	
 	return false
+
 ### STATE MUTATORS
 
 #add a piece that was already in the SceneTree
@@ -102,19 +105,37 @@ func add_existing_piece(p:Piece) -> void:
 func add_piece(p:Piece, pos=null) -> void:
 	if pos == null: pos = p.get_position()
 	
-	if get_piece(pos) != null:
-		remove_piece(p, pos)
+	var old_p = get_piece(pos)
+	if old_p != null:
+		remove_piece(old_p, pos, p)
+	else:
+		get_state()[pos] = p
 	
-	get_state()[pos] = p
 	current_state[pos] = p
 
-func remove_piece(p:Piece, pos=null) -> Removed:
-	var r = Removed.new()
+func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	r.last = p
 	
 	if pos == null: pos = p.get_position()
 	get_state()[pos] = r
 	current_state.erase(pos)
+	
+	return r
+
+func add_element(e, k) -> void:
+	var old_e = current_state.get(k)
+	if old_e != null:
+		remove_element(old_e, k, e)
+	else:
+		get_state()[k] = e
+	
+	current_state[k] = e
+
+func remove_element(e, k, r=Removed.new()):
+	r.last = e
+	
+	get_state()[k] = r
+	current_state.erase(k)
 	
 	return r
 
@@ -131,13 +152,13 @@ func move_piece(p:Piece, new_pos) -> Piece:
 	p_new = copy_piece(p)
 
 	p_new.last = s.get(new_pos)
+	if p_new.last is Piece: remove_piece(p_new.last, new_pos, p_new)
 	remove_piece(p, pos)
-	if p_new.last is Piece: remove_piece(p_new.last, new_pos)
 	
 	var n_s := p_new.get_state()
 	n_s["position"] = new_pos
 	
-	add_piece(p_new)
+	add_piece(p_new, new_pos)
 	
 	return p_new
 
@@ -251,7 +272,6 @@ func undo() -> Dictionary:
 	
 	var s:Dictionary = states.pop_back()
 	tear_state(s)
-	merge_state_misc(states[-1])
 	
 	if build: b_options()
 	else: g_options()
@@ -273,28 +293,17 @@ func merge_state(s:Dictionary, target:=current_state):
 		else:
 			target.erase(k[i])
 
-func merge_state_misc(s:Dictionary, target:=current_state):
-	var k := s.keys()
-	var v := s.values()
-	
-	for i in k.size():
-		var p = v[i]
-		
-		if !(p is Piece) and !(p is Removed):
-			target[k[i]] = v[i]
-
 func tear_state(s:Dictionary, target:=current_state):
 	var k := s.keys()
 	var v := s.values()
 	
 	for i in k.size():
 		var p = v[i]
-		if p is Removed or p is Piece:
-			var l = p.last
-			if l is Piece:
-				target[k[i]] = l
-			else:
-				target.erase(k[i])
+		var l = p.last
+		if l is Piece:
+			target[k[i]] = l
+		else:
+			target.erase(k[i])
 
 
 func duplicate_state(s:Dictionary) -> Dictionary:

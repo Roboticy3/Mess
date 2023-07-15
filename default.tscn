@@ -44,6 +44,10 @@ grow_vertical = 2
 
 [node name="Board" type="Node" parent="."]
 script = ExtResource("1_843vs")
+node_paths = null
+max_shape = null
+max_teams = null
+starting_state = null
 
 [node name="White Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")

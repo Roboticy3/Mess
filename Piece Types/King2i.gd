@@ -38,7 +38,7 @@ func generate_options(p:Piece, b:=Accessor.current_board) -> Dictionary:
 	var p_state = p.get_state()
 	add_options_from_positions(o, squares, p, b)
 	
-	if !p_state["moved"]:
+	if p_state["moved"]:
 		return o
 	
 	var ra = p_state["rook axes"]
@@ -60,9 +60,10 @@ func can_castle_to(direction:Vector2i, p:Piece, b:Board):
 		return
 	
 	var r_state = rook.get_state()
-	if !(r_state["team"] == p.get_state()["team"] and r_state["moves"] == 0):
+	if !(r_state["team"] == p.get_state()["team"] and !r_state["moved"]):
 		return
 	
+	print(positions, rook)
 	return [positions, rook]
 	
 	

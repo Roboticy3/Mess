@@ -1,4 +1,4 @@
-extends Node
+extends BoardElement
 class_name Piece
 
 @export var type:PieceType
@@ -8,8 +8,6 @@ class_name Piece
 var state:Dictionary
 
 var options:Dictionary
-
-var last
 
 func _ready():
 	if !state.is_empty():

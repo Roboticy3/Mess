@@ -2,12 +2,19 @@ extends PieceType
 class_name Rook2i
 
 const rook2i_state_form := {
-	"position": Vector2i()
+	"position": Vector2i(),
+	"moved": false
 }
 
 func _init():
 	name = "rook2i"
 	state_form.merge(rook2i_state_form, true)
+
+#track the movement of the rook to tell the king if it can castle
+func option_move(p,b,o):
+	p = super.option_move(p,b,o)
+	p.state["moved"] = true
+	return p
 
 const directions:Array[Vector2i] = [
 	Vector2i(1, 0),

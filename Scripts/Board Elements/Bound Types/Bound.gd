@@ -1,4 +1,4 @@
-extends Node
+extends BoardElement
 class_name Bound
 
 #a shape defined by two corners
