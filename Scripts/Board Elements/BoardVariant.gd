@@ -1,4 +1,5 @@
 extends BoardElement
+class_name BoardVariant
 
 var data:Variant
 

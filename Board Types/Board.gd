@@ -122,7 +122,7 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	
 	return r
 
-func add_element(e, k) -> void:
+func add_element(e:BoardElement, k) -> void:
 	var old_e = current_state.get(k)
 	if old_e != null:
 		remove_element(old_e, k, e)
@@ -131,7 +131,7 @@ func add_element(e, k) -> void:
 	
 	current_state[k] = e
 
-func remove_element(e, k, r=Removed.new()):
+func remove_element(e:BoardElement, k, r=Removed.new()):
 	r.last = e
 	
 	get_state()[k] = r
@@ -300,10 +300,10 @@ func tear_state(s:Dictionary, target:=current_state):
 	for i in k.size():
 		var p = v[i]
 		var l = p.last
-		if l is Piece:
-			target[k[i]] = l
-		else:
+		if l is Removed || l == null:
 			target.erase(k[i])
+		else:
+			target[k[i]] = l
 
 
 func duplicate_state(s:Dictionary) -> Dictionary:
