@@ -36,8 +36,7 @@ var position_type = TYPE_NIL
 
 #the initial state of the board, can contain Pieces and Variants
 @export var starting_state := {
-	"shape":[],
-	"teams":[]}
+	"shape":[]}
 
 #the board stores its state at the beginning of each turn
 #each state is a dictionary including pieces and variables that can change during a game
@@ -60,7 +59,9 @@ func _init():
 var team_sort := func (a, b): return a.priority > b.priority
 #run when the board and all of the nodes in node_paths are loaded to fill the board with pieces. shapes, etc
 func fill_nodes():
-	var a := add_node.bind(get_teams(),get_shape())
+	var ts = get_teams()
+	var ss = get_shape()
+	var a := add_node.bind(ts, ss)
 	for v in node_paths:
 		Accessor.get_children_recursive(get_node(v), a)
 	get_teams().sort_custom(team_sort)
@@ -75,7 +76,7 @@ func _ready():
 	
 #everybody shut up new class just dropped
 #call this with a node to add it to the board individually
-var add_node:Callable = func (v:Node, t:Array, s:Array) -> bool:
+var add_node:Callable = func (v:Node, t, s) -> bool:
 	if v is Piece: 
 		v = v as Piece
 		
@@ -321,11 +322,15 @@ func duplicate_state(s:Dictionary) -> Dictionary:
 
 ###GETTERS
 
-func get_shape():
-	return current_state.get("shape")
+func get_shape() -> Array:
+	var ss = current_state.get("shape")
+	if ss == null: return []
+	return ss
 
-func get_teams():
-	return current_state.get("teams")
+func get_teams() -> Array:
+	var ts = current_state.get("teams")
+	if ts == null: return []
+	return ts
 
 func get_piece(pos, s:=current_state):
 	var p = s.get(pos)
@@ -336,7 +341,8 @@ func get_piece(pos, s:=current_state):
 
 func is_playable(p:Piece) -> bool:
 	var t = p.get_team()
-	return t == null || t == get_team()
+	var bt = get_team()
+	return t == get_team() || bt == null || t == null
 
 func get_state(turn := get_turn()) -> Dictionary:
 	if turn < 0: return starting_state
@@ -353,7 +359,7 @@ func get_team(pos=null, turn := get_turn()) -> Team:
 		
 		return t
 	
-	if ts.is_empty():
+	if ts == null || ts.is_empty():
 		return null
 	
 	return ts[turn % ts.size()]

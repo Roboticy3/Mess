@@ -3,7 +3,6 @@ extends Board2i
 var kings := BoardVariant.new({})
 
 func _init():
-	build = false
 	add_element(kings, "kings")
 	super._init()
 

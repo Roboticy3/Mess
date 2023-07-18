@@ -2,7 +2,7 @@ extends BoardElement
 class_name Team
 
 #if Pieces are placed as children of a Team, the Team's starting state will "cascade" onto the pieces, adjusting their direction
-@export var starting_state:Dictionary = {"direction":Vector2i(0, 1)}
+@export var starting_state:Dictionary = {"direction":Vector2i(1, 1)}
 
 @export var node_paths:Array[NodePath] = [NodePath(".")]
 
