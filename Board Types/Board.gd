@@ -328,9 +328,9 @@ func get_teams():
 	return current_state.get("teams")
 
 func get_piece(pos, s:=current_state):
-	if !s.has(pos): return null
+	var p = s.get(pos)
+	if p == null: return null
 	
-	var p = s[pos]
 	if !(p is Piece): return null
 	return p
 
