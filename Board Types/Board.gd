@@ -235,11 +235,16 @@ func b_options(depth:=2) -> void:
 	merge_state(b_new_s, s)
 	
 	#build states from options, by applying each option to the base new state
-	for i in k.size():
-		if k[i] == null: continue
-		var p:Piece = v[i]
+	#add an extra option called the "trivial option," i.e. doing nothing, for checks
+	for i in k.size() + 1:
+		var p:Piece
+		var options:Dictionary
+		if i < k.size():
+			if k[i] != null && !v[i].options.is_empty():
+				options = v[i].options
+		elif depth > 1:
+			options = {null:{}}
 		
-		var options := p.options
 		var o_k := options.keys()
 		var o_v := options.values()
 		
@@ -254,6 +259,7 @@ func b_options(depth:=2) -> void:
 				merge_state(new_s)
 				o_v[j].call()
 			
+			if o_k[j] == null: print(self)
 			_evaluate()
 			
 			b_options(depth - 1)

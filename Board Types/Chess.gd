@@ -6,11 +6,6 @@ func _init():
 	add_element(kings, "kings")
 	super._init()
 
-func call_option(p:Piece, o) -> bool:
-	var res := super.call_option(p, o)
-	
-	return res
-
 func undo() -> Dictionary:
 	var res:= super.undo()
 	kings = current_state["kings"]

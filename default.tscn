@@ -47,6 +47,9 @@ script = ExtResource("1_843vs")
 
 [node name="White Team" type="Node" parent="Board"]
 script = ExtResource("2_l4gke")
+starting_state = {
+"direction": Vector2i(0, 1)
+}
 priority = 1
 
 [node name="Pawn" type="Node" parent="Board/White Team"]
