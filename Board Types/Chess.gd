@@ -36,5 +36,12 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	return res
 
 func _evaluate():
-	super._evaluate()
+	
+	var k = current_state["kings"].data
+	var t = get_team()
+	
+	if !k.has(t):
+		pass
+	
+	
 

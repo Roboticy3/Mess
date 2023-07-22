@@ -1,7 +1,8 @@
-extends BoardElement
 class_name BoardVariant
 
-var data:Variant
+var last
+
+var data
 
 func _init(x):
 	data = x

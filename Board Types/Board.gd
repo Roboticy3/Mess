@@ -36,6 +36,7 @@ var position_type = TYPE_NIL
 
 #the initial state of the board, can contain Pieces and Variants
 @export var starting_state := {
+	"teams":[],
 	"shape":[]}
 
 #the board stores its state at the beginning of each turn
@@ -123,7 +124,7 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	
 	return r
 
-func add_element(e:BoardElement, k) -> void:
+func add_element(e, k) -> void:
 	var old_e = current_state.get(k)
 	if old_e != null:
 		remove_element(old_e, k, e)
@@ -132,7 +133,7 @@ func add_element(e:BoardElement, k) -> void:
 	
 	current_state[k] = e
 
-func remove_element(e:BoardElement, k, r=Removed.new()):
+func remove_element(e, k, r=Removed.new()):
 	r.last = e
 	
 	get_state()[k] = r
