@@ -3,7 +3,7 @@ class_name PieceType
 
 var name:StringName = "?"
 
-var state_form:Dictionary = {"position":null}
+var state_form:Dictionary = {"position":null, "turn":0}
 
 func generate_options(_p:Piece, _b:=Accessor.current_board)->Dictionary:
 	return {}
@@ -49,6 +49,12 @@ func add_options_from_positions(options:Dictionary, positions:Array, p:Piece, b:
 		
 		if validator.call(p, b, pos):
 			options[pos] = option.bind(p, b, pos)
+
+func add_option(options:Dictionary, pos, option):
+	options[pos] = option
+
+func remove_option(options:Dictionary, pos) -> bool:
+	return options.erase(pos)
 
 #spaces from a list of (sorta) global directions
 #directions will not be transformed by the piece's direction since the piece may not have the direction property

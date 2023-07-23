@@ -3,7 +3,7 @@ class_name Piece
 
 @export var type:PieceType
 
-@export var starting_state:Dictionary = {"position":null}
+@export var starting_state:Dictionary = {"position":null, "turn":0}
 
 var state:Dictionary
 
@@ -45,6 +45,11 @@ func to_global(position, b:=Accessor.current_board):
 	return type.to_global(state, b, position)
 func get_position() -> Variant:
 	return state["position"]
+
+func get_turn() -> int:
+	return state["turn"]
+func set_turn(i:int):
+	state["turn"] = i
 	
 func get_state() -> Dictionary:
 	return state

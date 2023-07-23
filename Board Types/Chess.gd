@@ -29,14 +29,3 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 		add_element(kings, "kings")
 	
 	return res
-
-func _evaluate():
-	
-	var k = current_state["kings"].data
-	var t = get_team()
-	
-	if !k.has(t):
-		pass
-	
-	
-

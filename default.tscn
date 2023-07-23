@@ -52,6 +52,13 @@ starting_state = {
 }
 priority = 1
 
+[node name="Pawn7" type="Node" parent="Board/White Team"]
+script = ExtResource("3_22oss")
+type = SubResource("Resource_8a4kp")
+starting_state = {
+"position": Vector2i(6, 1)
+}
+
 [node name="Pawn" type="Node" parent="Board/White Team"]
 script = ExtResource("3_22oss")
 type = SubResource("Resource_8a4kp")
@@ -92,13 +99,6 @@ script = ExtResource("3_22oss")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(5, 1)
-}
-
-[node name="Pawn7" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
-type = SubResource("Resource_8a4kp")
-starting_state = {
-"position": Vector2i(6, 1)
 }
 
 [node name="Pawn8" type="Node" parent="Board/White Team"]

@@ -81,7 +81,7 @@ var add_node:Callable = func (v:Node, t, s) -> bool:
 	if v is Piece: 
 		v = v as Piece
 		
-		add_existing_piece(v)
+		add_piece(v)
 		return true
 	elif v is Bound:
 		v = v as Bound
@@ -97,11 +97,10 @@ var add_node:Callable = func (v:Node, t, s) -> bool:
 	
 	return false
 
-### STATE MUTATORS
+func end_game(winner:Team):
+	print(winner)
 
-#add a piece that was already in the SceneTree
-func add_existing_piece(p:Piece) -> void:
-	add_piece(p)
+### STATE MUTATORS
 
 #add a piece, even if it is not in the SceneTree
 func add_piece(p:Piece, pos=null) -> void:
@@ -114,6 +113,7 @@ func add_piece(p:Piece, pos=null) -> void:
 		get_state()[pos] = p
 	
 	current_state[pos] = p
+	p.state["turn"] = get_turn()
 
 func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	r.last = p
@@ -200,72 +200,30 @@ func call_option(p:Piece, o) -> bool:
 	return true
 
 #similar to generate options, except it generates the states resulting from each option as the values, instead of the Callables themselves
-func b_options(depth:=2) -> void:
-	
-	if depth < 1:
-		return
+func b_options() -> void:
 	
 	var s := current_state.duplicate()
 	var k := s.keys()
 	var v := s.values()
 	
-	#create a base for every new state to be created at this depth
-	#contains a copy of all pieces which have options, with the options filled out
-	var b_new_s := {}
 	for i in k.size():
-		var p = v[i]
-		if !(p is Piece): 
-			k[i] = null
-			continue
-		
-		var options:Dictionary = p.options
-		if options.is_empty():
-			options = p.generate_options(self, false)
-		
-		if options.is_empty():
-			k[i] = null
-			continue
-		
-		var new_p := copy_piece(p)
-		new_p.options = options
-		
-		b_new_s[k[i]] = new_p
-		v[i] = new_p
+		if v[i] is Piece: 
+			b_piece_options(v[i], s)
+
+func b_piece_options(p:Piece, s:Dictionary):
 	
-	merge_state(b_new_s, s)
+	var options:Dictionary = p.generate_options(self)
 	
-	#build states from options, by applying each option to the base new state
-	#add an extra option called the "trivial option," i.e. doing nothing, for checks
-	for i in k.size() + 1:
-		var p:Piece
-		var options:Dictionary
-		if i < k.size():
-			if k[i] != null && !v[i].options.is_empty():
-				options = v[i].options
-		elif depth > 1:
-			options = {null:{}}
+	var o_k := options.keys()
+	var o_v := options.values()
+	
+	for j in o_k.size():
 		
-		var o_k := options.keys()
-		var o_v := options.values()
+		add_state()
+		o_v[j].call()
 		
-		for j in o_k.size():
-			
-			if o_v[j] is Dictionary:
-				add_state(o_v[j])
-			
-			elif o_v[j] is Callable:
-				var new_s := duplicate_state(b_new_s)
-				add_state(new_s)
-				merge_state(new_s)
-				o_v[j].call()
-			
-			if o_k[j] == null: print(self)
-			_evaluate()
-			
-			b_options(depth - 1)
-			
-			options[o_k[j]] = states.pop_back()
-			current_state = s.duplicate()
+		options[o_k[j]] = states.pop_back()
+		current_state = s.duplicate()
 
 func add_state(s:={}, merge:=false):
 	states.append(s)
@@ -408,7 +366,7 @@ func copy_piece(p:Piece) -> Piece:
 ### DESIGNED TO BE OVERRIDDEN BY INHERITORS
 
 #end the game if a winner is found
-func _evaluate() -> void:
+func _evaluate():
 	pass
 
 #_traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds

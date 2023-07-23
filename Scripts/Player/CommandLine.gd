@@ -114,13 +114,13 @@ func show_options(args:Array[String]):
 	
 	if a:
 		for pos in b.current_state:
-			var p:Piece = b.current_state[pos]
+			var p = b.current_state[pos]
 			if !(p is Piece):
 				continue
 				
-			var p_o := p.options
+			var p_o = p.options
 			
-			if p_o.is_empty():
+			if !(p_o is Dictionary) || p_o.is_empty():
 				continue
 			
 			Accessor.a_print(str(p))
