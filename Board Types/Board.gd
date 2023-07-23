@@ -166,17 +166,6 @@ func move_piece(p:Piece, new_pos) -> Piece:
 
 ###STATE GENERATORS
 
-func g_options() -> void:
-	var s := current_state
-	var k := s.keys()
-	var v := s.values()
-	
-	for i in k.size():
-		var p = v[i]
-		if !(p is Piece): continue
-		
-		p.generate_options(self)
-
 #create a new turn by calling an option on a piece
 #creates a new state and fills it by calling the given option on the given piece
 func call_option(p:Piece, o) -> bool:
@@ -199,6 +188,17 @@ func call_option(p:Piece, o) -> bool:
 	
 	return true
 
+func g_options() -> void:
+	var s := current_state
+	var k := s.keys()
+	var v := s.values()
+	
+	for i in k.size():
+		var p = v[i]
+		if !(p is Piece): continue
+		
+		p.generate_options(self)
+
 #similar to generate options, except it generates the states resulting from each option as the values, instead of the Callables themselves
 func b_options() -> void:
 	
@@ -210,20 +210,32 @@ func b_options() -> void:
 		if v[i] is Piece: 
 			b_piece_options(v[i], s)
 
-func b_piece_options(p:Piece, s:Dictionary):
+func b_piece_options(p:Piece, s:Dictionary, set:=true, next:=true):
 	
-	var options:Dictionary = p.generate_options(self)
+	var options:Dictionary = p.generate_options(self, set)
 	
 	var o_k := options.keys()
 	var o_v := options.values()
 	
 	for j in o_k.size():
-		
 		add_state()
 		o_v[j].call()
 		
-		options[o_k[j]] = states.pop_back()
+		if next: b_options_next()
+		
+		var new_s:Dictionary = states.pop_back()
+		if set: p.options[o_k[j]] = new_s
 		current_state = s.duplicate()
+
+func b_options_next():
+	
+	var s := current_state.duplicate()
+	var k := s.keys()
+	var v := s.values()
+	
+	for i in k.size():
+		if v[i] is Piece: 
+			b_piece_options(v[i], s, false, false)
 
 func add_state(s:={}, merge:=false):
 	states.append(s)
