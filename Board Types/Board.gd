@@ -210,9 +210,9 @@ func b_options() -> void:
 		if v[i] is Piece: 
 			b_piece_options(v[i], s)
 
-func b_piece_options(p:Piece, s:Dictionary, set:=true, next:=true):
+func b_piece_options(p:Piece, s:Dictionary, set:=true, next:=true, halt:=false):
 	
-	var options:Dictionary = p.generate_options(self, set)
+	var options:Dictionary = p.generate_options(self)
 	
 	var o_k := options.keys()
 	var o_v := options.values()
@@ -222,6 +222,9 @@ func b_piece_options(p:Piece, s:Dictionary, set:=true, next:=true):
 		o_v[j].call()
 		
 		if next: b_options_next()
+		
+		if halt and _evaluate():
+			break
 		
 		var new_s:Dictionary = states.pop_back()
 		if set: p.options[o_k[j]] = new_s
@@ -235,8 +238,8 @@ func b_options_next():
 	
 	for i in k.size():
 		if v[i] is Piece: 
-			b_piece_options(v[i], s, false, false)
-
+			pass
+			
 func add_state(s:={}, merge:=false):
 	states.append(s)
 	
