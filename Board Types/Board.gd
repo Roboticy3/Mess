@@ -200,46 +200,20 @@ func g_options() -> void:
 		p.generate_options(self)
 
 #similar to generate options, except it generates the states resulting from each option as the values, instead of the Callables themselves
+var iter := BoardIterator.new()
 func b_options() -> void:
 	
 	var s := current_state.duplicate()
-	var k := s.keys()
-	var v := s.values()
 	
-	for i in k.size():
-		if v[i] is Piece: 
-			b_piece_options(v[i], s)
+	iter.all_options_iter_full(self, b_option)
 
-func b_piece_options(p:Piece, s:Dictionary, set:=true, next:=true, halt:=false):
+func b_option(pos, piece:Piece, o, option:Callable):
+	add_state()
+	option.call()
 	
-	var options:Dictionary = p.generate_options(self)
-	
-	var o_k := options.keys()
-	var o_v := options.values()
-	
-	for j in o_k.size():
-		add_state()
-		o_v[j].call()
-		
-		if next: b_options_next()
-		
-		if halt and _evaluate():
-			break
-		
-		var new_s:Dictionary = states.pop_back()
-		if set: p.options[o_k[j]] = new_s
-		current_state = s.duplicate()
+	piece.options[o] = states.pop_back()
+	current_state = iter.state.duplicate()
 
-func b_options_next():
-	
-	var s := current_state.duplicate()
-	var k := s.keys()
-	var v := s.values()
-	
-	for i in k.size():
-		if v[i] is Piece: 
-			pass
-			
 func add_state(s:={}, merge:=false):
 	states.append(s)
 	
@@ -381,8 +355,8 @@ func copy_piece(p:Piece) -> Piece:
 ### DESIGNED TO BE OVERRIDDEN BY INHERITORS
 
 #end the game if a winner is found
-func _evaluate():
-	pass
+func _evaluate() -> bool:
+	return false
 
 #_traverse (WIP) allow moves to interact with the Board's shape, currently just returns to if its in bounds
 func _traverse(from, to):

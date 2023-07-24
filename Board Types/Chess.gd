@@ -29,3 +29,9 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 		add_element(kings, "kings")
 	
 	return res
+
+func _evaluate() -> bool:
+	
+	var t = get_team()
+	
+	return current_state.get("kings").data.size() < 2
