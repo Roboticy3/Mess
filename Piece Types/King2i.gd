@@ -63,7 +63,6 @@ func can_castle_to(direction:Vector2i, p:Piece, b:Board):
 	if !(r_state["team"] == p.get_state()["team"] and !r_state["moved"]):
 		return
 	
-	print(positions, rook)
 	return [positions, rook]
 	
 	

@@ -27,6 +27,7 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 		kings = BoardVariant.new(kings.data.duplicate())
 		kings.data.erase(p.get_team())
 		add_element(kings, "kings")
+		print(p, self)
 	
 	return res
 

@@ -14,12 +14,12 @@ var o_pos:=[null]
 var o_val:=[null]
 var o_done:=true
 
-var all_options_broke := false
+var all_options_break := false
 func all_options_start(b:Board):
 	piece_start(b)
 	all_options_step(b)
 	
-	all_options_broke = false
+	all_options_break = false
 
 func all_options_step(b:Board):
 	if done:
@@ -90,6 +90,7 @@ func get_all_options_cur() -> Array:
 
 func all_options_iter_full(b:Board, action:Callable):
 	all_options_start(b)
+	
 	while !done:
 		var cur := get_all_options_cur()
 		
@@ -103,7 +104,7 @@ func all_options_iter_full(b:Board, action:Callable):
 
 func all_options_should_break(yn:=true):
 	done = yn
-	all_options_broke = yn
+	all_options_break = yn
 
 func all_options_did_break() -> bool:
-	return all_options_broke
+	return all_options_break

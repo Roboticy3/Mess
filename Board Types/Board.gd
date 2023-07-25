@@ -202,8 +202,16 @@ func g_options() -> void:
 #similar to generate options, except it generates the states resulting from each option as the values, instead of the Callables themselves
 var iter := BoardIterator.new()
 var iter2 := BoardIterator.new()
-func b_options(builder:=b_option) -> void:
-	iter.all_options_iter_full(self, builder)
+func b_options() -> void:
+	
+	add_state()
+	iter2.all_options_iter_full(self, b_check)
+	states.pop_back()
+	current_state = iter2.state
+	if iter2.all_options_did_break():
+		Accessor.call_deferred("a_print", str(get_team()) + " is in check!")
+	
+	iter.all_options_iter_full(self, b_option)
 
 func b_option(pos, piece:Piece, o, option:Callable):
 	
@@ -226,6 +234,7 @@ func b_check(pos, piece:Piece, o, option:Callable):
 	
 	if _evaluate():
 		iter2.all_options_should_break()
+		#print(self)
 	
 	states.pop_back()
 	current_state = iter2.state.duplicate()
