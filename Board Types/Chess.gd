@@ -16,18 +16,15 @@ func add_piece(p:Piece, pos=null) -> void:
 	super.add_piece(p, pos)
 	
 	if p.type is King2i:
-		kings = BoardVariant.new(kings.data.duplicate())
-		kings.data[p.get_team()] = p
-		add_element(kings, "kings")
+		var k = get_element("kings").data.duplicate()
+		k[p.get_team()] = p
+		add_element(BoardVariant.new(k), "kings")
 
 func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	var res = super.remove_piece(p, pos, r)
 	
 	if p.type is King2i:
-		kings = BoardVariant.new(kings.data.duplicate())
-		kings.data.erase(p.get_team())
-		add_element(kings, "kings")
-		print(p, self)
+		print(self)
 	
 	return res
 

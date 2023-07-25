@@ -207,7 +207,7 @@ func b_options() -> void:
 	add_state()
 	iter2.all_options_iter_full(self, b_check)
 	states.pop_back()
-	current_state = iter2.state
+	current_state = iter2.state.duplicate()
 	if iter2.all_options_did_break():
 		Accessor.call_deferred("a_print", str(get_team()) + " is in check!")
 	
@@ -234,7 +234,6 @@ func b_check(pos, piece:Piece, o, option:Callable):
 	
 	if _evaluate():
 		iter2.all_options_should_break()
-		#print(self)
 	
 	states.pop_back()
 	current_state = iter2.state.duplicate()
@@ -317,6 +316,9 @@ func get_piece(pos, s:=current_state):
 	
 	if !(p is Piece): return null
 	return p
+
+func get_element(k):
+	return current_state.get(k)
 
 func is_playable(p:Piece) -> bool:
 	var t = p.get_team()
