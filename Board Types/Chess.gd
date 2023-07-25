@@ -24,7 +24,9 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 	var res = super.remove_piece(p, pos, r)
 	
 	if p.type is King2i:
-		print(self)
+		var k = get_element("kings").data.duplicate()
+		k.erase(p.get_team())
+		add_element(BoardVariant.new(k), "kings")
 	
 	return res
 

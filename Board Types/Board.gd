@@ -154,7 +154,6 @@ func move_piece(p:Piece, new_pos) -> Piece:
 	p_new = copy_piece(p)
 
 	p_new.last = s.get(new_pos)
-	if p_new.last is Piece: remove_piece(p_new.last, new_pos, p_new)
 	remove_piece(p, pos)
 	
 	var n_s := p_new.get_state()
@@ -234,6 +233,8 @@ func b_check(pos, piece:Piece, o, option:Callable):
 	
 	if _evaluate():
 		iter2.all_options_should_break()
+		if piece.type is Bishop2i:
+			print(self)
 	
 	states.pop_back()
 	current_state = iter2.state.duplicate()

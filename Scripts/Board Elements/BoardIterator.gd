@@ -70,6 +70,8 @@ func options_start(b:Board):
 		o_done = true
 		return
 	
+	val[i] = b.copy_piece(val[i])
+	state[pos[i]] = val[i]
 	o_done = false
 
 func options_step():
