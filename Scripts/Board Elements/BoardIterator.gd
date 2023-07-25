@@ -14,13 +14,16 @@ var o_pos:=[null]
 var o_val:=[null]
 var o_done:=true
 
+var all_options_broke := false
 func all_options_start(b:Board):
 	piece_start(b)
 	all_options_step(b)
+	
+	all_options_broke = false
 
 func all_options_step(b:Board):
 	if done:
-		return []
+		return
 	
 	if o_done:
 		piece_step()
@@ -57,7 +60,7 @@ func piece_step():
 
 func options_start(b:Board):
 	if done: return
-	options = val[i].generate_options(b)
+	options = val[i].generate_options(b, false)
 	
 	j = -1
 	o_pos = options.keys() + [null]
@@ -97,3 +100,10 @@ func all_options_iter_full(b:Board, action:Callable):
 		action.callv(cur)
 		
 		all_options_step(b)
+
+func all_options_should_break(yn:=true):
+	done = yn
+	all_options_broke = yn
+
+func all_options_did_break() -> bool:
+	return all_options_broke

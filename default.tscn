@@ -237,7 +237,7 @@ starting_state = {
 script = ExtResource("3_22oss")
 type = SubResource("Resource_1421e")
 starting_state = {
-"position": Vector2i(6, 7)
+"position": Vector2i(5, 2)
 }
 
 [node name="King" type="Node" parent="Board/Black Team"]

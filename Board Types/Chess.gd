@@ -32,6 +32,5 @@ func remove_piece(p:Piece, pos=null, r=Removed.new()):
 
 func _evaluate() -> bool:
 	
-	var t = get_team()
-	
-	return current_state.get("kings").data.size() < 2
+	var t = get_team(null, get_turn())
+	return !current_state["kings"].data.has(t)

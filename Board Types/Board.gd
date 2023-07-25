@@ -205,27 +205,29 @@ var iter2 := BoardIterator.new()
 func b_options(builder:=b_option) -> void:
 	iter.all_options_iter_full(self, builder)
 
-var iter_should_break := false
 func b_option(pos, piece:Piece, o, option:Callable):
+	
 	add_state()
 	option.call()
 	
-	iter_should_break = false
 	iter2.all_options_iter_full(self, b_check)
 	
 	var new_s = states.pop_back()
-	if !iter_should_break: piece.options[o] = new_s
+	if iter2.all_options_did_break(): 
+		piece.options.erase(o)
+	else:
+		piece.options[o] = new_s
 	current_state = iter.state.duplicate()
 
 func b_check(pos, piece:Piece, o, option:Callable):
+	
 	add_state()
 	option.call()
 	
 	if _evaluate():
-		iter_should_break = true
-		iter2.done = true
+		iter2.all_options_should_break()
 	
-	piece.options[o] = states.pop_back()
+	states.pop_back()
 	current_state = iter2.state.duplicate()
 
 func add_state(s:={}, merge:=false):
