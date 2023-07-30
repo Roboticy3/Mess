@@ -23,23 +23,6 @@ func can_take(p:Piece, b:Board, position) -> bool:
 	
 	return position != null && (bt != t || t == null)
 
-var can_take_last_occupied := false
-func can_take_in_line(p:Piece, b:Board, position) -> bool:
-	var t = p.get_team()
-	
-	if can_take_last_occupied: 
-		can_take_last_occupied = false
-		return false
-	
-	var q = b.get_piece(position)
-	var qt = null
-	if q is Piece: 
-		can_take_last_occupied = true
-		qt = q.get_team()
-	else: can_take_last_occupied = false
-	
-	return position != null && (qt != t || t == null)
-
 #from a list of local positions
 func add_options_from_positions(options:Dictionary, positions:Array, p:Piece, b:Board, 
 	option=option_move, validator=can_take) -> void:
@@ -62,7 +45,7 @@ func remove_option(options:Dictionary, pos) -> bool:
 #the direction describes a line to iterate through until and invalid square is found
 #returns a 2d array of all spaces traversed in order
 const max_iter := 100
-func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=can_take_in_line, iterations:=max_iter) -> Array[Array]:
+func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=can_take, iterations:=max_iter) -> Array[Array]:
 	var p_state = p.get_state()
 	
 	var positions:Array[Array] = []
@@ -73,7 +56,13 @@ func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=
 		var j = 1
 		#starting from the first square in a direction, travel in that direction until a square that cannot be taken is reached
 		var pos = b._traverse(p_state["position"], p_state["position"] + directions[i])
-		while validator.call(p, b, pos):
+		
+		#if validator.call(p, b, pos): print(p.type, pos)
+		
+		var should_break := false
+		while validator.call(p, b, pos) && !should_break:
+			
+			should_break = b.get_piece(pos) is Piece
 			
 			positions[i].append(pos)
 			
@@ -81,13 +70,14 @@ func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=
 			j += 1
 			pos = b._traverse(pos, pos + directions[i])
 			
+			#print(pos)
+			
 			#nasa memory safety
-			if j > iterations:
-				break
+			should_break = j > max_iter || should_break
 	
 	return positions
 
-func add_options_from_line_directions(options:Dictionary, directions:Array, p:Piece, b:Board, option:=option_move, validator:=can_take_in_line, iterations:=max_iter) -> void:
+func add_options_from_line_directions(options:Dictionary, directions:Array, p:Piece, b:Board, option:=option_move, validator:=can_take, iterations:=max_iter) -> void:
 	var positions = spaces_from_line_directions(directions, p, b, validator, iterations)
 	
 	for y in positions:

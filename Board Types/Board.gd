@@ -217,6 +217,8 @@ func b_option(pos, piece:Piece, o, option:Callable):
 	add_state()
 	option.call()
 	
+	print(self)
+	
 	iter2.all_options_iter_full(self, b_check)
 	
 	var new_s = states.pop_back()
@@ -234,7 +236,7 @@ func b_check(pos, piece:Piece, o, option:Callable):
 	if _evaluate():
 		iter2.all_options_should_break()
 		if piece.type is Bishop2i:
-			print(self)
+			print(self, iter2.options.keys())
 	
 	states.pop_back()
 	current_state = iter2.state.duplicate()
