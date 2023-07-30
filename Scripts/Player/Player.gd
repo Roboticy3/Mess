@@ -26,13 +26,11 @@ func _ready():
 	if b is Board:
 		board = b
 	else:
-		push_error("Player ", self, "'s board path does not point to a Board")
+		board = Accessor.current_board
 	
 	for i in team_paths.size():
 		var v = get_node(team_paths[i])
 		if v is Team: teams.append(v)
-
-
 
 func select_piece(pos) -> Piece:
 	var p = board.get_piece(pos)

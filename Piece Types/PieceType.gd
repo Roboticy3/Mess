@@ -57,8 +57,6 @@ func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=
 		#starting from the first square in a direction, travel in that direction until a square that cannot be taken is reached
 		var pos = b._traverse(p_state["position"], p_state["position"] + directions[i])
 		
-		#if validator.call(p, b, pos): print(p.type, pos)
-		
 		var should_break := false
 		while validator.call(p, b, pos) && !should_break:
 			
@@ -70,10 +68,8 @@ func spaces_from_line_directions(directions:Array, p:Piece, b:Board, validator:=
 			j += 1
 			pos = b._traverse(pos, pos + directions[i])
 			
-			#print(pos)
-			
 			#nasa memory safety
-			should_break = j > max_iter || should_break
+			should_break = j > iterations || should_break
 	
 	return positions
 

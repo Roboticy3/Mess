@@ -1,38 +1,38 @@
 [gd_scene load_steps=22 format=3 uid="uid://ci5mt31lrmwjj"]
 
-[ext_resource type="Script" path="res://Board Types/Chess.gd" id="1_843vs"]
-[ext_resource type="Script" path="res://Scripts/Board Elements/Team.gd" id="2_l4gke"]
-[ext_resource type="Script" path="res://Scripts/Board Elements/Piece.gd" id="3_22oss"]
-[ext_resource type="Script" path="res://Piece Types/Pawn2i.gd" id="4_c2gxl"]
-[ext_resource type="Script" path="res://Piece Types/Knight2i.gd" id="5_sjywq"]
-[ext_resource type="Script" path="res://Scripts/Player/Player.gd" id="6_34qhd"]
-[ext_resource type="Script" path="res://Piece Types/King2i.gd" id="6_jo4u3"]
-[ext_resource type="Theme" uid="uid://b76e6ruwcxs2s" path="res://Resources/UI/UI_Theme.tres" id="7_bmt6j"]
-[ext_resource type="Script" path="res://Piece Types/Rook2i.gd" id="7_vi3aq"]
-[ext_resource type="Script" path="res://Scripts/Technical/CopyProperties.gd" id="8_68y8w"]
-[ext_resource type="FontFile" uid="uid://ckqe7wyyay7fh" path="res://Resources/UI/FreeMono.ttf" id="8_kjhd7"]
-[ext_resource type="Script" path="res://Piece Types/Bishop2i.gd" id="8_q5qix"]
-[ext_resource type="Script" path="res://Piece Types/Queen2i.gd" id="9_wrjyr"]
-[ext_resource type="Script" path="res://Scripts/Board Elements/Bound Types/Bound2i.gd" id="10_mxo0n"]
-[ext_resource type="Script" path="res://Scripts/Player/CommandLine.gd" id="10_to7dn"]
+[ext_resource type="Script" path="res://Board Types/Chess.gd" id="1_oheln"]
+[ext_resource type="Script" path="res://Scripts/Board Elements/Team.gd" id="2_in4tw"]
+[ext_resource type="Script" path="res://Scripts/Board Elements/Piece.gd" id="3_q77fk"]
+[ext_resource type="Script" path="res://Piece Types/Pawn2i.gd" id="4_v46c7"]
+[ext_resource type="Script" path="res://Piece Types/Knight2i.gd" id="5_vdp2e"]
+[ext_resource type="Script" path="res://Piece Types/King2i.gd" id="6_rneo1"]
+[ext_resource type="Script" path="res://Piece Types/Rook2i.gd" id="7_isuqk"]
+[ext_resource type="Script" path="res://Piece Types/Bishop2i.gd" id="8_w3qfg"]
+[ext_resource type="Script" path="res://Piece Types/Queen2i.gd" id="9_fvaax"]
+[ext_resource type="Script" path="res://Scripts/Board Elements/Bound Types/Bound2i.gd" id="10_7qxjk"]
+[ext_resource type="Script" path="res://Scripts/Player/Player.gd" id="11_ueeiu"]
+[ext_resource type="Theme" uid="uid://b76e6ruwcxs2s" path="res://Resources/UI/UI_Theme.tres" id="12_gi1fi"]
+[ext_resource type="FontFile" uid="uid://ckqe7wyyay7fh" path="res://Resources/UI/FreeMono.ttf" id="13_af0er"]
+[ext_resource type="Script" path="res://Scripts/Technical/CopyProperties.gd" id="14_v52kd"]
+[ext_resource type="Script" path="res://Scripts/Player/CommandLine.gd" id="15_ssa0c"]
 
 [sub_resource type="Resource" id="Resource_8a4kp"]
-script = ExtResource("4_c2gxl")
+script = ExtResource("4_v46c7")
 
 [sub_resource type="Resource" id="Resource_1421e"]
-script = ExtResource("5_sjywq")
+script = ExtResource("5_vdp2e")
 
 [sub_resource type="Resource" id="Resource_e0o4y"]
-script = ExtResource("6_jo4u3")
+script = ExtResource("6_rneo1")
 
 [sub_resource type="Resource" id="Resource_ve2vv"]
-script = ExtResource("7_vi3aq")
+script = ExtResource("7_isuqk")
 
 [sub_resource type="Resource" id="Resource_v6ihh"]
-script = ExtResource("8_q5qix")
+script = ExtResource("8_w3qfg")
 
 [sub_resource type="Resource" id="Resource_6gybt"]
-script = ExtResource("9_wrjyr")
+script = ExtResource("9_fvaax")
 
 [node name="Default" type="Control"]
 layout_mode = 3
@@ -43,240 +43,240 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Board" type="Node" parent="."]
-script = ExtResource("1_843vs")
+script = ExtResource("1_oheln")
 
 [node name="White Team" type="Node" parent="Board"]
-script = ExtResource("2_l4gke")
+script = ExtResource("2_in4tw")
 starting_state = {
 "direction": Vector2i(0, 1)
 }
 priority = 1
 
 [node name="Pawn" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(0, 1)
 }
 
 [node name="Pawn2" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(1, 1)
 }
 
 [node name="Pawn3" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(2, 1)
 }
 
 [node name="Pawn4" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(3, 1)
 }
 
 [node name="Pawn5" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(4, 1)
 }
 
 [node name="Pawn6" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(5, 1)
 }
 
 [node name="Pawn7" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(6, 1)
 }
 
 [node name="Pawn8" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(7, 1)
 }
 
 [node name="Knight" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_1421e")
 starting_state = {
 "position": Vector2i(1, 0)
 }
 
 [node name="Knight2" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_1421e")
 starting_state = {
 "position": Vector2i(6, 0)
 }
 
 [node name="King" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_e0o4y")
 starting_state = {
 "position": Vector2i(4, 0)
 }
 
 [node name="Rook" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_ve2vv")
 starting_state = {
 "position": Vector2i(0, 0)
 }
 
 [node name="Rook2" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_ve2vv")
 starting_state = {
 "position": Vector2i(7, 0)
 }
 
 [node name="Bishop" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_v6ihh")
 starting_state = {
 "position": Vector2i(2, 0)
 }
 
 [node name="Bishop2" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_v6ihh")
 starting_state = {
 "position": Vector2i(5, 0)
 }
 
 [node name="Queen" type="Node" parent="Board/White Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_6gybt")
 starting_state = {
 "position": Vector2i(3, 0)
 }
 
 [node name="Black Team" type="Node" parent="Board"]
-script = ExtResource("2_l4gke")
+script = ExtResource("2_in4tw")
 starting_state = {
 "direction": Vector2i(0, -1)
 }
 
 [node name="Pawn" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(0, 6)
 }
 
 [node name="Pawn2" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(1, 6)
 }
 
 [node name="Pawn3" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(2, 6)
 }
 
 [node name="Pawn4" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(3, 6)
 }
 
 [node name="Pawn5" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(4, 6)
 }
 
 [node name="Pawn6" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(5, 6)
 }
 
 [node name="Pawn7" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(6, 6)
 }
 
 [node name="Pawn8" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_8a4kp")
 starting_state = {
 "position": Vector2i(7, 6)
 }
 
 [node name="Knight" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_1421e")
 starting_state = {
 "position": Vector2i(1, 7)
 }
 
 [node name="Knight2" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_1421e")
 starting_state = {
 "position": Vector2i(6, 7)
 }
 
 [node name="King" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_e0o4y")
 starting_state = {
 "position": Vector2i(4, 7)
 }
 
 [node name="Rook" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_ve2vv")
 starting_state = {
 "position": Vector2i(0, 7)
 }
 
 [node name="Rook2" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_ve2vv")
 starting_state = {
 "position": Vector2i(7, 7)
 }
 
 [node name="Bishop" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_v6ihh")
 starting_state = {
 "position": Vector2i(2, 7)
 }
 
 [node name="Bishop2" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_v6ihh")
 starting_state = {
-"position": Vector2i(6, 2)
+"position": Vector2i(5, 7)
 }
 
 [node name="Queen" type="Node" parent="Board/Black Team"]
-script = ExtResource("3_22oss")
+script = ExtResource("3_q77fk")
 type = SubResource("Resource_6gybt")
 starting_state = {
 "position": Vector2i(3, 7)
@@ -285,13 +285,12 @@ starting_state = {
 [node name="Shape" type="Node" parent="Board"]
 
 [node name="Bound2i" type="Node" parent="Board/Shape"]
-script = ExtResource("10_mxo0n")
+script = ExtResource("10_7qxjk")
 _a = Vector2i(7, 7)
 
 [node name="Test" type="Node" parent="."]
-script = ExtResource("6_34qhd")
+script = ExtResource("11_ueeiu")
 team_paths = Array[NodePath]([NodePath("../Board/White Team"), NodePath("../Board/Black Team")])
-board_path = NodePath("../Board")
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 1
@@ -314,12 +313,12 @@ offset_bottom = -32.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 8
-theme = ExtResource("7_bmt6j")
-theme_override_fonts/normal_font = ExtResource("8_kjhd7")
+theme = ExtResource("12_gi1fi")
+theme_override_fonts/normal_font = ExtResource("13_af0er")
 bbcode_enabled = true
 scroll_following = true
 autowrap_mode = 1
-script = ExtResource("8_68y8w")
+script = ExtResource("14_v52kd")
 
 [node name="CommandLine" type="LineEdit" parent="UI"]
 layout_mode = 1
@@ -330,7 +329,7 @@ anchor_bottom = 1.0
 offset_top = -25.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_fonts/font = ExtResource("8_kjhd7")
+theme_override_fonts/font = ExtResource("13_af0er")
 placeholder_text = "enter command here"
-script = ExtResource("10_to7dn")
+script = ExtResource("15_ssa0c")
 player_path = NodePath("../../Test")

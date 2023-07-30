@@ -1,0 +1,31 @@
+on test.tscn
+style Command
+position_type 6
+
+#white
+select 4 1
+move 4 3
+
+#black
+select 4 6
+move 4 4
+
+#w
+select 5 0
+move 2 3
+
+#b
+select 6 7
+move 5 5
+
+#w
+select 3 0
+move 7 4
+
+#b
+select 5 5
+move 4 3
+
+#w
+select 7 4
+move 5 6

@@ -32,18 +32,20 @@ func send():
 		commands[0]: select_piece(args)
 		commands[1]: play(args)
 		commands[2]: show_state(args)
-		commands[3]: undo()
+		commands[3]: undo(args)
 		commands[4]: show_options(args)
+		commands[5]: execute_mcs(args)
 
 const commands := [
 	"select",
 	"move",
 	"show",
 	"undo",
-	"options"
+	"options",
+	"macro"
 ]
 
-func select_piece(args:Array[String]):
+func select_piece(args:Array):
 	
 	if args.size() < 2:
 		Accessor.a_print("not enough arguments to select")
@@ -51,7 +53,7 @@ func select_piece(args:Array[String]):
 	
 	player.select_piece(args_to_vector2i(args))
 
-func play(args:Array[String]):
+func play(args:Array):
 	
 	if !player.selection:
 		Accessor.a_print("cannot move a piece with no selection")
@@ -63,7 +65,7 @@ func play(args:Array[String]):
 	
 	player.play(args_to_vector2i(args))
 
-func show_state(args:Array[String]):
+func show_state(args:Array):
 	
 	var b := player.board
 	var idx := b.get_turn()
@@ -92,9 +94,13 @@ func show_state(args:Array[String]):
 		Accessor.shaped_2i_state_to_string(b.get_state(idx), b.get_shape())
 	)
 
-func undo():
+func undo(args:Array):
 	var b := player.board
 	var s := b.undo()
+	
+	if !args.is_empty() && args[0] == "-a":
+		while b.get_turn() > 1:
+			undo([])
 	
 	Accessor.a_print(
 		"undid:\n" + Accessor.shaped_2i_state_to_string(s, b.get_shape())
@@ -146,3 +152,23 @@ func args_to_vector2i(args:Array) -> Vector2i:
 	var x = args[0].to_int()
 	var y = args[1].to_int()
 	return Vector2i(x, y)
+
+func execute_mcs(args:Array):
+	if args.is_empty():
+		Accessor.a_print("path argument requred to execute a macro")
+		return
+	
+	if !args[0].ends_with(".mcs"):
+		Accessor.a_print("path argument must end in .mcs to be a macro")
+		return
+	
+	var mcs := FileAccess.open("Macros/" + args[0], FileAccess.READ)
+	text = mcs.get_line()
+	
+	while !mcs.eof_reached():
+		
+		if !text.begins_with("#"): 
+			send()
+		
+		text = mcs.get_line()
+	
