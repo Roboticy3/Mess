@@ -1,6 +1,4 @@
-on test.tscn
-style Command
-position_type 6
+guess_level test.tscn
 
 #white
 select 4 1

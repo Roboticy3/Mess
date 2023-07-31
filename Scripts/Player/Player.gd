@@ -8,12 +8,6 @@ class_name Player
 #the only real functions of the player are select_piece and play, requiring a position and option respectively
 #it is up to other scripts, controlling ui or a 3d scene, to provide this information and call the functions from the client
 
-#all the teams which this player can play as, leave empty for no restriction
-#a piece with no team will essentially have a team of null, and can be played by any player
-#if the team_paths array is empty, the player can play any piece, as long as it has options
-@export var team_paths:Array[NodePath] = []
-var teams:Array[Team] = [null]
-
 #the player must have a board to interact with to be able to do anything
 @export_node_path var board_path:NodePath
 var board:Board
@@ -27,14 +21,10 @@ func _ready():
 		board = b
 	else:
 		board = Accessor.current_board
-	
-	for i in team_paths.size():
-		var v = get_node(team_paths[i])
-		if v is Team: teams.append(v)
 
 func select_piece(pos) -> Piece:
 	var p = board.get_piece(pos)
-	if p && (teams.has(p.get_team()) || team_paths.is_empty()):
+	if p:
 		selection = p
 		Accessor.a_print("selected " + str(p))
 		Accessor.a_print("options: " + str(p.options.keys()))

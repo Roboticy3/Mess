@@ -35,6 +35,8 @@ func send():
 		commands[3]: undo(args)
 		commands[4]: show_options(args)
 		commands[5]: execute_mcs(args)
+		commands[6]: guess_level(args)
+		commands[7]: load_board(args)
 
 const commands := [
 	"select",
@@ -42,7 +44,9 @@ const commands := [
 	"show",
 	"undo",
 	"options",
-	"macro"
+	"macro",
+	"guess_level",
+	"board"
 ]
 
 func select_piece(args:Array):
@@ -99,7 +103,7 @@ func undo(args:Array):
 	var s := b.undo()
 	
 	if !args.is_empty() && args[0] == "-a":
-		while b.get_turn() > 1:
+		while b.get_turn() > 0:
 			undo([])
 	
 	Accessor.a_print(
@@ -153,7 +157,11 @@ func args_to_vector2i(args:Array) -> Vector2i:
 	var y = args[1].to_int()
 	return Vector2i(x, y)
 
+#I"M FUCKING COOKING UP SUMTHIN MEAN TONIGHT
+var mcs_should_break := false
 func execute_mcs(args:Array):
+	mcs_should_break = false
+	
 	if args.is_empty():
 		Accessor.a_print("path argument requred to execute a macro")
 		return
@@ -163,6 +171,11 @@ func execute_mcs(args:Array):
 		return
 	
 	var mcs := FileAccess.open("Macros/" + args[0], FileAccess.READ)
+	
+	if !mcs:
+		Accessor.a_print("path argument was not found")
+		return
+	
 	text = mcs.get_line()
 	
 	while !mcs.eof_reached():
@@ -170,5 +183,24 @@ func execute_mcs(args:Array):
 		if !text.begins_with("#"): 
 			send()
 		
+		if mcs_should_break:
+			break
+		
 		text = mcs.get_line()
+
+func guess_level(args:Array):
+	if args.is_empty():
+		return
 	
+	var level_path := get_tree().current_scene.scene_file_path
+	var start := level_path.rfind("/")
+	level_path = level_path.substr(start + 1)
+	
+	if args[0] == level_path:
+		Accessor.a_print("guessed correctly!")
+	else:
+		Accessor.a_print("guessed incorrectly >:(")
+		mcs_should_break = true
+
+func load_board(args:Array):
+	pass
