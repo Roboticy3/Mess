@@ -84,3 +84,6 @@ var a_debug:=""
 func a_print(s:String) -> void:
 	a_debug += s + "\n"
 	emit_signal("a_print_signal")
+
+#debug console that takes display data from a_debug and commands from the client
+var current_console:Control

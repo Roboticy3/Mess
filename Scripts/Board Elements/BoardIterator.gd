@@ -14,6 +14,8 @@ var o_pos:=[null]
 var o_val:=[null]
 var o_done:=true
 
+var set_options := false
+
 var all_options_break := false
 func all_options_start(b:Board):
 	piece_start(b)
@@ -25,20 +27,23 @@ func all_options_step(b:Board):
 	if done:
 		return
 	
+	options_step()
+	
 	if o_done:
-		piece_step()
-		options_start(b)
-	else:
+		while o_done && !done:
+			piece_step()
+			options_start(b)
+		
 		options_step()
 
 func piece_start(b:Board):
 	state = b.current_state.duplicate()
 	
 	i = -1
-	pos = state.keys() + [null]
-	val = state.values() + [null]
+	pos = state.keys()
+	val = state.values()
 	
-	if pos.size() == 1:
+	if pos.is_empty():
 		done = true
 		return
 	
@@ -60,25 +65,23 @@ func piece_step():
 
 func options_start(b:Board):
 	if done: return
-	options = val[i].generate_options(b, false)
+	options = val[i].generate_options(b, set_options)
 	
 	j = -1
-	o_pos = options.keys() + [null]
-	o_val = options.values() + [null]
+	o_pos = options.keys()
+	o_val = options.values()
 	
-	if o_pos.size() == 1:
+	if o_pos.is_empty():
 		o_done = true
 		return
 	
-	val[i] = b.copy_piece(val[i])
-	state[pos[i]] = val[i]
 	o_done = false
 
 func options_step():
 	
 	j += 1
 	
-	if j > o_pos.size() - 2:
+	if j >= o_pos.size():
 		o_done = true
 		return
 	
@@ -95,10 +98,6 @@ func all_options_iter_full(b:Board, action:Callable):
 	
 	while !done:
 		var cur := get_all_options_cur()
-		
-		if cur[3] == null: 
-			all_options_step(b)
-			continue
 		
 		action.callv(cur)
 		

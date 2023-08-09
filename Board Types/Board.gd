@@ -45,14 +45,11 @@ var position_type = TYPE_NIL
 var states:Array[Dictionary]
 var current_state:Dictionary
 
-#first board flagged as active will be set to Accessor's current_board
-var active := true
-
 ### INITIALIZATION, MAY BE OVERRIDEN BY INHERITORS
 
 func _init():
-
-	if active: Accessor.current_board = self
+	
+	Accessor.current_board = self
 	
 	states = [starting_state.duplicate()]
 	current_state = starting_state.duplicate()
@@ -203,10 +200,12 @@ var iter := BoardIterator.new()
 var iter2 := BoardIterator.new()
 func b_options() -> void:
 	
+	iter.set_options = true
+	
 	add_state()
 	iter2.all_options_iter_full(self, b_check)
 	states.pop_back()
-	current_state = iter2.state.duplicate()
+	current_state = iter2.state
 	if iter2.all_options_did_break():
 		Accessor.call_deferred("a_print", str(get_team()) + " is in check!")
 	

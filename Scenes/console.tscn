@@ -1,0 +1,46 @@
+[gd_scene load_steps=6 format=3 uid="uid://rogbbyaspgy4"]
+
+[ext_resource type="Script" path="res://Scripts/Technical/AccessorSetter.gd" id="1_88xsp"]
+[ext_resource type="Theme" uid="uid://b76e6ruwcxs2s" path="res://Resources/UI/UI_Theme.tres" id="1_ssexd"]
+[ext_resource type="FontFile" uid="uid://ckqe7wyyay7fh" path="res://Resources/UI/FreeMono.ttf" id="2_ynpnb"]
+[ext_resource type="Script" path="res://Scripts/Technical/CopyProperties.gd" id="3_4621q"]
+[ext_resource type="Script" path="res://Scripts/Player/CommandLine.gd" id="4_akj7n"]
+
+[node name="Console" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_88xsp")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -43.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 8
+theme = ExtResource("1_ssexd")
+theme_override_fonts/normal_font = ExtResource("2_ynpnb")
+bbcode_enabled = true
+scroll_following = true
+autowrap_mode = 1
+script = ExtResource("3_4621q")
+
+[node name="CommandLine" type="LineEdit" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -25.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("2_ynpnb")
+placeholder_text = "enter command here"
+script = ExtResource("4_akj7n")
+player_path = NodePath("../../../Test")

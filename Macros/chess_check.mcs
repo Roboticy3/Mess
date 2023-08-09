@@ -1,0 +1,18 @@
+guess_level test.tscn
+
+select 3 1
+move 3 3
+
+select 4 6
+move 4 4
+
+select 3 3
+move 4 4
+
+select 1 7
+move 2 5
+
+select 3 0
+move 3 6
+
+options -a

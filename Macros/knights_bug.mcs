@@ -1,0 +1,18 @@
+guess_level test.tscn
+
+#move opposite knights to the center of the board
+select 1 0
+move 2 2
+select 6 7
+move 5 5
+select 2 2
+move 4 3
+select 5 5
+move 3 4
+
+#check the black king with the white knight, why does the bishop have an option to take its own pawn here?
+select 4 3
+move 5 5
+
+#this one is not recreating itself easily
+options -a
