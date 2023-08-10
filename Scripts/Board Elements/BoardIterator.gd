@@ -57,7 +57,7 @@ func piece_step():
 		
 		i += 1
 		
-	if i > pos.size() - 2:
+	if i >= pos.size():
 		done = true
 		return
 	
@@ -66,6 +66,7 @@ func piece_step():
 func options_start(b:Board):
 	if done: return
 	options = val[i].generate_options(b, set_options)
+	if set_options: val[i].options = {}
 	
 	j = -1
 	o_pos = options.keys()
