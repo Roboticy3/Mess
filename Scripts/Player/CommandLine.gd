@@ -16,6 +16,7 @@ func _input(event):
 		send()
 		text = ""
 
+var history:Array[String] = []
 #send a command by matching the first word in this commandline to something in the constant list of commands
 #then run that command with the rest of the words as arguments
 func send():
@@ -28,6 +29,7 @@ func send():
 	
 	Accessor.a_print(text)
 	
+	var success := true
 	match s[0]:
 		commands[0]: select_piece(args)
 		commands[1]: play(args)
@@ -36,7 +38,11 @@ func send():
 		commands[4]: show_options(args)
 		commands[5]: execute_mcs(args)
 		commands[6]: guess_level(args)
-		commands[7]: load_board(args)
+		commands[7]: history = []
+		_: success = false
+		
+	if success && s[0] != commands[7]:
+		history.append(text)
 
 const commands := [
 	"select",
@@ -46,7 +52,7 @@ const commands := [
 	"options",
 	"macro",
 	"guess_level",
-	"board"
+	"clear_history"
 ]
 
 func select_piece(args:Array):
@@ -166,8 +172,22 @@ func execute_mcs(args:Array):
 		Accessor.a_print("path argument requred to execute a macro")
 		return
 	
+	var save := false
+	save = args.size() > 1 && args.pop_front() == "-s"
+	
 	if !args[0].ends_with(".mcs"):
 		Accessor.a_print("path argument must end in .mcs to be a macro")
+		return
+	
+	if save:
+		var mcs = FileAccess.open("Macros/" + args[0], FileAccess.WRITE)
+		
+		mcs.store_line("guess_level " + get_level_name())
+		
+		for i in history.size():
+			mcs.store_line(history[i])
+		
+		mcs.close()
 		return
 	
 	var mcs := FileAccess.open("Macros/" + args[0], FileAccess.READ)
@@ -192,9 +212,7 @@ func guess_level(args:Array):
 	if args.is_empty():
 		return
 	
-	var level_path := get_tree().current_scene.scene_file_path
-	var start := level_path.rfind("/")
-	level_path = level_path.substr(start + 1)
+	var level_path = get_level_name()
 	
 	if args[0] == level_path:
 		Accessor.a_print("guessed correctly!")
@@ -202,5 +220,7 @@ func guess_level(args:Array):
 		Accessor.a_print("guessed incorrectly >:(")
 		mcs_should_break = true
 
-func load_board(args:Array):
-	pass
+func get_level_name() -> String:
+	var level_path := get_tree().current_scene.scene_file_path
+	var start := level_path.rfind("/")
+	return level_path.substr(start + 1)
